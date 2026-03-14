@@ -11,23 +11,46 @@
       padding: 0;
     }
 
+    :root {
+      --bg: #111111;
+      --bg-soft: #1a1a1a;
+      --card: #1c1c1c;
+      --card-2: #232323;
+      --line: #2d2d2d;
+      --text: #ffffff;
+      --muted: #cfcfcf;
+      --yellow: #f2b300;
+      --yellow-dark: #d89f00;
+      --green: #25d366;
+      --green-dark: #1ebe5d;
+      --danger: #ff5a5a;
+      --shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    }
+
     body {
       font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
+      background:
+        radial-gradient(circle at top, rgba(242,179,0,0.08), transparent 30%),
+        linear-gradient(180deg, #111 0%, #0d0d0d 100%);
+      color: var(--text);
     }
 
     header {
       background: linear-gradient(180deg, #111 0%, #1a1a1a 100%);
-      padding: 40px 20px;
+      padding: 40px 20px 28px;
       text-align: center;
-      border-bottom: 4px solid #f2b300;
+      border-bottom: 4px solid var(--yellow);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(6px);
     }
 
     header h1 {
       font-size: 42px;
-      color: #f2b300;
+      color: var(--yellow);
       margin-bottom: 10px;
+      letter-spacing: 1px;
     }
 
     header p {
@@ -42,21 +65,65 @@
       color: #fff;
     }
 
+    .top-actions {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-top {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-size: 15px;
+      box-shadow: var(--shadow);
+    }
+
+    .btn-whats {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .btn-whats:hover {
+      background: var(--green-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-cart {
+      background: var(--yellow);
+      color: #111;
+    }
+
+    .btn-cart:hover {
+      background: var(--yellow-dark);
+      transform: translateY(-1px);
+    }
+
     .container {
-      max-width: 1100px;
+      max-width: 1180px;
       margin: 0 auto;
       padding: 30px 15px 60px;
     }
 
     .secao {
-      margin-bottom: 40px;
+      margin-bottom: 42px;
     }
 
     .secao h2 {
       font-size: 32px;
-      color: #f2b300;
+      color: var(--yellow);
       margin-bottom: 20px;
-      border-left: 6px solid #f2b300;
+      border-left: 6px solid var(--yellow);
       padding-left: 12px;
     }
 
@@ -67,11 +134,17 @@
     }
 
     .item {
-      background: #1c1c1c;
-      border: 1px solid #2c2c2c;
-      border-radius: 14px;
+      background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+      border: 1px solid var(--line);
+      border-radius: 16px;
       padding: 18px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .item:hover {
+      transform: translateY(-3px);
+      border-color: rgba(242, 179, 0, 0.4);
     }
 
     .item h3 {
@@ -81,10 +154,11 @@
     }
 
     .item .codigo {
-      color: #f2b300;
+      color: var(--yellow);
       font-weight: bold;
       font-size: 14px;
       margin-bottom: 8px;
+      letter-spacing: 0.5px;
     }
 
     .item p {
@@ -105,60 +179,380 @@
 
     .preco {
       font-size: 26px;
-      color: #f2b300;
+      color: var(--yellow);
       font-weight: bold;
+    }
+
+    .acoes-item {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .btn {
       display: inline-block;
-      background: #25d366;
-      color: #fff;
+      border: none;
       text-decoration: none;
       padding: 12px 18px;
-      border-radius: 10px;
+      border-radius: 12px;
       font-weight: bold;
-      transition: 0.2s;
+      transition: 0.2s ease;
+      cursor: pointer;
+      font-size: 14px;
     }
 
-    .btn:hover {
-      background: #1ebe5d;
+    .btn-pedir {
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #3a3a3a;
     }
 
-    .adicionais, .bebidas {
-      background: #1c1c1c;
-      border-radius: 14px;
+    .btn-pedir:hover {
+      background: #333;
+    }
+
+    .btn-add {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 8px 16px rgba(37, 211, 102, 0.22);
+    }
+
+    .btn-add:hover {
+      background: var(--green-dark);
+      transform: translateY(-1px);
+    }
+
+    .extras-box {
+      background: linear-gradient(180deg, var(--card) 0%, var(--card-2) 100%);
+      border-radius: 16px;
       padding: 20px;
-      border: 1px solid #2c2c2c;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
     }
 
-    .lista-simples {
+    .lista-opcoes {
       display: grid;
       gap: 12px;
     }
 
-    .linha {
+    .linha-opcao {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px dashed #555;
+      padding-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .linha-opcao:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .info-opcao {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-opcao span {
+      font-size: 18px;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .info-opcao small {
+      color: #bdbdbd;
+      font-size: 13px;
+    }
+
+    .direita-opcao {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .preco-opcao {
+      color: var(--yellow);
+      font-weight: bold;
+      font-size: 18px;
+      min-width: 75px;
+      text-align: right;
+    }
+
+    .carrinho-flutuante {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      background: linear-gradient(180deg, var(--yellow) 0%, var(--yellow-dark) 100%);
+      color: #111;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 14px 28px rgba(0,0,0,0.35);
+      font-size: 16px;
+    }
+
+    .carrinho-flutuante:hover {
+      transform: translateY(-2px);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      z-index: 50;
+      padding: 18px;
+      overflow-y: auto;
+    }
+
+    .modal.ativo {
+      display: block;
+    }
+
+    .modal-conteudo {
+      max-width: 720px;
+      margin: 40px auto;
+      background: linear-gradient(180deg, #1b1b1b 0%, #111 100%);
+      border: 1px solid #303030;
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .modal-topo {
+      padding: 22px 22px 16px;
+      border-bottom: 1px solid #2b2b2b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .modal-topo h3 {
+      color: var(--yellow);
+      font-size: 28px;
+    }
+
+    .fechar {
+      background: #2a2a2a;
+      border: 1px solid #3a3a3a;
+      color: #fff;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+
+    .fechar:hover {
+      background: #343434;
+    }
+
+    .modal-corpo {
+      padding: 20px 22px 24px;
+    }
+
+    .carrinho-vazio {
+      color: #bbb;
+      text-align: center;
+      padding: 24px 0;
+      font-size: 17px;
+    }
+
+    .lista-carrinho {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .item-carrinho {
+      background: #1d1d1d;
+      border: 1px solid #2f2f2f;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .item-carrinho strong {
+      display: block;
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .item-carrinho small {
+      color: #bdbdbd;
+      font-size: 13px;
+    }
+
+    .acoes-carrinho {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .qtd-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #141414;
+      padding: 6px 10px;
+      border-radius: 10px;
+      border: 1px solid #2b2b2b;
+    }
+
+    .qtd-btn {
+      border: none;
+      background: #2e2e2e;
+      color: #fff;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .qtd-btn:hover {
+      background: #444;
+    }
+
+    .btn-remover {
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-remover:hover {
+      filter: brightness(0.95);
+    }
+
+    .resumo {
+      border-top: 1px solid #2c2c2c;
+      padding-top: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .linha-resumo {
       display: flex;
       justify-content: space-between;
       gap: 10px;
-      border-bottom: 1px dashed #555;
-      padding-bottom: 8px;
+      font-size: 17px;
       color: #fff;
-      font-size: 18px;
+    }
+
+    .linha-resumo.total {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--yellow);
+      margin-top: 4px;
+    }
+
+    .dados-pedido {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .campo {
+      display: grid;
+      gap: 6px;
+    }
+
+    .campo label {
+      font-size: 14px;
+      color: #ddd;
+      font-weight: bold;
+    }
+
+    .campo input,
+    .campo textarea,
+    .campo select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #353535;
+      background: #111;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .campo input:focus,
+    .campo textarea:focus,
+    .campo select:focus {
+      border-color: rgba(242, 179, 0, 0.7);
+      box-shadow: 0 0 0 3px rgba(242, 179, 0, 0.12);
+    }
+
+    .acoes-final {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn-limpar {
+      background: #2a2a2a;
+      color: #fff;
+      border: 1px solid #3a3a3a;
+    }
+
+    .btn-limpar:hover {
+      background: #333;
+    }
+
+    .btn-finalizar {
+      background: var(--green);
+      color: #fff;
+      box-shadow: 0 10px 18px rgba(37, 211, 102, 0.2);
+    }
+
+    .btn-finalizar:hover {
+      background: var(--green-dark);
     }
 
     footer {
       background: #0d0d0d;
       text-align: center;
       padding: 30px 20px;
-      border-top: 4px solid #f2b300;
+      border-top: 4px solid var(--yellow);
       color: #ddd;
     }
 
     footer strong {
-      color: #f2b300;
+      color: var(--yellow);
     }
 
-    @media (max-width: 600px) {
+    .obs {
+      margin-top: 10px;
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+      header {
+        position: static;
+      }
+
       header h1 {
         font-size: 32px;
       }
@@ -174,6 +568,20 @@
       .preco {
         font-size: 22px;
       }
+
+      .acoes-final {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-topo h3 {
+        font-size: 22px;
+      }
+
+      .carrinho-flutuante {
+        right: 12px;
+        left: 12px;
+        bottom: 12px;
+      }
     }
   </style>
 </head>
@@ -186,6 +594,11 @@
     <div class="topo-info">
       <div><strong>WhatsApp:</strong> (15) 99617-9172</div>
       <div><strong>Horário:</strong> Quarta e quinta 19h às 23h | Sexta e sábado 19h às 24h | Domingo 19h às 23h</div>
+    </div>
+
+    <div class="top-actions">
+      <a class="btn-top btn-whats" href="https://wa.me/5515996179172" target="_blank">WhatsApp</a>
+      <button class="btn-top btn-cart" onclick="abrirCarrinho()">Ver carrinho (<span id="topCartCount">0</span>)</button>
     </div>
   </header>
 
@@ -201,7 +614,10 @@
           <p>Salsicha, maionese, batata palha, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 13,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Simples%20-%20R$%2013,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Simples%20-%20R$%2013,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Simples', 13)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -211,7 +627,10 @@
           <p>2 salsichas, catupiry ou cheddar ou mussarela, maionese, batata palha, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 16,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Duplo%20-%20R$%2016,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Duplo%20-%20R$%2016,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Duplo', 16)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -221,7 +640,10 @@
           <p>2 salsichas, cheddar, catupiry, mussarela, vinagrete, palha, maionese, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 17,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Cachorrão%20Três%20Queijo%20-%20R$%2017,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Cachorrão%20Três%20Queijo%20-%20R$%2017,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Cachorrão Três Queijo', 17)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -231,7 +653,10 @@
           <p>2 salsichas, frango desfiado, catupiry, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 18,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Dogfrango%20-%20R$%2018,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Dogfrango%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Dogfrango', 18)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -241,7 +666,10 @@
           <p>2 salsichas, calabresa, bacon, mussarela, catupiry, maionese, batata palha, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 20,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Especial%20-%20R$%2020,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Especial%20-%20R$%2020,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Especial', 20)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -251,7 +679,10 @@
           <p>Ovo, mussarela, catupiry, maionese, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 17,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Vegetariano%20-%20R$%2017,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Vegetariano%20-%20R$%2017,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Vegetariano', 17)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -268,7 +699,10 @@
           <p>Hambúrguer, mussarela, maionese, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 18,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Burguer%20-%20R$%2018,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Burguer%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Burguer', 18)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -278,7 +712,10 @@
           <p>Hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 18,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Salada%20-%20R$%2018,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Salada%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Salada', 18)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -288,7 +725,10 @@
           <p>2 ovos, hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 20,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Egg%20-%20R$%2020,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Egg%20-%20R$%2020,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Egg', 20)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -298,7 +738,10 @@
           <p>Hambúrguer, 2 ovos, catupiry, presunto, mussarela, bacon, vinagrete, alface, maionese, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 23,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Egg%20Especial%20-%20R$%2023,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Egg%20Especial%20-%20R$%2023,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Egg Especial', 23)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -308,7 +751,10 @@
           <p>Bacon, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 22,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Bacon%20-%20R$%2022,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Bacon%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Bacon', 22)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -318,7 +764,10 @@
           <p>Calabresa, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 22,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Calabresa%20-%20R$%2022,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Calabresa%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Calabresa', 22)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -328,7 +777,10 @@
           <p>Frango desfiado, catupiry ou cheddar ou mussarela, maionese, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 21,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20-%20R$%2021,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20-%20R$%2021,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango', 21)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -338,7 +790,10 @@
           <p>Frango desfiado, catupiry, cheddar, mussarela, vinagrete, maionese.</p>
           <div class="rodape-item">
             <div class="preco">R$ 21,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Frango%20Três%20Queijo%20-%20R$%2021,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Frango%20Três%20Queijo%20-%20R$%2021,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Frango Três Queijo', 21)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -348,7 +803,10 @@
           <p>Frango desfiado, bacon ou calabresa, catupiry, maionese, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 22,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20Especial%20-%20R$%2022,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20Especial%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango Especial', 22)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -358,7 +816,10 @@
           <p>Hambúrguer, ovo, calabresa, bacon, presunto, mussarela, maionese, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 23,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Omelete%20-%20R$%2023,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Omelete%20-%20R$%2023,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Omelete', 23)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -368,7 +829,10 @@
           <p>Hambúrguer, catupiry, frango desfiado, mussarela, calabresa, bacon, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 27,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20O%20Chapeiro%20-%20R$%2027,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20O%20Chapeiro%20-%20R$%2027,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('O Chapeiro', 27)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -378,7 +842,10 @@
           <p>Salsicha, ovo, calabresa, bacon, hambúrguer, frango desfiado, mussarela, catupiry, presunto, maionese, tomate, cebola, ketchup.</p>
           <div class="rodape-item">
             <div class="preco">R$ 32,00</div>
-            <a class="btn" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Tudo%20-%20R$%2032,00" target="_blank">Pedir</a>
+            <div class="acoes-item">
+              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Tudo%20-%20R$%2032,00" target="_blank">Pedir direto</a>
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Tudo', 32)">+ Carrinho</button>
+            </div>
           </div>
         </div>
 
@@ -387,32 +854,346 @@
 
     <section class="secao">
       <h2>Adicionais</h2>
-      <div class="adicionais lista-simples">
-        <div class="linha"><span>Hambúrguer</span><strong>R$ 5,00</strong></div>
-        <div class="linha"><span>Catupiry, Cheddar, Mussarela</span><strong>R$ 3,00</strong></div>
-        <div class="linha"><span>Calabresa e Bacon</span><strong>R$ 3,00</strong></div>
-        <div class="linha"><span>Ovo e Salsicha</span><strong>R$ 2,00</strong></div>
+      <div class="extras-box lista-opcoes">
+        <div class="linha-opcao">
+          <div class="info-opcao">
+            <span>Hambúrguer</span>
+            <small>Adicional extra no lanche</small>
+          </div>
+          <div class="direita-opcao">
+            <div class="preco-opcao">R$ 5,00</div>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Hambúrguer', 5)">+ Carrinho</button>
+          </div>
+        </div>
+
+        <div class="linha-opcao">
+          <div class="info-opcao">
+            <span>Catupiry / Cheddar / Mussarela</span>
+            <small>Escolha o queijo desejado</small>
+          </div>
+          <div class="direita-opcao">
+            <div class="preco-opcao">R$ 3,00</div>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Catupiry / Cheddar / Mussarela', 3)">+ Carrinho</button>
+          </div>
+        </div>
+
+        <div class="linha-opcao">
+          <div class="info-opcao">
+            <span>Calabresa e Bacon</span>
+            <small>Mais sabor no seu pedido</small>
+          </div>
+          <div class="direita-opcao">
+            <div class="preco-opcao">R$ 3,00</div>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Calabresa e Bacon', 3)">+ Carrinho</button>
+          </div>
+        </div>
+
+        <div class="linha-opcao">
+          <div class="info-opcao">
+            <span>Ovo e Salsicha</span>
+            <small>Adicional econômico</small>
+          </div>
+          <div class="direita-opcao">
+            <div class="preco-opcao">R$ 2,00</div>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Ovo e Salsicha', 2)">+ Carrinho</button>
+          </div>
+        </div>
       </div>
     </section>
 
     <section class="secao">
       <h2>Bebidas</h2>
-      <div class="bebidas lista-simples">
-        <div class="linha"><span>Coca Cola 2L</span><strong>R$ 14,00</strong></div>
-        <div class="linha"><span>Coca Cola Lata</span><strong>R$ 6,00</strong></div>
-        <div class="linha"><span>Sprite Lata</span><strong>R$ 5,00</strong></div>
-        <div class="linha"><span>Fanta 2L</span><strong>R$ 12,00</strong></div>
-        <div class="linha"><span>Fanta Lata</span><strong>R$ 6,00</strong></div>
-        <div class="linha"><span>Guaraná Lata</span><strong>R$ 5,00</strong></div>
+      <div class="grid">
+        <div class="item">
+          <div class="codigo">B01</div>
+          <h3>Coca Cola 2L</h3>
+          <p>Perfeita para acompanhar seu pedido.</p>
+          <div class="rodape-item">
+            <div class="preco">R$ 14,00</div>
+            <div class="acoes-item">
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola 2L', 14)">+ Carrinho</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="item">
+          <div class="codigo">B02</div>
+          <h3>Coca Cola Lata</h3>
+          <p>Bebida gelada para seu combo.</p>
+          <div class="rodape-item">
+            <div class="preco">R$ 6,00</div>
+            <div class="acoes-item">
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola Lata', 6)">+ Carrinho</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="item">
+          <div class="codigo">B03</div>
+          <h3>Sprite Lata</h3>
+          <p>Refrescante e leve.</p>
+          <div class="rodape-item">
+            <div class="preco">R$ 5,00</div>
+            <div class="acoes-item">
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Sprite Lata', 5)">+ Carrinho</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="item">
+          <div class="codigo">B04</div>
+          <h3>Fanta 2L</h3>
+          <p>Ideal para dividir com a galera.</p>
+          <div class="rodape-item">
+            <div class="preco">R$ 12,00</div>
+            <div class="acoes-item">
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta 2L', 12)">+ Carrinho</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="item">
+          <div class="codigo">B05</div>
+          <h3>Fanta Lata</h3>
+          <p>Sabor clássico e geladinho.</p>
+          <div class="rodape-item">
+            <div class="preco">R$ 6,00</div>
+            <div class="acoes-item">
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta Lata', 6)">+ Carrinho</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="item">
+          <div class="codigo">B06</div>
+          <h3>Guaraná Lata</h3>
+          <p>Combina muito com hambúrguer.</p>
+          <div class="rodape-item">
+            <div class="preco">R$ 5,00</div>
+            <div class="acoes-item">
+              <button class="btn btn-add" onclick="adicionarAoCarrinho('Guaraná Lata', 5)">+ Carrinho</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
   </main>
 
+  <button class="carrinho-flutuante" onclick="abrirCarrinho()">
+    🛒 Carrinho (<span id="cartCount">0</span>)
+  </button>
+
+  <div class="modal" id="modalCarrinho">
+    <div class="modal-conteudo">
+      <div class="modal-topo">
+        <h3>Seu pedido</h3>
+        <button class="fechar" onclick="fecharCarrinho()">×</button>
+      </div>
+
+      <div class="modal-corpo">
+        <div id="listaCarrinho"></div>
+
+        <div class="resumo">
+          <div class="linha-resumo">
+            <span>Itens</span>
+            <strong id="resumoItens">0</strong>
+          </div>
+          <div class="linha-resumo total">
+            <span>Total</span>
+            <strong id="resumoTotal">R$ 0,00</strong>
+          </div>
+        </div>
+
+        <div class="dados-pedido">
+          <div class="campo">
+            <label for="nomeCliente">Seu nome</label>
+            <input type="text" id="nomeCliente" placeholder="Digite seu nome">
+          </div>
+
+          <div class="campo">
+            <label for="formaPagamento">Forma de pagamento</label>
+            <select id="formaPagamento">
+              <option value="">Selecione</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="Pix">Pix</option>
+              <option value="Cartão">Cartão</option>
+            </select>
+          </div>
+
+          <div class="campo">
+            <label for="observacoes">Observações do pedido</label>
+            <textarea id="observacoes" rows="4" placeholder="Ex.: sem cebola, tirar ketchup, enviar troco para R$ 50, etc."></textarea>
+          </div>
+        </div>
+
+        <div class="acoes-final">
+          <button class="btn btn-limpar" onclick="limparCarrinho()">Limpar carrinho</button>
+          <button class="btn btn-finalizar" onclick="finalizarPedido()">Finalizar no WhatsApp</button>
+        </div>
+
+        <div class="obs">
+          Confira o pedido antes de finalizar. Ao clicar em finalizar, o WhatsApp abrirá com a mensagem pronta.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <p><strong>Delivery:</strong> (15) 99617-9172</p>
     <p>Chapa Lanches © 2026</p>
   </footer>
+
+  <script>
+    const numeroWhatsapp = '5515996179172';
+    let carrinho = [];
+
+    function formatarPreco(valor) {
+      return valor.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    }
+
+    function atualizarContadores() {
+      const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+      document.getElementById('cartCount').innerText = totalItens;
+      document.getElementById('topCartCount').innerText = totalItens;
+    }
+
+    function adicionarAoCarrinho(nome, preco) {
+      const itemExistente = carrinho.find(item => item.nome === nome);
+
+      if (itemExistente) {
+        itemExistente.quantidade += 1;
+      } else {
+        carrinho.push({
+          nome,
+          preco,
+          quantidade: 1
+        });
+      }
+
+      atualizarContadores();
+    }
+
+    function aumentarQuantidade(index) {
+      carrinho[index].quantidade += 1;
+      renderizarCarrinho();
+    }
+
+    function diminuirQuantidade(index) {
+      carrinho[index].quantidade -= 1;
+
+      if (carrinho[index].quantidade <= 0) {
+        carrinho.splice(index, 1);
+      }
+
+      renderizarCarrinho();
+    }
+
+    function removerItem(index) {
+      carrinho.splice(index, 1);
+      renderizarCarrinho();
+    }
+
+    function calcularTotal() {
+      return carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+    }
+
+    function renderizarCarrinho() {
+      const lista = document.getElementById('listaCarrinho');
+
+      if (carrinho.length === 0) {
+        lista.innerHTML = '<div class="carrinho-vazio">Seu carrinho está vazio.</div>';
+      } else {
+        lista.innerHTML = `
+          <div class="lista-carrinho">
+            ${carrinho.map((item, index) => `
+              <div class="item-carrinho">
+                <div>
+                  <strong>${item.nome}</strong>
+                  <small>${formatarPreco(item.preco)} cada</small>
+                </div>
+
+                <div class="acoes-carrinho">
+                  <div class="qtd-box">
+                    <button class="qtd-btn" onclick="diminuirQuantidade(${index})">-</button>
+                    <strong>${item.quantidade}</strong>
+                    <button class="qtd-btn" onclick="aumentarQuantidade(${index})">+</button>
+                  </div>
+                  <strong>${formatarPreco(item.preco * item.quantidade)}</strong>
+                  <button class="btn-remover" onclick="removerItem(${index})">Remover</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      document.getElementById('resumoItens').innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+      document.getElementById('resumoTotal').innerText = formatarPreco(calcularTotal());
+      atualizarContadores();
+    }
+
+    function abrirCarrinho() {
+      renderizarCarrinho();
+      document.getElementById('modalCarrinho').classList.add('ativo');
+    }
+
+    function fecharCarrinho() {
+      document.getElementById('modalCarrinho').classList.remove('ativo');
+    }
+
+    function limparCarrinho() {
+      carrinho = [];
+      renderizarCarrinho();
+    }
+
+    function finalizarPedido() {
+      if (carrinho.length === 0) {
+        alert('Seu carrinho está vazio.');
+        return;
+      }
+
+      const nome = document.getElementById('nomeCliente').value.trim();
+      const pagamento = document.getElementById('formaPagamento').value;
+      const observacoes = document.getElementById('observacoes').value.trim();
+
+      let mensagem = '🍔 *Pedido - Chapa Lanches*%0A%0A';
+
+      if (nome) {
+        mensagem += '*Cliente:* ' + encodeURIComponent(nome) + '%0A';
+      }
+
+      mensagem += '*Itens do pedido:*%0A';
+
+      carrinho.forEach(item => {
+        mensagem += '- ' + encodeURIComponent(item.quantidade + 'x ' + item.nome + ' — ' + formatarPreco(item.preco * item.quantidade)) + '%0A';
+      });
+
+      mensagem += '%0A*Total:* ' + encodeURIComponent(formatarPreco(calcularTotal())) + '%0A';
+
+      if (pagamento) {
+        mensagem += '*Pagamento:* ' + encodeURIComponent(pagamento) + '%0A';
+      }
+
+      if (observacoes) {
+        mensagem += '*Observações:* ' + encodeURIComponent(observacoes) + '%0A';
+      }
+
+      window.open('https://wa.me/' + numeroWhatsapp + '?text=' + mensagem, '_blank');
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('modalCarrinho');
+      if (event.target === modal) {
+        fecharCarrinho();
+      }
+    };
+
+    atualizarContadores();
+  </script>
 
 </body>
 </html>
