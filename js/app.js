@@ -779,8 +779,9 @@ async function finalizarPedido() {
     }
 
     const pedidoSalvo = await salvarPedidoNoBanco(payload);
+    const emojiPedido = String.fromCodePoint(0x1F354);
 
-    let mensagem = `\u{1F354} *Pedido - ${nomeLoja}*
+    let mensagem = `${emojiPedido} *Pedido - ${nomeLoja}*
 
 *Pedido:* #${pedidoSalvo.id}
 *Cliente:* ${nome}
