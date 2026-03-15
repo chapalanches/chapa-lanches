@@ -179,12 +179,6 @@ function calcularSubtotal() {
 
 // =========================
 // ENTREGA
-// Regra:
-// até raioMinimoKm = taxaMinima
-// acima disso soma valorPorKm por km excedente
-// exemplo: 3km = 4,00
-// 4km = 5,00
-// 5km = 6,00
 // =========================
 function calcularTaxaEntrega() {
   const tipoEntrega = tipoEntregaInput ? tipoEntregaInput.value : "retirada";
@@ -291,6 +285,22 @@ function enviarPedidoWhatsApp() {
   const taxaEntrega = calcularTaxaEntrega();
   const total = subtotal + taxaEntrega;
 
+  salvarPedidoLocal({
+    nome,
+    tipoEntrega: tipoEntrega === "delivery" ? "Delivery" : "Retirada",
+    endereco,
+    numero,
+    bairro,
+    referencia,
+    distancia,
+    pagamento,
+    observacao,
+    itens: carrinho.map((item) => ({ ...item })),
+    subtotal,
+    taxaEntrega,
+    total
+  });
+
   let mensagem = `🍔 *NOVO PEDIDO - CHAPA LANCHES*%0A%0A`;
   mensagem += `👤 *Cliente:* ${encodeURIComponent(nome)}%0A`;
   mensagem += `🛍️ *Tipo:* ${encodeURIComponent(tipoEntrega === "delivery" ? "Delivery" : "Retirada")}%0A%0A`;
@@ -332,6 +342,60 @@ function enviarPedidoWhatsApp() {
 
   const url = `https://wa.me/${APP_CONFIG.telefone}?text=${mensagem}`;
   window.open(url, "_blank");
+
+  limparFormularioAposPedido();
+}
+
+// =========================
+// SALVAR PEDIDO LOCAL
+// =========================
+function salvarPedidoLocal(dadosPedido) {
+  const chave = "chapa_lanches_pedidos";
+
+  let pedidos = [];
+
+  try {
+    pedidos = JSON.parse(localStorage.getItem(chave)) || [];
+  } catch (error) {
+    pedidos = [];
+  }
+
+  const agora = new Date();
+
+  const novoPedido = {
+    id: Date.now(),
+    dataIso: agora.toISOString(),
+    dataFormatada: agora.toLocaleString("pt-BR"),
+    status: "Recebido",
+    ...dadosPedido
+  };
+
+  pedidos.push(novoPedido);
+  localStorage.setItem(chave, JSON.stringify(pedidos));
+}
+
+// =========================
+// LIMPAR FORMULÁRIO
+// =========================
+function limparFormularioAposPedido() {
+  carrinho = [];
+  atualizarCarrinho();
+
+  if (nomeInput) nomeInput.value = "";
+  if (enderecoInput) enderecoInput.value = "";
+  if (numeroInput) numeroInput.value = "";
+  if (bairroInput) bairroInput.value = "";
+  if (referenciaInput) referenciaInput.value = "";
+  if (pagamentoInput) pagamentoInput.value = "";
+  if (observacaoInput) observacaoInput.value = "";
+  if (distanciaInput) distanciaInput.value = "";
+
+  if (tipoEntregaInput) {
+    tipoEntregaInput.value = "retirada";
+  }
+
+  atualizarVisibilidadeEntrega();
+  atualizarCarrinho();
 }
 
 // =========================
@@ -342,5 +406,5 @@ function formatarMoeda(valor) {
 }
 
 function escapeAspas(texto) {
-  return texto.replace(/'/g, "\\'");
+  return String(texto).replace(/'/g, "\\'");
 }
