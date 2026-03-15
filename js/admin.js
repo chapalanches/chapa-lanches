@@ -570,8 +570,19 @@ function atualizarRelogio() {
 }
 
 function carregarStatusLoja() {
-  const valor = localStorage.getItem(LOJA_STATUS_KEY);
-  const aberta = valor !== "false";
+
+  const agora = new Date();
+
+  const hora = agora.getHours();
+  const minuto = agora.getMinutes();
+
+  const horarioAtual = hora * 60 + minuto;
+
+  const abertura = 19 * 60;  // 19:00
+  const fechamento = 23 * 60 + 59; // 23:59
+
+  const aberta = horarioAtual >= abertura && horarioAtual <= fechamento;
+
   aplicarStatusLoja(aberta);
 }
 
