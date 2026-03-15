@@ -1,200 +1,276 @@
-// =========================
-// CHAPA LANCHES - ADMIN.JS
-// Painel simples com localStorage
-// =========================
+let pedidos = [];
 
-const LISTA_PEDIDOS_KEY = "chapa_lanches_pedidos";
+function obterPedidosStorage() {
+  const chaves = ["pedidos", "chapa_pedidos", "pedidos_chapa"];
 
-const pedidosContainer = document.getElementById("pedidos-container");
-const totalPedidosEl = document.getElementById("total-pedidos");
-const totalHojeEl = document.getElementById("total-hoje");
-const faturamentoHojeEl = document.getElementById("faturamento-hoje");
-const btnLimparPedidos = document.getElementById("btn-limpar-pedidos");
-
-document.addEventListener("DOMContentLoaded", () => {
-  carregarPainel();
-  configurarEventos();
-
-  // atualiza sozinho a cada 5 segundos
-  setInterval(carregarPainel, 5000);
-});
-
-function configurarEventos() {
-  if (btnLimparPedidos) {
-    btnLimparPedidos.addEventListener("click", limparTodosPedidos);
-  }
-}
-
-function carregarPainel() {
-  const pedidos = obterPedidos();
-
-  atualizarResumo(pedidos);
-  renderizarPedidos(pedidos);
-}
-
-function obterPedidos() {
-  try {
-    const dados = localStorage.getItem(LISTA_PEDIDOS_KEY);
-    return dados ? JSON.parse(dados) : [];
-  } catch (error) {
-    console.error("Erro ao ler pedidos:", error);
-    return [];
-  }
-}
-
-function salvarPedidos(pedidos) {
-  localStorage.setItem(LISTA_PEDIDOS_KEY, JSON.stringify(pedidos));
-}
-
-function atualizarResumo(pedidos) {
-  if (totalPedidosEl) {
-    totalPedidosEl.textContent = pedidos.length;
+  for (const chave of chaves) {
+    const dados = localStorage.getItem(chave);
+    if (dados) {
+      try {
+        const lista = JSON.parse(dados);
+        if (Array.isArray(lista)) {
+          return { chave, pedidos: lista };
+        }
+      } catch (erro) {
+        console.error("Erro ao ler pedidos do storage:", chave, erro);
+      }
+    }
   }
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  return { chave: "pedidos", pedidos: [] };
+}
 
-  const pedidosHoje = pedidos.filter((pedido) => {
-    return (pedido.dataIso || "").slice(0, 10) === hoje;
+function salvarPedidosStorage() {
+  const info = obterPedidosStorage();
+  localStorage.setItem(info.chave || "pedidos", JSON.stringify(pedidos));
+}
+
+function normalizarPedido(pedido, index) {
+  const itens = Array.isArray(pedido.itens) ? pedido.itens : [];
+
+  return {
+    id: pedido.id || ("PED" + String(index + 1).padStart(4, "0")),
+    cliente: pedido.cliente || pedido.nome || "Cliente não informado",
+    telefone: pedido.telefone || pedido.whatsapp || "",
+    entrega: pedido.entrega || pedido.tipoEntrega || pedido.tipo || "Não informado",
+    endereco: pedido.endereco || "",
+    numero: pedido.numero || "",
+    bairro: pedido.bairro || "",
+    complemento: pedido.complemento || "",
+    pagamento: pedido.pagamento || pedido.formaPagamento || "Não informado",
+    troco: pedido.troco || "",
+    observacao: pedido.observacao || pedido.observacoes || "",
+    subtotal: Number(pedido.subtotal || 0),
+    taxaEntrega: Number(pedido.taxaEntrega || pedido.taxa || 0),
+    total: Number(pedido.total || 0),
+    data: pedido.data || pedido.criadoEm || new Date().toLocaleString("pt-BR"),
+    status: (pedido.status || "pendente").toLowerCase(),
+    itens: itens.map(item => ({
+      nome: item.nome || item.titulo || "Item",
+      quantidade: Number(item.quantidade || 1),
+      preco: Number(item.preco || item.valor || 0),
+      observacao: item.observacao || ""
+    }))
+  };
+}
+
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
+function classeStatus(status) {
+  if (status === "pendente") return "status status-pendente";
+  if (status === "em preparo") return "status status-preparo";
+  if (status === "em entrega") return "status status-entrega";
+  if (status === "finalizado") return "status status-finalizado";
+  return "status status-pendente";
+}
+
+function textoStatus(status) {
+  if (status === "pendente") return "Pendente";
+  if (status === "em preparo") return "Em preparo";
+  if (status === "em entrega") return "Em entrega";
+  if (status === "finalizado") return "Finalizado";
+  return "Pendente";
+}
+
+function atualizarIndicadores() {
+  document.getElementById("totalPedidos").textContent = pedidos.length;
+  document.getElementById("totalPendentes").textContent = pedidos.filter(p => p.status === "pendente").length;
+  document.getElementById("totalPreparo").textContent = pedidos.filter(p => p.status === "em preparo").length;
+  document.getElementById("totalEntrega").textContent = pedidos.filter(p => p.status === "em entrega").length;
+  document.getElementById("totalFinalizados").textContent = pedidos.filter(p => p.status === "finalizado").length;
+}
+
+function carregarPedidos() {
+  const dados = obterPedidosStorage();
+  pedidos = dados.pedidos.map((pedido, index) => normalizarPedido(pedido, index));
+  atualizarIndicadores();
+  renderizarPedidos();
+}
+
+function renderizarPedidos() {
+  const lista = document.getElementById("listaPedidos");
+  const busca = document.getElementById("buscaPedido").value.toLowerCase().trim();
+  const filtroStatus = document.getElementById("filtroStatus").value;
+
+  let filtrados = pedidos.filter(pedido => {
+    const textoBusca = `
+      ${pedido.id}
+      ${pedido.cliente}
+      ${pedido.telefone}
+      ${pedido.entrega}
+      ${pedido.endereco}
+      ${pedido.numero}
+      ${pedido.bairro}
+      ${pedido.complemento}
+      ${pedido.pagamento}
+      ${pedido.observacao}
+    `.toLowerCase();
+
+    const bateBusca = !busca || textoBusca.includes(busca);
+    const bateStatus = !filtroStatus || pedido.status === filtroStatus;
+
+    return bateBusca && bateStatus;
   });
 
-  if (totalHojeEl) {
-    totalHojeEl.textContent = pedidosHoje.length;
-  }
+  filtrados = filtrados.slice().reverse();
 
-  const faturamentoHoje = pedidosHoje.reduce((total, pedido) => {
-    return total + Number(pedido.total || 0);
-  }, 0);
-
-  if (faturamentoHojeEl) {
-    faturamentoHojeEl.textContent = `R$ ${formatarMoeda(faturamentoHoje)}`;
-  }
-}
-
-function renderizarPedidos(pedidos) {
-  if (!pedidosContainer) return;
-
-  pedidosContainer.innerHTML = "";
-
-  if (!pedidos.length) {
-    pedidosContainer.innerHTML = `
-      <div class="pedido">
-        <h4>Nenhum pedido encontrado</h4>
-        <p>Ainda não existem pedidos salvos no painel.</p>
+  if (!filtrados.length) {
+    lista.innerHTML = `
+      <div class="vazio">
+        <h2>Nenhum pedido encontrado</h2>
+        <p>Assim que novos pedidos forem salvos, eles aparecerão aqui.</p>
       </div>
     `;
     return;
   }
 
-  const pedidosOrdenados = [...pedidos].sort((a, b) => {
-    return new Date(b.dataIso) - new Date(a.dataIso);
-  });
+  lista.innerHTML = filtrados.map(pedido => {
+    const indiceReal = pedidos.findIndex(p => p.id === pedido.id);
 
-  pedidosOrdenados.forEach((pedido) => {
-    const card = document.createElement("div");
-    card.className = "pedido";
+    const itensHtml = pedido.itens.length
+      ? pedido.itens.map(item => `
+          <div class="item-pedido">
+            <div class="item-topo">
+              <span>${item.quantidade}x ${item.nome}</span>
+              <span>${formatarMoeda(item.preco * item.quantidade)}</span>
+            </div>
+            <small>Preço unitário: ${formatarMoeda(item.preco)}</small>
+            ${item.observacao ? `<small>Obs.: ${item.observacao}</small>` : ``}
+          </div>
+        `).join("")
+      : `<div class="item-pedido"><small>Nenhum item detalhado neste pedido.</small></div>`;
 
-    const itensHtml = (pedido.itens || [])
-      .map((item) => {
-        return `<li>${item.quantidade}x ${escapeHtml(item.nome)} - R$ ${formatarMoeda(item.preco * item.quantidade)}</li>`;
-      })
-      .join("");
+    const telefoneLimpo = (pedido.telefone || "").replace(/\D/g, "");
+    const botaoWhatsapp = telefoneLimpo
+      ? `<button class="btn btn-green" onclick="abrirWhatsapp('${telefoneLimpo}')">WhatsApp</button>`
+      : "";
 
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
-        <div>
-          <h4>Pedido #${pedido.id}</h4>
-          <p><strong>Cliente:</strong> ${escapeHtml(pedido.nome || "-")}</p>
-          <p><strong>Tipo:</strong> ${escapeHtml(pedido.tipoEntrega || "-")}</p>
-          <p><strong>Status:</strong> <span style="font-weight:bold;">${escapeHtml(pedido.status || "Recebido")}</span></p>
-          <p><strong>Data:</strong> ${escapeHtml(pedido.dataFormatada || "-")}</p>
+    return `
+      <article class="pedido-card">
+        <div class="pedido-topo">
+          <div>
+            <h3>Pedido ${pedido.id}</h3>
+            <small>Recebido em: ${pedido.data}</small>
+          </div>
+          <div class="${classeStatus(pedido.status)}">${textoStatus(pedido.status)}</div>
         </div>
 
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button type="button" onclick="alterarStatusPedido(${pedido.id}, 'Recebido')" style="padding:8px 12px;background:#f2b300;color:#000;border:none;border-radius:8px;cursor:pointer;">
-            Recebido
-          </button>
-          <button type="button" onclick="alterarStatusPedido(${pedido.id}, 'Em preparo')" style="padding:8px 12px;background:#3498db;color:#fff;border:none;border-radius:8px;cursor:pointer;">
-            Em preparo
-          </button>
-          <button type="button" onclick="alterarStatusPedido(${pedido.id}, 'Saiu para entrega')" style="padding:8px 12px;background:#9b59b6;color:#fff;border:none;border-radius:8px;cursor:pointer;">
-            Saiu
-          </button>
-          <button type="button" onclick="alterarStatusPedido(${pedido.id}, 'Finalizado')" style="padding:8px 12px;background:#25d366;color:#fff;border:none;border-radius:8px;cursor:pointer;">
-            Finalizado
-          </button>
-          <button type="button" onclick="excluirPedido(${pedido.id})" style="padding:8px 12px;background:#ff5a5a;color:#fff;border:none;border-radius:8px;cursor:pointer;">
-            Excluir
-          </button>
+        <div class="pedido-body">
+          <div class="pedido-bloco">
+            <h4>Cliente</h4>
+            <div class="info-line"><strong>Nome:</strong> <span>${pedido.cliente}</span></div>
+            <div class="info-line"><strong>Telefone:</strong> <span>${pedido.telefone || "Não informado"}</span></div>
+            <div class="info-line"><strong>Entrega:</strong> <span>${pedido.entrega}</span></div>
+            <div class="info-line"><strong>Pagamento:</strong> <span>${pedido.pagamento}</span></div>
+            ${pedido.troco ? `<div class="info-line"><strong>Troco para:</strong> <span>${pedido.troco}</span></div>` : ""}
+          </div>
+
+          <div class="pedido-bloco">
+            <h4>Endereço</h4>
+            <div class="info-line"><strong>Endereço:</strong> <span>${pedido.endereco || "Não informado"}</span></div>
+            <div class="info-line"><strong>Número:</strong> <span>${pedido.numero || "-"}</span></div>
+            <div class="info-line"><strong>Bairro:</strong> <span>${pedido.bairro || "-"}</span></div>
+            <div class="info-line"><strong>Complemento:</strong> <span>${pedido.complemento || "-"}</span></div>
+          </div>
+
+          <div class="pedido-bloco">
+            <h4>Itens do pedido</h4>
+            <div class="itens-lista">
+              ${itensHtml}
+            </div>
+          </div>
+
+          <div class="pedido-bloco">
+            <h4>Resumo</h4>
+            <div class="info-line"><strong>Subtotal:</strong> <span>${formatarMoeda(pedido.subtotal)}</span></div>
+            <div class="info-line"><strong>Taxa entrega:</strong> <span>${formatarMoeda(pedido.taxaEntrega)}</span></div>
+            <div class="info-line"><strong>Total:</strong> <span>${formatarMoeda(pedido.total)}</span></div>
+            <div class="info-line"><strong>Observação:</strong> <span>${pedido.observacao || "-"}</span></div>
+          </div>
         </div>
-      </div>
 
-      <hr style="margin:12px 0;border:none;border-top:1px solid #2d2d2d;">
+        <div class="pedido-acoes">
+          <select onchange="alterarStatus(${indiceReal}, this.value)">
+            <option value="pendente" ${pedido.status === "pendente" ? "selected" : ""}>Pendente</option>
+            <option value="em preparo" ${pedido.status === "em preparo" ? "selected" : ""}>Em preparo</option>
+            <option value="em entrega" ${pedido.status === "em entrega" ? "selected" : ""}>Em entrega</option>
+            <option value="finalizado" ${pedido.status === "finalizado" ? "selected" : ""}>Finalizado</option>
+          </select>
 
-      <p><strong>Itens:</strong></p>
-      <ul style="margin:8px 0 12px 18px;">
-        ${itensHtml}
-      </ul>
+          ${botaoWhatsapp}
 
-      <p><strong>Subtotal:</strong> R$ ${formatarMoeda(pedido.subtotal || 0)}</p>
-      <p><strong>Taxa:</strong> R$ ${formatarMoeda(pedido.taxaEntrega || 0)}</p>
-      <p><strong>Total:</strong> R$ ${formatarMoeda(pedido.total || 0)}</p>
-
-      ${
-        pedido.tipoEntrega === "delivery"
-          ? `
-            <p><strong>Endereço:</strong> ${escapeHtml(pedido.endereco || "-")}, ${escapeHtml(pedido.numero || "-")} - ${escapeHtml(pedido.bairro || "-")}</p>
-            <p><strong>Referência:</strong> ${escapeHtml(pedido.referencia || "-")}</p>
-            <p><strong>Distância:</strong> ${escapeHtml(String(pedido.distancia || "-"))} km</p>
-          `
-          : ""
-      }
-
-      <p><strong>Pagamento:</strong> ${escapeHtml(pedido.pagamento || "-")}</p>
-      <p><strong>Observação:</strong> ${escapeHtml(pedido.observacao || "-")}</p>
+          <button class="btn btn-red" onclick="excluirPedido(${indiceReal})">Excluir</button>
+        </div>
+      </article>
     `;
-
-    pedidosContainer.appendChild(card);
-  });
+  }).join("");
 }
 
-function alterarStatusPedido(id, novoStatus) {
-  const pedidos = obterPedidos();
+function alterarStatus(indice, novoStatus) {
+  if (indice < 0 || indice >= pedidos.length) return;
 
-  const pedido = pedidos.find((p) => Number(p.id) === Number(id));
-  if (!pedido) return;
-
-  pedido.status = novoStatus;
-
-  salvarPedidos(pedidos);
-  carregarPainel();
+  pedidos[indice].status = novoStatus;
+  salvarPedidosStorage();
+  atualizarIndicadores();
+  renderizarPedidos();
 }
 
-function excluirPedido(id) {
+function excluirPedido(indice) {
+  if (indice < 0 || indice >= pedidos.length) return;
+
   const confirmar = confirm("Deseja realmente excluir este pedido?");
   if (!confirmar) return;
 
-  const pedidos = obterPedidos().filter((p) => Number(p.id) !== Number(id));
-  salvarPedidos(pedidos);
-  carregarPainel();
+  pedidos.splice(indice, 1);
+  salvarPedidosStorage();
+  atualizarIndicadores();
+  renderizarPedidos();
 }
 
 function limparTodosPedidos() {
-  const confirmar = confirm("Deseja apagar todos os pedidos?");
+  if (!pedidos.length) {
+    alert("Não há pedidos para apagar.");
+    return;
+  }
+
+  const confirmar = confirm("Tem certeza que deseja apagar TODOS os pedidos?");
   if (!confirmar) return;
 
-  localStorage.removeItem(LISTA_PEDIDOS_KEY);
-  carregarPainel();
+  pedidos = [];
+  salvarPedidosStorage();
+  atualizarIndicadores();
+  renderizarPedidos();
 }
 
-function formatarMoeda(valor) {
-  return Number(valor || 0).toFixed(2).replace(".", ",");
+function exportarPedidos() {
+  const blob = new Blob([JSON.stringify(pedidos, null, 2)], {
+    type: "application/json"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "pedidos-chapa-lanches.json";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
-function escapeHtml(texto) {
-  return String(texto ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function abrirWhatsapp(telefone) {
+  window.open(`https://wa.me/${telefone}`, "_blank");
 }
+
+document.getElementById("btnAtualizar").addEventListener("click", carregarPedidos);
+document.getElementById("btnExportar").addEventListener("click", exportarPedidos);
+document.getElementById("btnLimparTudo").addEventListener("click", limparTodosPedidos);
+document.getElementById("buscaPedido").addEventListener("input", renderizarPedidos);
+document.getElementById("filtroStatus").addEventListener("change", renderizarPedidos);
+
+window.addEventListener("storage", carregarPedidos);
+
+carregarPedidos();
+setInterval(carregarPedidos, 5000);
