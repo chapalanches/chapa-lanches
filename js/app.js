@@ -780,7 +780,7 @@ async function finalizarPedido() {
 
     const pedidoSalvo = await salvarPedidoNoBanco(payload);
 
-    let mensagem = `🍔 *Pedido - ${nomeLoja}*
+    let mensagem = `\u{1F354} *Pedido - ${nomeLoja}*
 
 *Pedido:* #${pedidoSalvo.id}
 *Cliente:* ${nome}
@@ -823,7 +823,7 @@ async function finalizarPedido() {
     }
 
     window.open(
-      'https://wa.me/' + numeroWhatsapp + '?text=' + encodeURIComponent(mensagem),
+      `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(mensagem)}`,
       '_blank'
     );
 
@@ -841,9 +841,11 @@ async function finalizarPedido() {
     document.getElementById('complementoEntrega').value = '';
     document.getElementById('formaPagamento').value = '';
     document.getElementById('observacoes').value = '';
+
     if (avisoEntrega) {
       avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
     }
+
     fecharCarrinho();
     renderizarCarrinho();
 
