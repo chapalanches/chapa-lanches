@@ -111,7 +111,7 @@ function enderecoClienteTextoHumano() {
   const cep = document.getElementById('cepEntrega').value.trim();
   const complemento = document.getElementById('complementoEntrega').value.trim();
 
-  let partes = [];
+  const partes = [];
 
   if (rua) partes.push(rua);
   if (numero) partes.push(numero);
@@ -780,39 +780,52 @@ async function finalizarPedido() {
 
     const pedidoSalvo = await salvarPedidoNoBanco(payload);
 
-    let mensagem = '🍔 *Pedido - ' + encodeURIComponent(nomeLoja) + '*%0A%0A';
-    mensagem += '*Pedido:* #' + pedidoSalvo.id + '%0A';
-    mensagem += '*Cliente:* ' + encodeURIComponent(nome) + '%0A';
-    mensagem += '*Tipo do pedido:* ' + encodeURIComponent(formatarTipoEntregaTexto(tipoEntrega)) + '%0A';
+    let mensagem = `🍔 *Pedido - ${nomeLoja}*
+
+*Pedido:* #${pedidoSalvo.id}
+*Cliente:* ${nome}
+*Tipo do pedido:* ${formatarTipoEntregaTexto(tipoEntrega)}`;
 
     if (tipoEntrega === 'delivery') {
-      mensagem += '*Endereço:* ' + encodeURIComponent(endereco) + '%0A';
-      mensagem += '*Distância real:* ' + encodeURIComponent(distanciaEntregaKm.toFixed(2) + ' km') + '%0A';
+      mensagem += `
+*Endereço:* ${endereco}
+*Distância real:* ${distanciaEntregaKm.toFixed(2)} km`;
 
       if (tempoEntregaTexto) {
-        mensagem += '*Tempo estimado:* ' + encodeURIComponent(tempoEntregaTexto) + '%0A';
+        mensagem += `
+*Tempo estimado:* ${tempoEntregaTexto}`;
       }
     }
 
-    mensagem += '%0A*Itens do pedido:*%0A';
+    mensagem += `
+
+*Itens do pedido:*`;
 
     carrinho.forEach(item => {
-      mensagem += '- ' + encodeURIComponent(item.quantidade + 'x ' + item.nome + ' — ' + formatarPreco(item.preco * item.quantidade)) + '%0A';
+      mensagem += `
+- ${item.quantidade}x ${item.nome} - ${formatarPreco(item.preco * item.quantidade)}`;
     });
 
-    mensagem += '%0A*Subtotal:* ' + encodeURIComponent(formatarPreco(subtotal)) + '%0A';
-    mensagem += '*Taxa de entrega:* ' + encodeURIComponent(formatarPreco(taxaEntrega)) + '%0A';
-    mensagem += '*Total:* ' + encodeURIComponent(formatarPreco(total)) + '%0A';
+    mensagem += `
+
+*Subtotal:* ${formatarPreco(subtotal)}
+*Taxa de entrega:* ${formatarPreco(taxaEntrega)}
+*Total:* ${formatarPreco(total)}`;
 
     if (pagamento) {
-      mensagem += '*Pagamento:* ' + encodeURIComponent(pagamento) + '%0A';
+      mensagem += `
+*Pagamento:* ${pagamento}`;
     }
 
     if (observacoes) {
-      mensagem += '*Observações:* ' + encodeURIComponent(observacoes) + '%0A';
+      mensagem += `
+*Observações:* ${observacoes}`;
     }
 
-    window.open('https://wa.me/' + numeroWhatsapp + '?text=' + mensagem, '_blank');
+    window.open(
+      'https://wa.me/' + numeroWhatsapp + '?text=' + encodeURIComponent(mensagem),
+      '_blank'
+    );
 
     carrinho = [];
     taxaEntrega = 0;
