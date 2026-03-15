@@ -1,154 +1,205 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel Admin - Chapa Lanches</title>
-  <link rel="icon" href="img/logofull.svg">
-  <link rel="stylesheet" href="css/admin.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <script>
-    if (localStorage.getItem("chapa_admin_logado") !== "true") {
-      window.location.href = "login.html";
-    }
-  </script>
+<title>Painel Admin - Chapa Lanches</title>
+
+<link rel="icon" href="img/logofull.svg">
+<link rel="stylesheet" href="css/admin.css">
+
+<script>
+if (localStorage.getItem("chapa_admin_logado") !== "true") {
+  window.location.href = "login.html";
+}
+</script>
+
 </head>
 <body>
 
-  <header class="topbar">
-    <div class="header-container">
-      <div class="logo-box">
-        <img src="img/logofull-126.svg" alt="Logo Chapa Lanches">
-        <div>
-          <h1>Painel Admin</h1>
-          <p>Controle de pedidos em tempo real</p>
-        </div>
-      </div>
+<header class="topbar">
 
-      <div class="header-right">
-        <div class="store-status-wrap">
-          <span class="store-label">Loja</span>
-          <button id="btnToggleLoja" class="store-status aberta">Aberta</button>
-        </div>
+<div class="header-container">
 
-        <div class="top-actions">
-          <button class="btn btn-yellow" id="btnAtualizar">Atualizar</button>
-          <button class="btn btn-blue" id="btnExportar">Exportar JSON</button>
-          <button class="btn btn-red" id="btnLimparTudo">Limpar Tudo</button>
-          <button class="btn btn-dark" id="btnSair">Sair</button>
-        </div>
-      </div>
-    </div>
-  </header>
+<div class="logo-box">
+<img src="img/logofull-126.svg">
+<div>
+<h1>Painel Admin</h1>
+<p>Controle de pedidos em tempo real</p>
+</div>
+</div>
 
-  <main class="container">
-    <section class="page-head">
-      <div>
-        <h2>Pedidos</h2>
-        <p>Acompanhe os pedidos da loja de forma simples e rápida.</p>
-      </div>
-      <div class="clock-box">
-        <span>Agora</span>
-        <strong id="clockAtual">--:--:--</strong>
-      </div>
-    </section>
+<div class="header-right">
 
-    <section class="stats-grid">
-      <div class="stat-card">
-        <p>Total de pedidos</p>
-        <strong id="totalPedidos">0</strong>
-      </div>
+<div class="store-status-wrap">
+<span class="store-label">Loja</span>
+<button id="btnToggleLoja" class="store-status aberta">Aberta</button>
+</div>
 
-      <div class="stat-card">
-        <p>Pedidos hoje</p>
-        <strong id="pedidosHoje">0</strong>
-      </div>
+<div class="top-actions">
 
-      <div class="stat-card">
-        <p>Faturamento do dia</p>
-        <strong id="faturamentoDia">R$ 0,00</strong>
-      </div>
+<button class="btn btn-yellow" id="btnAtualizar">
+Atualizar
+</button>
 
-      <div class="stat-card">
-        <p>Ticket médio</p>
-        <strong id="ticketMedio">R$ 0,00</strong>
-      </div>
+<button class="btn btn-blue" id="btnExportar">
+Exportar JSON
+</button>
 
-      <div class="stat-card">
-        <p>Delivery</p>
-        <strong id="totalDelivery">0</strong>
-      </div>
+<button class="btn btn-dark" id="btnSair">
+Sair
+</button>
 
-      <div class="stat-card">
-        <p>Retirada</p>
-        <strong id="totalRetirada">0</strong>
-      </div>
-    </section>
+</div>
 
-    <section class="filters-card">
-      <div class="filters-grid">
-        <input type="text" id="buscaPedido" placeholder="Buscar por cliente, telefone, bairro, endereço, observação...">
+</div>
+</div>
+</header>
 
-        <select id="filtroStatus">
-          <option value="">Todos os status</option>
-          <option value="pendente">Pendente</option>
-          <option value="em preparo">Em preparo</option>
-          <option value="em entrega">Em entrega</option>
-          <option value="finalizado">Finalizado</option>
-        </select>
 
-        <select id="filtroTipo">
-          <option value="">Todos os tipos</option>
-          <option value="delivery">Delivery</option>
-          <option value="retirada">Retirada</option>
-        </select>
+<main class="container">
 
-        <select id="ordenacao">
-          <option value="mais-novo">Mais novo primeiro</option>
-          <option value="mais-antigo">Mais antigo primeiro</option>
-          <option value="maior-valor">Maior valor</option>
-          <option value="menor-valor">Menor valor</option>
-        </select>
-      </div>
-    </section>
+<section class="page-head">
 
-    <section class="board">
-      <div class="board-column">
-        <div class="column-head pendente">
-          <h3>Novos pedidos</h3>
-          <span id="countPendente">0</span>
-        </div>
-        <div id="colPendente" class="column-body"></div>
-      </div>
+<div>
+<h2>Pedidos</h2>
+<p>Acompanhe os pedidos da loja de forma simples e rápida.</p>
+</div>
 
-      <div class="board-column">
-        <div class="column-head preparo">
-          <h3>Em preparo</h3>
-          <span id="countPreparo">0</span>
-        </div>
-        <div id="colPreparo" class="column-body"></div>
-      </div>
+<div class="clock-box">
+<span>Agora</span>
+<strong id="clockAtual">--:--:--</strong>
+</div>
 
-      <div class="board-column">
-        <div class="column-head entrega">
-          <h3>Em entrega</h3>
-          <span id="countEntrega">0</span>
-        </div>
-        <div id="colEntrega" class="column-body"></div>
-      </div>
+</section>
 
-      <div class="board-column">
-        <div class="column-head finalizado">
-          <h3>Finalizados</h3>
-          <span id="countFinalizado">0</span>
-        </div>
-        <div id="colFinalizado" class="column-body"></div>
-      </div>
-    </section>
-  </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/config.js"></script>
-  <script src="js/admin.js"></script>
+<section class="stats-grid">
+
+<div class="stat-card">
+<p>Total de pedidos</p>
+<strong id="totalPedidos">0</strong>
+</div>
+
+<div class="stat-card">
+<p>Pedidos hoje</p>
+<strong id="pedidosHoje">0</strong>
+</div>
+
+<div class="stat-card">
+<p>Faturamento do dia</p>
+<strong id="faturamentoDia">R$ 0,00</strong>
+</div>
+
+<div class="stat-card">
+<p>Ticket médio</p>
+<strong id="ticketMedio">R$ 0,00</strong>
+</div>
+
+<div class="stat-card">
+<p>Delivery</p>
+<strong id="totalDelivery">0</strong>
+</div>
+
+<div class="stat-card">
+<p>Retirada</p>
+<strong id="totalRetirada">0</strong>
+</div>
+
+</section>
+
+
+<section class="filters-card">
+
+<div class="filters-grid">
+
+<input type="text"
+id="buscaPedido"
+placeholder="Buscar por cliente, telefone, bairro, endereço, observação...">
+
+<select id="filtroStatus">
+<option value="">Todos os status</option>
+<option value="pendente">Pendente</option>
+<option value="em preparo">Em preparo</option>
+<option value="em entrega">Em entrega</option>
+<option value="finalizado">Finalizado</option>
+</select>
+
+<select id="filtroTipo">
+<option value="">Todos os tipos</option>
+<option value="delivery">Delivery</option>
+<option value="retirada">Retirada</option>
+</select>
+
+<select id="ordenacao">
+<option value="mais-novo">Mais novo primeiro</option>
+<option value="mais-antigo">Mais antigo primeiro</option>
+<option value="maior-valor">Maior valor</option>
+<option value="menor-valor">Menor valor</option>
+</select>
+
+</div>
+</section>
+
+
+<section class="board">
+
+<div class="board-column">
+
+<div class="column-head pendente">
+<h3>Novos pedidos</h3>
+<span id="countPendente">0</span>
+</div>
+
+<div id="colPendente" class="column-body"></div>
+
+</div>
+
+
+<div class="board-column">
+
+<div class="column-head preparo">
+<h3>Em preparo</h3>
+<span id="countPreparo">0</span>
+</div>
+
+<div id="colPreparo" class="column-body"></div>
+
+</div>
+
+
+<div class="board-column">
+
+<div class="column-head entrega">
+<h3>Em entrega</h3>
+<span id="countEntrega">0</span>
+</div>
+
+<div id="colEntrega" class="column-body"></div>
+
+</div>
+
+
+<div class="board-column">
+
+<div class="column-head finalizado">
+<h3>Finalizados</h3>
+<span id="countFinalizado">0</span>
+</div>
+
+<div id="colFinalizado" class="column-body"></div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/admin.js"></script>
+
 </body>
 </html>
