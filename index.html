@@ -1699,7 +1699,7 @@
     avisoEntrega.innerText = 'Calculando distância e taxa de entrega...';
 
     try {
-      const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO;
+      const enderecoLoja = ENDERECO_LOJA_PADRAO;
       const enderecoCliente = montarEnderecoCompletoCliente();
 
       const [coordenadaLoja, coordenadaCliente] = await Promise.all([
