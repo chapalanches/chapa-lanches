@@ -1,263 +1,529 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chapa Lanches</title>
   <link rel="icon" href="img/logofull.svg">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <header>
-    <div class="header-container">
-      <div class="logo">
-        <img src="img/logofull-126.svg" alt="Chapa Lanches">
-        <span>Chapa Lanches</span>
+<header>
+  <div class="logo-topo">
+    <img src="img/logofull-126.svg" alt="Logo Chapa Lanches">
+    <h1>Chapa Lanches</h1>
+  </div>
+
+  <p>Nosso magnífico cardápio</p>
+
+  <div class="topo-info">
+    <div><strong>WhatsApp:</strong> (15) 99617-9172</div>
+    <div><strong>Horário:</strong> Quarta a domingo 19h às 22h30</div>
+  </div>
+
+  <div id="statusLoja" class="status-loja fechado">
+    🔴 Fechado no momento
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="secao">
+    <h2>Hot Dog</h2>
+    <div class="grid">
+      <div class="item">
+        <div class="codigo">01</div>
+        <h3>Simples</h3>
+        <p>Salsicha, maionese, batata palha, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 13,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Simples%20-%20R$%2013,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Simples', 13)">+ Carrinho</button>
+          </div>
+        </div>
       </div>
 
-      <div id="status-loja" class="status-loja fechado">Fechado</div>
+      <div class="item">
+        <div class="codigo">02</div>
+        <h3>Duplo</h3>
+        <p>2 salsichas, catupiry ou cheddar ou mussarela, maionese, batata palha, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 16,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Duplo%20-%20R$%2016,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Duplo', 16)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">03</div>
+        <h3>Cachorrão Três Queijo</h3>
+        <p>2 salsichas, cheddar, catupiry, mussarela, vinagrete, palha, maionese, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 17,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Cachorrão%20Três%20Queijo%20-%20R$%2017,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Cachorrão Três Queijo', 17)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">04</div>
+        <h3>Dogfrango</h3>
+        <p>2 salsichas, frango desfiado, catupiry, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 18,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Dogfrango%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Dogfrango', 18)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">05</div>
+        <h3>Especial</h3>
+        <p>2 salsichas, calabresa, bacon, mussarela, catupiry, maionese, batata palha, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 20,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Especial%20-%20R$%2020,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Especial', 20)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">06</div>
+        <h3>Vegetariano</h3>
+        <p>Ovo, mussarela, catupiry, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 17,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Vegetariano%20-%20R$%2017,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Vegetariano', 17)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
     </div>
-  </header>
+  </section>
 
-  <main>
-    <section class="hero">
-      <div class="container hero-container">
-        <div class="hero-texto">
-          <p class="hero-tag">Delivery • Retirada • Pedido rápido</p>
-          <h1>Os melhores lanches da cidade, feitos na chapa e com muito sabor.</h1>
-          <p class="hero-subtexto">
-            Monte seu pedido, escolha retirada ou delivery e envie direto pelo WhatsApp.
-          </p>
-
-          <div class="hero-acoes">
-            <a href="#cardapio" class="btn-hero">Ver cardápio</a>
-            <a href="#pedido" class="btn-hero btn-hero-outline">Fazer pedido</a>
-          </div>
-        </div>
-
-        <div class="hero-box">
-          <div class="hero-card">
-            <h3>Pedido fácil</h3>
-            <p>Escolha os itens, preencha os dados e envie em poucos cliques.</p>
-          </div>
-
-          <div class="hero-card">
-            <h3>Taxa automática</h3>
-            <p>O sistema calcula a taxa conforme a distância informada.</p>
-          </div>
-
-          <div class="hero-card">
-            <h3>Loja em tempo real</h3>
-            <p>O status de aberto ou fechado aparece automaticamente.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="container" id="cardapio">
-      <h2 class="titulo">Cardápio</h2>
-      <p class="subtitulo">
-        Escolha seus favoritos e monte seu pedido.
-      </p>
-
-      <div class="categoria-bloco">
-        <h3 class="categoria-titulo">Lanches</h3>
-
-        <div class="grid-cardapio">
-          <div class="card">
-            <h3>X-Burguer</h3>
-            <p>Pão, hambúrguer, queijo e molho especial.</p>
-            <div class="preco">R$ 18,00</div>
-            <button class="btn-add" data-nome="X-Burguer" data-preco="18">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>X-Salada</h3>
-            <p>Pão, hambúrguer, queijo, alface, tomate e molho.</p>
-            <div class="preco">R$ 20,00</div>
-            <button class="btn-add" data-nome="X-Salada" data-preco="20">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>X-Bacon</h3>
-            <p>Pão, hambúrguer, queijo e bacon crocante.</p>
-            <div class="preco">R$ 23,00</div>
-            <button class="btn-add" data-nome="X-Bacon" data-preco="23">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>X-Tudo</h3>
-            <p>Pão, hambúrguer, queijo, presunto, bacon, ovo, alface e tomate.</p>
-            <div class="preco">R$ 28,00</div>
-            <button class="btn-add" data-nome="X-Tudo" data-preco="28">Adicionar</button>
+  <section class="secao">
+    <h2>Burgers</h2>
+    <div class="grid">
+      <div class="item">
+        <div class="codigo">07</div>
+        <h3>X-Burguer</h3>
+        <p>Hambúrguer, mussarela, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 18,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Burguer%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Burguer', 18)">+ Carrinho</button>
           </div>
         </div>
       </div>
 
-      <div class="categoria-bloco">
-        <h3 class="categoria-titulo">Porções</h3>
-
-        <div class="grid-cardapio">
-          <div class="card">
-            <h3>Batata Frita P</h3>
-            <p>Porção pequena de batata frita crocante.</p>
-            <div class="preco">R$ 12,00</div>
-            <button class="btn-add" data-nome="Batata Frita P" data-preco="12">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>Batata Frita G</h3>
-            <p>Porção grande de batata frita crocante.</p>
-            <div class="preco">R$ 18,00</div>
-            <button class="btn-add" data-nome="Batata Frita G" data-preco="18">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>Calabresa Acebolada</h3>
-            <p>Porção de calabresa acebolada na chapa.</p>
-            <div class="preco">R$ 22,00</div>
-            <button class="btn-add" data-nome="Calabresa Acebolada" data-preco="22">Adicionar</button>
+      <div class="item">
+        <div class="codigo">08</div>
+        <h3>X-Salada</h3>
+        <p>Hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 18,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Salada%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Salada', 18)">+ Carrinho</button>
           </div>
         </div>
       </div>
 
-      <div class="categoria-bloco">
-        <h3 class="categoria-titulo">Bebidas</h3>
-
-        <div class="grid-cardapio">
-          <div class="card">
-            <h3>Coca-Cola Lata</h3>
-            <p>Refrigerante Coca-Cola lata 350ml.</p>
-            <div class="preco">R$ 6,00</div>
-            <button class="btn-add" data-nome="Coca-Cola Lata" data-preco="6">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>Coca-Cola 2L</h3>
-            <p>Refrigerante Coca-Cola 2 litros.</p>
-            <div class="preco">R$ 12,00</div>
-            <button class="btn-add" data-nome="Coca-Cola 2L" data-preco="12">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>Guaraná 2L</h3>
-            <p>Refrigerante Guaraná 2 litros.</p>
-            <div class="preco">R$ 11,00</div>
-            <button class="btn-add" data-nome="Guaraná 2L" data-preco="11">Adicionar</button>
-          </div>
-
-          <div class="card">
-            <h3>Água</h3>
-            <p>Água gelada sem gás.</p>
-            <div class="preco">R$ 3,50</div>
-            <button class="btn-add" data-nome="Água" data-preco="3.5">Adicionar</button>
+      <div class="item">
+        <div class="codigo">09</div>
+        <h3>X-Egg</h3>
+        <p>2 ovos, hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 20,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Egg%20-%20R$%2020,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Egg', 20)">+ Carrinho</button>
           </div>
         </div>
       </div>
-    </section>
 
-    <section class="container" id="pedido">
-      <div class="carrinho">
-        <h2>Seu Pedido</h2>
-        <p class="subtitulo-carrinho">
-          Confira os itens escolhidos e finalize pelo WhatsApp.
-        </p>
-
-        <div id="lista-carrinho"></div>
-
-        <div class="resumo-valores">
-          <div class="total">
-            <span>Subtotal:</span>
-            <span id="subtotal">R$ 0,00</span>
-          </div>
-
-          <div class="total">
-            <span>Taxa de entrega:</span>
-            <span id="taxa-entrega">R$ 0,00</span>
-          </div>
-
-          <div class="total total-geral">
-            <span>Total:</span>
-            <span id="total">R$ 0,00</span>
+      <div class="item">
+        <div class="codigo">10</div>
+        <h3>Egg Especial</h3>
+        <p>Hambúrguer, 2 ovos, catupiry, presunto, mussarela, bacon, vinagrete, alface, maionese, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 23,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Egg%20Especial%20-%20R$%2023,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Egg Especial', 23)">+ Carrinho</button>
           </div>
         </div>
+      </div>
 
-        <div class="form">
-          <input id="nome" type="text" placeholder="Seu nome">
+      <div class="item">
+        <div class="codigo">11</div>
+        <h3>X-Bacon</h3>
+        <p>Bacon, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 22,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Bacon%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Bacon', 22)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
 
-          <select id="tipo-entrega">
-            <option value="retirada">Retirar no local</option>
+      <div class="item">
+        <div class="codigo">12</div>
+        <h3>X-Calabresa</h3>
+        <p>Calabresa, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 22,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Calabresa%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Calabresa', 22)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">13</div>
+        <h3>X-Frango</h3>
+        <p>Frango desfiado, catupiry ou cheddar ou mussarela, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 21,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20-%20R$%2021,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango', 21)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">14</div>
+        <h3>Frango Três Queijo</h3>
+        <p>Frango desfiado, catupiry, cheddar, mussarela, vinagrete, maionese.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 21,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Frango%20Três%20Queijo%20-%20R$%2021,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Frango Três Queijo', 21)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">15</div>
+        <h3>X-Frango Especial</h3>
+        <p>Frango desfiado, bacon ou calabresa, catupiry, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 22,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20Especial%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango Especial', 22)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">16</div>
+        <h3>Omelete</h3>
+        <p>Hambúrguer, ovo, calabresa, bacon, presunto, mussarela, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 23,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Omelete%20-%20R$%2023,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Omelete', 23)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">17</div>
+        <h3>O Chapeiro</h3>
+        <p>Hambúrguer, catupiry, frango desfiado, mussarela, calabresa, bacon, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 27,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20O%20Chapeiro%20-%20R$%2027,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('O Chapeiro', 27)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">18</div>
+        <h3>X-Tudo</h3>
+        <p>Salsicha, ovo, calabresa, bacon, hambúrguer, frango desfiado, mussarela, catupiry, presunto, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 32,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Tudo%20-%20R$%2032,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Tudo', 32)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2>Adicionais</h2>
+    <div class="extras-box lista-opcoes">
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Hambúrguer</span>
+          <small>Adicional extra no lanche</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 5,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Hambúrguer', 5)">+ Carrinho</button>
+        </div>
+      </div>
+
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Catupiry / Cheddar / Mussarela</span>
+          <small>Escolha o queijo desejado</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 3,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Catupiry / Cheddar / Mussarela', 3)">+ Carrinho</button>
+        </div>
+      </div>
+
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Calabresa e Bacon</span>
+          <small>Mais sabor no seu pedido</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 3,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Calabresa e Bacon', 3)">+ Carrinho</button>
+        </div>
+      </div>
+
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Ovo e Salsicha</span>
+          <small>Adicional econômico</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 2,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Ovo e Salsicha', 2)">+ Carrinho</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2>Bebidas</h2>
+    <div class="grid">
+      <div class="item">
+        <div class="codigo">B01</div>
+        <h3>Coca Cola 2L</h3>
+        <p>Perfeita para acompanhar seu pedido.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 14,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola 2L', 14)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B02</div>
+        <h3>Coca Cola Lata</h3>
+        <p>Bebida gelada para seu combo.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 6,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola Lata', 6)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B03</div>
+        <h3>Sprite Lata</h3>
+        <p>Refrescante e leve.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 5,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Sprite Lata', 5)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B04</div>
+        <h3>Fanta 2L</h3>
+        <p>Ideal para dividir com a galera.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 12,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta 2L', 12)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B05</div>
+        <h3>Fanta Lata</h3>
+        <p>Sabor clássico e geladinho.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 6,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta Lata', 6)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B06</div>
+        <h3>Guaraná Lata</h3>
+        <p>Combina muito com hambúrguer.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 5,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Guaraná Lata', 5)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<button class="carrinho-flutuante" onclick="abrirCarrinho()">
+  🛒 Carrinho (<span id="cartCount">0</span>)
+</button>
+
+<div class="modal" id="modalCarrinho">
+  <div class="modal-conteudo">
+    <div class="modal-topo">
+      <h3>Seu pedido</h3>
+      <button class="fechar" onclick="fecharCarrinho()">×</button>
+    </div>
+
+    <div class="modal-corpo">
+      <div id="listaCarrinho"></div>
+
+      <div class="resumo">
+        <div class="linha-resumo">
+          <span>Itens</span>
+          <strong id="resumoItens">0</strong>
+        </div>
+
+        <div class="linha-resumo">
+          <span>Subtotal</span>
+          <strong id="resumoSubtotal">R$ 0,00</strong>
+        </div>
+
+        <div class="linha-resumo">
+          <span>Taxa de entrega</span>
+          <strong id="resumoTaxaEntrega">R$ 0,00</strong>
+        </div>
+
+        <div class="linha-resumo total">
+          <span>Total</span>
+          <strong id="resumoTotal">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="dados-pedido">
+        <div class="campo">
+          <label for="nomeCliente">Seu nome</label>
+          <input type="text" id="nomeCliente" placeholder="Digite seu nome">
+        </div>
+
+        <div class="campo">
+          <label for="tipoEntrega">Tipo do pedido</label>
+          <select id="tipoEntrega" onchange="atualizarEntrega()">
+            <option value="retirada">Retirada no local</option>
             <option value="delivery">Delivery</option>
           </select>
+        </div>
 
-          <div class="campo-delivery">
-            <input id="endereco" type="text" placeholder="Rua / Avenida">
-          </div>
-
-          <div class="form-linha">
-            <div class="campo-delivery">
-              <input id="numero" type="text" placeholder="Número">
+        <div class="entrega-box">
+          <div id="camposEntrega" style="display: none;">
+            <div class="campo">
+              <label for="cepEntrega">CEP</label>
+              <input type="text" id="cepEntrega" placeholder="00000-000" maxlength="9" onblur="buscarCepEntrega()">
             </div>
 
-            <div class="campo-delivery">
-              <input id="bairro" type="text" placeholder="Bairro">
+            <div class="campo">
+              <label for="ruaEntrega">Rua</label>
+              <input type="text" id="ruaEntrega" placeholder="Nome da rua">
+            </div>
+
+            <div class="campo">
+              <label for="numeroEntrega">Número</label>
+              <input type="text" id="numeroEntrega" placeholder="Ex.: 235">
+            </div>
+
+            <div class="campo">
+              <label for="bairroEntrega">Bairro</label>
+              <input type="text" id="bairroEntrega" placeholder="Bairro">
+            </div>
+
+            <div class="campo">
+              <label for="cidadeEntrega">Cidade</label>
+              <input type="text" id="cidadeEntrega" placeholder="Cidade" value="Sorocaba">
+            </div>
+
+            <div class="campo">
+              <label for="complementoEntrega">Complemento</label>
+              <input type="text" id="complementoEntrega" placeholder="Casa, ap, referência...">
             </div>
           </div>
 
-          <div class="campo-delivery">
-            <input id="referencia" type="text" placeholder="Ponto de referência">
+          <div class="aviso-entrega" id="avisoEntrega">
+            Retirada no local sem taxa de entrega.
           </div>
+        </div>
 
-          <div class="campo-delivery">
-            <input id="distancia" type="number" step="0.1" placeholder="Distância em km">
-          </div>
+        <div class="campo">
+          <label for="formaPagamento">Forma de pagamento</label>
+          <select id="formaPagamento">
+            <option value="">Selecione</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Pix">Pix</option>
+            <option value="Cartão">Cartão</option>
+          </select>
+        </div>
 
-          <input id="pagamento" type="text" placeholder="Forma de pagamento (dinheiro, pix, cartão...)">
-
-          <input id="observacao" type="text" placeholder="Observação do pedido">
-
-          <button id="btn-whatsapp" class="btn-whatsapp">
-            Enviar pedido pelo WhatsApp
-          </button>
+        <div class="campo">
+          <label for="observacoes">Observações do pedido</label>
+          <textarea id="observacoes" rows="4" placeholder="Ex.: sem cebola, tirar ketchup, enviar troco para R$ 50, etc."></textarea>
         </div>
       </div>
-    </section>
 
-    <section class="container info-loja">
-      <div class="info-grid">
-        <div class="info-card">
-          <h3>Horário</h3>
-          <p>Consulte acima se a loja está aberta agora.</p>
-        </div>
-
-        <div class="info-card">
-          <h3>Retirada</h3>
-          <p>Peça pelo site e retire direto no balcão.</p>
-        </div>
-
-        <div class="info-card">
-          <h3>Delivery</h3>
-          <p>Informe seu endereço e calcule a taxa de entrega.</p>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="rodape">
-    <div class="container rodape-container">
-      <div>
-        <strong>Chapa Lanches</strong>
-        <p>Lanches, porções e bebidas com pedido rápido pelo WhatsApp.</p>
+      <div class="acoes-final">
+        <button class="btn btn-limpar" onclick="limparCarrinho()">Limpar carrinho</button>
+        <button class="btn btn-finalizar" id="btnFinalizar" onclick="finalizarPedido()">Finalizar no WhatsApp</button>
       </div>
 
-      <div>
-        <p>Desenvolvido para atendimento simples e rápido.</p>
+      <div class="obs">
+        Confira o pedido antes de finalizar. Ao clicar em finalizar, o WhatsApp abrirá com a mensagem pronta.
       </div>
     </div>
-  </footer>
+  </div>
+</div>
 
-  <script src="js/config.js"></script>
-  <script src="js/app.js"></script>
+<footer>
+  <p><strong>Delivery:</strong> (15) 99617-9172</p>
+  <p>Chapa Lanches © 2026</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+
 </body>
 </html>
