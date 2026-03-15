@@ -779,9 +779,8 @@ async function finalizarPedido() {
     }
 
     const pedidoSalvo = await salvarPedidoNoBanco(payload);
-    const emojiPedido = String.fromCodePoint(0x1F354);
 
-    let mensagem = `${emojiPedido} *Pedido - ${nomeLoja}*
+    let mensagem = `*Pedido - ${nomeLoja}*
 
 *Pedido:* #${pedidoSalvo.id}
 *Cliente:* ${nome}
@@ -823,8 +822,11 @@ async function finalizarPedido() {
 *Observações:* ${observacoes}`;
     }
 
+    const emojiUrl = '%F0%9F%8D%94%20';
+    const textoWhatsapp = emojiUrl + encodeURIComponent(mensagem);
+
     window.open(
-      `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(mensagem)}`,
+      `https://wa.me/${numeroWhatsapp}?text=${textoWhatsapp}`,
       '_blank'
     );
 
