@@ -1125,7 +1125,6 @@
                 type="text"
                 id="ruaEntrega"
                 placeholder="Nome da rua"
-                onblur="calcularEntregaAutomaticamente()"
               >
             </div>
 
@@ -1135,7 +1134,6 @@
                 type="text"
                 id="numeroEntrega"
                 placeholder="Ex.: 235"
-                onblur="calcularEntregaAutomaticamente()"
               >
             </div>
 
@@ -1145,7 +1143,6 @@
                 type="text"
                 id="bairroEntrega"
                 placeholder="Bairro"
-                onblur="calcularEntregaAutomaticamente()"
               >
             </div>
 
@@ -1156,7 +1153,6 @@
                 id="cidadeEntrega"
                 placeholder="Cidade"
                 value="Sorocaba"
-                onblur="calcularEntregaAutomaticamente()"
               >
             </div>
 
@@ -1213,18 +1209,34 @@
 
 <script>
   const numeroWhatsapp = '5515996179172';
-  const ENDERECO_LOJA = 'Avenida Doutor Arthur Bernardes, 235, Vila Gabriel, Sorocaba, SP, Brasil, CEP 18081-000';
+  const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Arthur Bernardes, 235, Vila Gabriel, Sorocaba, SP, Brasil, CEP 18081-000';
 
-  const supabaseClient = window.supabase.createClient(
-    APP_CONFIG.supabaseUrl,
-    APP_CONFIG.supabaseAnonKey
-  );
+  const REGRAS_ENTREGA_PADRAO = [
+    { km_min: 0, km_max: 3, fee: 4, active: true },
+    { km_min: 3.01, km_max: 4, fee: 5, active: true },
+    { km_min: 4.01, km_max: 5, fee: 6, active: true },
+    { km_min: 5.01, km_max: 6, fee: 7, active: true },
+    { km_min: 6.01, km_max: 7, fee: 8, active: true },
+    { km_min: 7.01, km_max: 8, fee: 9, active: true },
+    { km_min: 8.01, km_max: 9, fee: 10, active: true },
+    { km_min: 9.01, km_max: 10, fee: 11, active: true }
+  ];
+
+  let supabaseClient = null;
+
+  if (window.supabase && window.APP_CONFIG && APP_CONFIG.supabaseUrl && APP_CONFIG.supabaseAnonKey) {
+    supabaseClient = window.supabase.createClient(
+      APP_CONFIG.supabaseUrl,
+      APP_CONFIG.supabaseAnonKey
+    );
+  }
 
   let carrinho = [];
   let taxaEntrega = 0;
   let distanciaEntregaKm = null;
-  let regrasEntrega = [];
+  let regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
   let configuracaoLoja = null;
+  let timeoutCalculoEntrega = null;
 
   function formatarPreco(valor) {
     return Number(valor || 0).toLocaleString('pt-BR', {
@@ -1248,14 +1260,41 @@
       }
 
       input.value = valor;
+      agendarCalculoEntrega();
     });
+  }
+
+  function aplicarEventosEntrega() {
+    const ids = [
+      'ruaEntrega',
+      'numeroEntrega',
+      'bairroEntrega',
+      'cidadeEntrega',
+      'complementoEntrega'
+    ];
+
+    ids.forEach(id => {
+      const campo = document.getElementById(id);
+      if (!campo) return;
+
+      campo.addEventListener('input', agendarCalculoEntrega);
+      campo.addEventListener('change', agendarCalculoEntrega);
+      campo.addEventListener('blur', agendarCalculoEntrega);
+    });
+  }
+
+  function agendarCalculoEntrega() {
+    clearTimeout(timeoutCalculoEntrega);
+    timeoutCalculoEntrega = setTimeout(() => {
+      calcularEntregaAutomaticamente();
+    }, 600);
   }
 
   function montarEnderecoCompletoCliente() {
     const rua = document.getElementById('ruaEntrega').value.trim();
     const numero = document.getElementById('numeroEntrega').value.trim();
     const bairro = document.getElementById('bairroEntrega').value.trim();
-    const cidade = document.getElementById('cidadeEntrega').value.trim();
+    const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
     const cep = document.getElementById('cepEntrega').value.trim();
 
     return `${rua}, ${numero}, ${bairro}, ${cidade}, SP, Brasil, CEP ${cep}`;
@@ -1265,7 +1304,7 @@
     const rua = document.getElementById('ruaEntrega').value.trim();
     const numero = document.getElementById('numeroEntrega').value.trim();
     const bairro = document.getElementById('bairroEntrega').value.trim();
-    const cidade = document.getElementById('cidadeEntrega').value.trim();
+    const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
     const cep = document.getElementById('cepEntrega').value.trim();
     const complemento = document.getElementById('complementoEntrega').value.trim();
 
@@ -1309,7 +1348,7 @@
         document.getElementById('cidadeEntrega').value = dados.localidade || 'Sorocaba';
       }
 
-      avisoEntrega.innerText = 'CEP localizado. Confira número e complemento para calcular a entrega.';
+      avisoEntrega.innerText = 'CEP localizado. Informe o número para calcular a taxa.';
       await calcularEntregaAutomaticamente();
     } catch (erro) {
       console.error(erro);
@@ -1416,6 +1455,8 @@
         taxaEntrega = 0;
         distanciaEntregaKm = null;
         avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+      } else {
+        agendarCalculoEntrega();
       }
     } else {
       camposEntrega.style.display = 'none';
@@ -1502,33 +1543,66 @@
   }
 
   async function carregarRegrasEntrega() {
-    const { data, error } = await supabaseClient
-      .from('delivery_rules')
-      .select('*')
-      .eq('active', true)
-      .order('km_min', { ascending: true });
-
-    if (error) {
-      console.error('Erro ao carregar regras de entrega:', error);
+    if (!supabaseClient) {
+      regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
       return;
     }
 
-    regrasEntrega = data || [];
+    try {
+      const { data, error } = await supabaseClient
+        .from('delivery_rules')
+        .select('*')
+        .eq('active', true)
+        .order('km_min', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao carregar regras de entrega:', error);
+        regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
+        return;
+      }
+
+      if (data && data.length > 0) {
+        regrasEntrega = data;
+      } else {
+        regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
+      }
+    } catch (erro) {
+      console.error('Falha ao carregar regras:', erro);
+      regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
+    }
   }
 
   async function carregarConfiguracaoLoja() {
-    const { data, error } = await supabaseClient
-      .from('store_settings')
-      .select('*')
-      .limit(1)
-      .single();
-
-    if (error) {
-      console.error('Erro ao carregar configuração da loja:', error);
+    if (!supabaseClient) {
+      configuracaoLoja = {
+        store_address: ENDERECO_LOJA_PADRAO
+      };
       return;
     }
 
-    configuracaoLoja = data;
+    try {
+      const { data, error } = await supabaseClient
+        .from('store_settings')
+        .select('*')
+        .limit(1);
+
+      if (error) {
+        console.error('Erro ao carregar configuração da loja:', error);
+        configuracaoLoja = {
+          store_address: ENDERECO_LOJA_PADRAO
+        };
+        return;
+      }
+
+      configuracaoLoja = (data && data.length > 0)
+        ? data[0]
+        : { store_address: ENDERECO_LOJA_PADRAO };
+    } catch (erro) {
+      console.error('Falha ao carregar configuração:', erro);
+      configuracaoLoja = {
+        store_address: ENDERECO_LOJA_PADRAO
+      };
+    }
   }
 
   async function geocodificarEndereco(endereco) {
@@ -1573,13 +1647,27 @@
   }
 
   function descobrirTaxaPorDistancia(distanciaKm) {
-    const regra = regrasEntrega.find(r => {
-      const min = Number(r.km_min);
-      const max = Number(r.km_max);
-      return distanciaKm >= min && distanciaKm <= max;
-    });
+    if (!Number.isFinite(distanciaKm) || distanciaKm <= 0) {
+      return 0;
+    }
 
-    return regra ? Number(regra.fee) : null;
+    if (regrasEntrega && regrasEntrega.length > 0) {
+      const regra = regrasEntrega.find(r => {
+        const min = Number(r.km_min);
+        const max = Number(r.km_max);
+        return distanciaKm >= min && distanciaKm <= max;
+      });
+
+      if (regra) {
+        return Number(regra.fee);
+      }
+    }
+
+    if (distanciaKm <= 3) {
+      return 4;
+    }
+
+    return 4 + Math.ceil(distanciaKm - 3);
   }
 
   async function calcularEntregaAutomaticamente() {
@@ -1611,7 +1699,7 @@
     avisoEntrega.innerText = 'Calculando distância e taxa de entrega...';
 
     try {
-      const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA;
+      const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO;
       const enderecoCliente = montarEnderecoCompletoCliente();
 
       const [coordenadaLoja, coordenadaCliente] = await Promise.all([
@@ -1634,16 +1722,10 @@
         coordenadaCliente.lng
       );
 
-      const taxa = descobrirTaxaPorDistancia(distancia);
       distanciaEntregaKm = Number(distancia.toFixed(2));
+      taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
 
-      if (taxa === null) {
-        taxaEntrega = 0;
-        avisoEntrega.innerText = `Distância estimada: ${distanciaEntregaKm.toFixed(2)} km. Entrega fora da área configurada.`;
-      } else {
-        taxaEntrega = Number(taxa);
-        avisoEntrega.innerText = `Distância estimada: ${distanciaEntregaKm.toFixed(2)} km | Taxa de entrega: ${formatarPreco(taxaEntrega)}`;
-      }
+      avisoEntrega.innerText = `Distância estimada: ${distanciaEntregaKm.toFixed(2)} km | Taxa de entrega: ${formatarPreco(taxaEntrega)}`;
 
       renderizarCarrinho();
     } catch (erro) {
@@ -1656,6 +1738,12 @@
   }
 
   async function salvarPedidoNoBanco(payload) {
+    if (!supabaseClient) {
+      return {
+        id: Date.now()
+      };
+    }
+
     const { data, error } = await supabaseClient
       .from('orders')
       .insert([payload])
@@ -1707,17 +1795,12 @@
         return;
       }
 
-      if (!distanciaEntregaKm) {
+      if (distanciaEntregaKm === null) {
         await calcularEntregaAutomaticamente();
       }
 
-      if (!distanciaEntregaKm) {
+      if (distanciaEntregaKm === null) {
         alert('Não foi possível calcular a entrega. Verifique o endereço.');
-        return;
-      }
-
-      if (taxaEntrega <= 0) {
-        alert('Esse endereço está fora da área de entrega configurada.');
         return;
       }
     }
@@ -1825,6 +1908,7 @@
     await carregarConfiguracaoLoja();
     await carregarRegrasEntrega();
     aplicarMascaraCep();
+    aplicarEventosEntrega();
     atualizarContadores();
     atualizarEntrega();
     atualizarStatusLoja();
