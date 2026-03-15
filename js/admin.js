@@ -3,6 +3,12 @@ let ultimaQuantidadePedidos = 0;
 
 const STORAGE_KEYS = ["pedidos", "chapa_pedidos", "pedidos_chapa"];
 const LOJA_STATUS_KEY = "chapa_loja_aberta";
+const LOJA_OVERRIDE_KEY = "chapa_loja_override";
+const LOGIN_STORAGE_KEY = "chapa_admin_logado";
+
+function byId(id) {
+  return document.getElementById(id);
+}
 
 function obterChavePedidosUsada() {
   for (const chave of STORAGE_KEYS) {
@@ -43,6 +49,11 @@ function salvarPedidosStorage() {
 
 function gerarId(index) {
   return "PED" + String(index + 1).padStart(4, "0");
+}
+
+function gerarUidPedido(pedido, index, dataObj) {
+  const baseId = pedido.id || gerarId(index);
+  return `${baseId}_${dataObj.getTime()}_${index}`;
 }
 
 function converterDataSegura(valor) {
@@ -96,7 +107,7 @@ function normalizarPedido(pedido, index) {
   const itens = Array.isArray(pedido.itens) ? pedido.itens : [];
   const dataObj = converterDataSegura(pedido.data || pedido.criadoEm || pedido.createdAt);
 
-  let totalCalculadoItens = itens.reduce((acc, item) => {
+  const totalCalculadoItens = itens.reduce((acc, item) => {
     const quantidade = Number(item.quantidade || 1);
     const preco = Number(item.preco || item.valor || 0);
     return acc + (quantidade * preco);
@@ -109,8 +120,11 @@ function normalizarPedido(pedido, index) {
   let total = Number(pedido.total || 0);
   if (!total) total = subtotal + taxaEntrega;
 
+  const id = pedido.id || gerarId(index);
+
   return {
-    id: pedido.id || gerarId(index),
+    uid: gerarUidPedido({ id }, index, dataObj),
+    id,
     cliente: pedido.cliente || pedido.nome || "Cliente não informado",
     telefone: pedido.telefone || pedido.whatsapp || "",
     entrega: pedido.entrega || pedido.tipoEntrega || pedido.tipo || "Não informado",
@@ -142,7 +156,7 @@ function carregarPedidos() {
   const dados = obterPedidosStorage();
   const pedidosBrutos = Array.isArray(dados.pedidos) ? dados.pedidos : [];
 
-  const quantidadeAnterior = pedidos.length;
+  const quantidadeAnterior = ultimaQuantidadePedidos;
   pedidos = pedidosBrutos.map((pedido, index) => normalizarPedido(pedido, index));
 
   if (quantidadeAnterior > 0 && pedidos.length > quantidadeAnterior) {
@@ -156,9 +170,8 @@ function carregarPedidos() {
 
 function atualizarResumo() {
   const hoje = new Date();
-  const pedidosHojeLista = pedidos.filter(p => {
-    return p.dataObj.toDateString() === hoje.toDateString();
-  });
+
+  const pedidosHojeLista = pedidos.filter(p => p.dataObj.toDateString() === hoje.toDateString());
 
   const faturamento = pedidosHojeLista.reduce((acc, pedido) => acc + Number(pedido.total || 0), 0);
   const ticket = pedidosHojeLista.length ? (faturamento / pedidosHojeLista.length) : 0;
@@ -169,26 +182,26 @@ function atualizarResumo() {
   const entrega = pedidos.filter(p => p.status === "em entrega").length;
   const finalizados = pedidos.filter(p => p.status === "finalizado").length;
 
-  document.getElementById("totalPedidos").textContent = pedidos.length;
-  document.getElementById("pedidosHoje").textContent = pedidosHojeLista.length;
-  document.getElementById("faturamentoDia").textContent = formatarMoeda(faturamento);
-  document.getElementById("ticketMedio").textContent = formatarMoeda(ticket);
-  document.getElementById("totalDelivery").textContent = delivery;
-  document.getElementById("totalRetirada").textContent = retirada;
+  if (byId("totalPedidos")) byId("totalPedidos").textContent = pedidos.length;
+  if (byId("pedidosHoje")) byId("pedidosHoje").textContent = pedidosHojeLista.length;
+  if (byId("faturamentoDia")) byId("faturamentoDia").textContent = formatarMoeda(faturamento);
+  if (byId("ticketMedio")) byId("ticketMedio").textContent = formatarMoeda(ticket);
+  if (byId("totalDelivery")) byId("totalDelivery").textContent = delivery;
+  if (byId("totalRetirada")) byId("totalRetirada").textContent = retirada;
 
-  document.getElementById("countPendente").textContent = pendentes;
-  document.getElementById("countPreparo").textContent = preparo;
-  document.getElementById("countEntrega").textContent = entrega;
-  document.getElementById("countFinalizado").textContent = finalizados;
+  if (byId("countPendente")) byId("countPendente").textContent = pendentes;
+  if (byId("countPreparo")) byId("countPreparo").textContent = preparo;
+  if (byId("countEntrega")) byId("countEntrega").textContent = entrega;
+  if (byId("countFinalizado")) byId("countFinalizado").textContent = finalizados;
 }
 
 function obterPedidosFiltrados() {
-  const busca = document.getElementById("buscaPedido").value.toLowerCase().trim();
-  const filtroStatus = document.getElementById("filtroStatus").value;
-  const filtroTipo = document.getElementById("filtroTipo").value;
-  const ordenacao = document.getElementById("ordenacao").value;
+  const busca = (byId("buscaPedido")?.value || "").toLowerCase().trim();
+  const filtroStatus = byId("filtroStatus")?.value || "";
+  const filtroTipo = byId("filtroTipo")?.value || "";
+  const ordenacao = byId("ordenacao")?.value || "mais-novo";
 
-  let filtrados = pedidos.filter(pedido => {
+  const filtrados = pedidos.filter(pedido => {
     const texto = `
       ${pedido.id}
       ${pedido.cliente}
@@ -294,7 +307,7 @@ function botaoProximoStatus(indice, statusAtual) {
 }
 
 function criarCardPedido(pedido) {
-  const indiceReal = pedidos.findIndex(p => p.id === pedido.id && p.dataObj.getTime() === pedido.dataObj.getTime());
+  const indiceReal = pedidos.findIndex(p => p.uid === pedido.uid);
   const telefoneLimpo = String(pedido.telefone || "").replace(/\D/g, "");
   const novo = pedidoEhNovo(pedido);
   const atrasado = pedidoAtrasado(pedido);
@@ -366,8 +379,8 @@ function criarCardPedido(pedido) {
 
         <div class="action-grid">
           ${telefoneLimpo ? `<button class="btn btn-green btn-small" onclick="abrirWhatsapp('${telefoneLimpo}')">WhatsApp</button>` : `<button class="btn btn-dark btn-small" disabled>Sem WhatsApp</button>`}
-          <button class="btn btn-dark btn-small" onclick="imprimirPedido('${pedido.id}')">Imprimir</button>
-          <button class="btn btn-blue btn-small" onclick="copiarPedido('${pedido.id}')">Copiar</button>
+          <button class="btn btn-dark btn-small" onclick="imprimirPedido('${pedido.uid}')">Imprimir</button>
+          <button class="btn btn-blue btn-small" onclick="copiarPedido('${pedido.uid}')">Copiar</button>
           <button class="btn btn-red btn-small" onclick="excluirPedido(${indiceReal})">Excluir</button>
         </div>
       </div>
@@ -376,7 +389,8 @@ function criarCardPedido(pedido) {
 }
 
 function renderizarColuna(elementId, lista) {
-  const el = document.getElementById(elementId);
+  const el = byId(elementId);
+  if (!el) return;
 
   if (!lista.length) {
     el.innerHTML = `<div class="empty-column">Nenhum pedido nesta etapa.</div>`;
@@ -445,7 +459,9 @@ function exportarPedidos() {
   const a = document.createElement("a");
   a.href = url;
   a.download = "pedidos-chapa-lanches.json";
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
 }
 
@@ -453,8 +469,12 @@ function abrirWhatsapp(telefone) {
   window.open(`https://wa.me/${telefone}`, "_blank");
 }
 
-function imprimirPedido(idPedido) {
-  const pedido = pedidos.find(p => p.id === idPedido);
+function buscarPedidoPorUid(uidPedido) {
+  return pedidos.find(p => p.uid === uidPedido);
+}
+
+function imprimirPedido(uidPedido) {
+  const pedido = buscarPedidoPorUid(uidPedido);
   if (!pedido) return;
 
   const janela = window.open("", "_blank", "width=900,height=700");
@@ -463,6 +483,7 @@ function imprimirPedido(idPedido) {
   janela.document.write(`
     <html>
       <head>
+        <meta charset="UTF-8">
         <title>Impressão - ${pedido.id}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 24px; color: #000; }
@@ -519,8 +540,8 @@ function imprimirPedido(idPedido) {
   janela.document.close();
 }
 
-function copiarPedido(idPedido) {
-  const pedido = pedidos.find(p => p.id === idPedido);
+function copiarPedido(uidPedido) {
+  const pedido = buscarPedidoPorUid(uidPedido);
   if (!pedido) return;
 
   const texto = `
@@ -538,6 +559,11 @@ Taxa: ${formatarMoeda(pedido.taxaEntrega)}
 Total: ${formatarMoeda(pedido.total)}
 Observação: ${pedido.observacao || "-"}
   `.trim();
+
+  if (!navigator.clipboard) {
+    alert("Seu navegador não permite cópia automática.");
+    return;
+  }
 
   navigator.clipboard.writeText(texto)
     .then(() => alert("Pedido copiado com sucesso."))
@@ -565,56 +591,115 @@ function tocarNotificacaoNovoPedido() {
 }
 
 function atualizarRelogio() {
+  const el = byId("clockAtual");
+  if (!el) return;
+
   const agora = new Date();
-  document.getElementById("clockAtual").textContent = agora.toLocaleTimeString("pt-BR");
+  el.textContent = agora.toLocaleTimeString("pt-BR");
 }
 
-function carregarStatusLoja() {
-
+function obterStatusAutomaticoLoja() {
   const agora = new Date();
-
   const hora = agora.getHours();
   const minuto = agora.getMinutes();
 
   const horarioAtual = hora * 60 + minuto;
+  const abertura = 19 * 60;
+  const fechamento = 22 * 60 + 30;
 
-  const abertura = 19 * 60;  // 19:00
-  const fechamento = 23 * 60 + 59; // 23:59
-
-  const aberta = horarioAtual >= abertura && horarioAtual <= fechamento;
-
-  aplicarStatusLoja(aberta);
+  return horarioAtual >= abertura && horarioAtual <= fechamento;
 }
 
-function aplicarStatusLoja(aberta) {
-  const btn = document.getElementById("btnToggleLoja");
+function carregarStatusLoja() {
+  const override = localStorage.getItem(LOJA_OVERRIDE_KEY);
+
+  if (override === "aberta") {
+    aplicarStatusLoja(true, true);
+    return;
+  }
+
+  if (override === "fechada") {
+    aplicarStatusLoja(false, true);
+    return;
+  }
+
+  aplicarStatusLoja(obterStatusAutomaticoLoja(), false);
+}
+
+function aplicarStatusLoja(aberta, manual = false) {
+  const btn = byId("btnToggleLoja");
+  if (!btn) return;
+
   btn.classList.remove("aberta", "fechada");
 
   if (aberta) {
     btn.classList.add("aberta");
-    btn.textContent = "Aberta";
+    btn.textContent = manual ? "Aberta (manual)" : "Aberta";
     localStorage.setItem(LOJA_STATUS_KEY, "true");
   } else {
     btn.classList.add("fechada");
-    btn.textContent = "Fechada";
+    btn.textContent = manual ? "Fechada (manual)" : "Fechada";
     localStorage.setItem(LOJA_STATUS_KEY, "false");
   }
 }
 
 function alternarStatusLoja() {
-  const atual = localStorage.getItem(LOJA_STATUS_KEY) !== "false";
-  aplicarStatusLoja(!atual);
+  const statusAtual = localStorage.getItem(LOJA_STATUS_KEY) === "true";
+  const novoStatus = !statusAtual;
+
+  const confirmar = confirm(
+    novoStatus
+      ? "Deseja abrir a loja manualmente?"
+      : "Deseja fechar a loja manualmente?"
+  );
+
+  if (!confirmar) return;
+
+  localStorage.setItem(LOJA_OVERRIDE_KEY, novoStatus ? "aberta" : "fechada");
+  carregarStatusLoja();
 }
 
-document.getElementById("btnAtualizar").addEventListener("click", carregarPedidos);
-document.getElementById("btnExportar").addEventListener("click", exportarPedidos);
-document.getElementById("btnLimparTudo").addEventListener("click", limparTodosPedidos);
-document.getElementById("btnToggleLoja").addEventListener("click", alternarStatusLoja);
+function removerOverrideLoja() {
+  localStorage.removeItem(LOJA_OVERRIDE_KEY);
+  carregarStatusLoja();
+}
 
-document.getElementById("buscaPedido").addEventListener("input", renderizarQuadro);
-document.getElementById("filtroStatus").addEventListener("change", renderizarQuadro);
-document.getElementById("filtroTipo").addEventListener("change", renderizarQuadro);
-document.getElementById("ordenacao").addEventListener("change", renderizarQuadro);
+function sairDoPainel() {
+  const confirmar = confirm("Deseja sair do painel admin?");
+  if (!confirmar) return;
+
+  localStorage.removeItem(LOGIN_STORAGE_KEY);
+  window.location.href = "login.html";
+}
+
+const btnAtualizar = byId("btnAtualizar");
+const btnExportar = byId("btnExportar");
+const btnLimparTudo = byId("btnLimparTudo");
+const btnToggleLoja = byId("btnToggleLoja");
+const btnSair = byId("btnSair");
+const buscaPedido = byId("buscaPedido");
+const filtroStatus = byId("filtroStatus");
+const filtroTipo = byId("filtroTipo");
+const ordenacao = byId("ordenacao");
+
+if (btnAtualizar) btnAtualizar.addEventListener("click", carregarPedidos);
+if (btnExportar) btnExportar.addEventListener("click", exportarPedidos);
+if (btnLimparTudo) btnLimparTudo.addEventListener("click", limparTodosPedidos);
+if (btnToggleLoja) {
+  btnToggleLoja.addEventListener("click", alternarStatusLoja);
+  btnToggleLoja.addEventListener("contextmenu", function (event) {
+    event.preventDefault();
+    const confirmar = confirm("Remover o modo manual e voltar ao horário automático da loja?");
+    if (!confirmar) return;
+    removerOverrideLoja();
+  });
+}
+if (btnSair) btnSair.addEventListener("click", sairDoPainel);
+
+if (buscaPedido) buscaPedido.addEventListener("input", renderizarQuadro);
+if (filtroStatus) filtroStatus.addEventListener("change", renderizarQuadro);
+if (filtroTipo) filtroTipo.addEventListener("change", renderizarQuadro);
+if (ordenacao) ordenacao.addEventListener("change", renderizarQuadro);
 
 window.addEventListener("storage", () => {
   carregarPedidos();
@@ -628,5 +713,5 @@ atualizarRelogio();
 setInterval(atualizarRelogio, 1000);
 setInterval(() => {
   carregarPedidos();
-  renderizarQuadro();
+  carregarStatusLoja();
 }, 5000);
