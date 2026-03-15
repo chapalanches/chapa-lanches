@@ -1,410 +1,843 @@
-// =========================
-// CHAPA LANCHES - APP.JS
-// =========================
+const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) || '5515996179172';
+  const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa Lanches';
+  const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Vila Gabriel, Sorocaba, SP, Brasil, 18081-000';
 
-let carrinho = [];
+  const REGRAS_ENTREGA_PADRAO = [
+    { km_min: 0, km_max: 3, fee: 4, active: true },
+    { km_min: 3.01, km_max: 4, fee: 5, active: true },
+    { km_min: 4.01, km_max: 5, fee: 6, active: true },
+    { km_min: 5.01, km_max: 6, fee: 7, active: true },
+    { km_min: 6.01, km_max: 7, fee: 8, active: true },
+    { km_min: 7.01, km_max: 8, fee: 9, active: true },
+    { km_min: 8.01, km_max: 9, fee: 10, active: true },
+    { km_min: 9.01, km_max: 10, fee: 11, active: true }
+  ];
 
-// =========================
-// CONFIG PADRÃO
-// Usa config.js se existir
-// =========================
-const APP_CONFIG = typeof CONFIG !== "undefined" ? CONFIG : {
-  telefone: "5511999999999",
-  enderecoLoja: "Rua da Lanchonete, 123 - Centro",
-  taxaMinima: 4,
-  raioMinimoKm: 3,
-  valorPorKm: 1,
-  horarioAbertura: "18:00",
-  horarioFechamento: "23:30"
-};
+  let supabaseClient = null;
 
-// =========================
-// ELEMENTOS
-// =========================
-const listaCarrinho = document.getElementById("lista-carrinho");
-const subtotalEl = document.getElementById("subtotal");
-const taxaEntregaEl = document.getElementById("taxa-entrega");
-const totalEl = document.getElementById("total");
-const statusLojaEl = document.getElementById("status-loja");
+  if (
+    window.supabase &&
+    window.APP_CONFIG &&
+    window.APP_CONFIG.supabaseUrl &&
+    window.APP_CONFIG.supabaseAnonKey
+  ) {
+    supabaseClient = window.supabase.createClient(
+      window.APP_CONFIG.supabaseUrl,
+      window.APP_CONFIG.supabaseAnonKey
+    );
+  }
 
-const nomeInput = document.getElementById("nome");
-const enderecoInput = document.getElementById("endereco");
-const numeroInput = document.getElementById("numero");
-const bairroInput = document.getElementById("bairro");
-const referenciaInput = document.getElementById("referencia");
-const pagamentoInput = document.getElementById("pagamento");
-const observacaoInput = document.getElementById("observacao");
-const tipoEntregaInput = document.getElementById("tipo-entrega");
-const distanciaInput = document.getElementById("distancia");
+  let carrinho = [];
+  let taxaEntrega = 0;
+  let distanciaEntregaKm = null;
+  let tempoEntregaTexto = null;
+  let regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
+  let configuracaoLoja = null;
+  let timeoutCalculoEntrega = null;
 
-const btnWhatsApp = document.getElementById("btn-whatsapp");
+  let googleMapsReady = false;
+  let geocoder = null;
+  let distanceMatrixService = null;
+  let carregandoGoogleMaps = null;
 
-// =========================
-// INICIALIZAÇÃO
-// =========================
-document.addEventListener("DOMContentLoaded", () => {
-  iniciarBotoesAdicionar();
-  atualizarCarrinho();
-  atualizarStatusLoja();
-  configurarEventos();
-});
+  function formatarPreco(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  }
 
-// =========================
-// BOTÕES DE ADICIONAR
-// Espera elementos com:
-// class="btn-add"
-// data-nome="X-Burguer"
-// data-preco="25.90"
-// =========================
-function iniciarBotoesAdicionar() {
-  const botoes = document.querySelectorAll(".btn-add");
+  function somenteNumeros(texto) {
+    return (texto || '').replace(/\D/g, '');
+  }
 
-  botoes.forEach((botao) => {
-    botao.addEventListener("click", () => {
-      const nome = botao.dataset.nome;
-      const preco = parseFloat(botao.dataset.preco || "0");
+  function formatarTipoEntregaTexto(tipo) {
+    return tipo === 'delivery' ? 'Delivery' : 'Retirada no local';
+  }
 
-      if (!nome || isNaN(preco)) {
-        alert("Produto inválido.");
+  function aplicarMascaraCep() {
+    const input = document.getElementById('cepEntrega');
+
+    input.addEventListener('input', function () {
+      let valor = somenteNumeros(input.value).slice(0, 8);
+
+      if (valor.length > 5) {
+        valor = valor.slice(0, 5) + '-' + valor.slice(5);
+      }
+
+      input.value = valor;
+      agendarCalculoEntrega();
+    });
+  }
+
+  function aplicarEventosEntrega() {
+    const ids = [
+      'ruaEntrega',
+      'numeroEntrega',
+      'bairroEntrega',
+      'cidadeEntrega',
+      'complementoEntrega'
+    ];
+
+    ids.forEach(id => {
+      const campo = document.getElementById(id);
+      if (!campo) return;
+
+      campo.addEventListener('input', agendarCalculoEntrega);
+      campo.addEventListener('change', agendarCalculoEntrega);
+      campo.addEventListener('blur', agendarCalculoEntrega);
+    });
+  }
+
+  function agendarCalculoEntrega() {
+    clearTimeout(timeoutCalculoEntrega);
+    timeoutCalculoEntrega = setTimeout(() => {
+      calcularEntregaAutomaticamente();
+    }, 700);
+  }
+
+  function montarEnderecoCompletoCliente() {
+    const rua = document.getElementById('ruaEntrega').value.trim();
+    const numero = document.getElementById('numeroEntrega').value.trim();
+    const bairro = document.getElementById('bairroEntrega').value.trim();
+    const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
+    const cep = document.getElementById('cepEntrega').value.trim();
+
+    return `${rua}, ${numero}, ${bairro}, ${cidade}, SP, Brasil, ${cep}`;
+  }
+
+  function enderecoClienteTextoHumano() {
+    const rua = document.getElementById('ruaEntrega').value.trim();
+    const numero = document.getElementById('numeroEntrega').value.trim();
+    const bairro = document.getElementById('bairroEntrega').value.trim();
+    const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
+    const cep = document.getElementById('cepEntrega').value.trim();
+    const complemento = document.getElementById('complementoEntrega').value.trim();
+
+    let texto = `${rua}, ${numero}, ${bairro}, ${cidade}, CEP ${cep}`;
+
+    if (complemento) {
+      texto += `, ${complemento}`;
+    }
+
+    return texto;
+  }
+
+  async function buscarCepEntrega() {
+    const cep = somenteNumeros(document.getElementById('cepEntrega').value);
+    const avisoEntrega = document.getElementById('avisoEntrega');
+
+    if (cep.length !== 8) return;
+
+    try {
+      avisoEntrega.innerText = 'Consultando CEP...';
+
+      const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const dados = await resposta.json();
+
+      if (dados.erro) {
+        avisoEntrega.innerText = 'CEP não encontrado. Confira o número digitado.';
         return;
       }
 
-      adicionarAoCarrinho(nome, preco);
-    });
-  });
-}
+      if (!document.getElementById('ruaEntrega').value.trim()) {
+        document.getElementById('ruaEntrega').value = dados.logradouro || '';
+      }
 
-// =========================
-// EVENTOS
-// =========================
-function configurarEventos() {
-  if (tipoEntregaInput) {
-    tipoEntregaInput.addEventListener("change", () => {
-      atualizarVisibilidadeEntrega();
-      atualizarCarrinho();
-    });
+      if (!document.getElementById('bairroEntrega').value.trim()) {
+        document.getElementById('bairroEntrega').value = dados.bairro || '';
+      }
+
+      if (!document.getElementById('cidadeEntrega').value.trim()) {
+        document.getElementById('cidadeEntrega').value = dados.localidade || 'Sorocaba';
+      }
+
+      avisoEntrega.innerText = 'CEP localizado. Informe o número para calcular a taxa.';
+      await calcularEntregaAutomaticamente();
+    } catch (erro) {
+      console.error(erro);
+      avisoEntrega.innerText = 'Não foi possível consultar o CEP agora.';
+    }
   }
 
-  if (distanciaInput) {
-    distanciaInput.addEventListener("input", () => {
-      atualizarCarrinho();
-    });
+  function atualizarContadores() {
+    const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+    document.getElementById('cartCount').innerText = totalItens;
   }
 
-  if (btnWhatsApp) {
-    btnWhatsApp.addEventListener("click", enviarPedidoWhatsApp);
+  function adicionarAoCarrinho(nome, preco) {
+    const itemExistente = carrinho.find(item => item.nome === nome);
+
+    if (itemExistente) {
+      itemExistente.quantidade += 1;
+    } else {
+      carrinho.push({
+        nome,
+        preco,
+        quantidade: 1
+      });
+    }
+
+    atualizarContadores();
   }
 
-  atualizarVisibilidadeEntrega();
-}
-
-// =========================
-// CARRINHO
-// =========================
-function adicionarAoCarrinho(nome, preco) {
-  const itemExistente = carrinho.find((item) => item.nome === nome);
-
-  if (itemExistente) {
-    itemExistente.quantidade += 1;
-  } else {
-    carrinho.push({
-      nome,
-      preco,
-      quantidade: 1
-    });
+  function aumentarQuantidade(index) {
+    carrinho[index].quantidade += 1;
+    renderizarCarrinho();
   }
 
-  atualizarCarrinho();
-}
-
-function removerDoCarrinho(nome) {
-  const index = carrinho.findIndex((item) => item.nome === nome);
-
-  if (index === -1) return;
-
-  if (carrinho[index].quantidade > 1) {
+  function diminuirQuantidade(index) {
     carrinho[index].quantidade -= 1;
-  } else {
-    carrinho.splice(index, 1);
+
+    if (carrinho[index].quantidade <= 0) {
+      carrinho.splice(index, 1);
+    }
+
+    renderizarCarrinho();
   }
 
-  atualizarCarrinho();
-}
+  function removerItem(index) {
+    carrinho.splice(index, 1);
+    renderizarCarrinho();
+  }
 
-function atualizarCarrinho() {
-  if (!listaCarrinho) return;
+  function calcularSubtotal() {
+    return carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+  }
 
-  listaCarrinho.innerHTML = "";
+  function calcularTotal() {
+    return calcularSubtotal() + taxaEntrega;
+  }
 
-  if (carrinho.length === 0) {
-    listaCarrinho.innerHTML = `<p style="color:#cfcfcf;">Seu carrinho está vazio.</p>`;
-  } else {
-    carrinho.forEach((item) => {
-      const div = document.createElement("div");
-      div.className = "item-carrinho";
+  function lojaAbertaAgora() {
+    const agora = new Date();
+    const dia = agora.getDay();
 
-      const totalItem = item.preco * item.quantidade;
+    if (dia !== 0 && dia !== 3 && dia !== 4 && dia !== 5 && dia !== 6) {
+      return false;
+    }
 
-      div.innerHTML = `
-        <div>
-          <strong>${item.quantidade}x ${item.nome}</strong><br>
-          <small>R$ ${formatarMoeda(item.preco)} cada</small>
-        </div>
-        <div style="text-align:right;">
-          <strong>R$ ${formatarMoeda(totalItem)}</strong><br>
-          <button type="button" onclick="removerDoCarrinho('${escapeAspas(item.nome)}')" style="margin-top:6px;padding:6px 10px;background:#ff5a5a;color:#fff;border:none;border-radius:6px;cursor:pointer;">
-            Remover
-          </button>
+    const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    const abre = 19 * 60;
+    const fecha = 22 * 60 + 30;
+
+    return minutosAgora >= abre && minutosAgora < fecha;
+  }
+
+  function atualizarStatusLoja() {
+    const statusLoja = document.getElementById('statusLoja');
+    const btnFinalizar = document.getElementById('btnFinalizar');
+    const aberta = lojaAbertaAgora();
+
+    if (aberta) {
+      statusLoja.classList.remove('fechado');
+      statusLoja.classList.add('aberto');
+      statusLoja.innerText = '🟢 Aberto agora';
+      btnFinalizar.disabled = false;
+    } else {
+      statusLoja.classList.remove('aberto');
+      statusLoja.classList.add('fechado');
+      statusLoja.innerText = '🔴 Fechado no momento';
+      btnFinalizar.disabled = true;
+    }
+  }
+
+  function atualizarEntrega() {
+    const tipoEntrega = document.getElementById('tipoEntrega').value;
+    const camposEntrega = document.getElementById('camposEntrega');
+    const avisoEntrega = document.getElementById('avisoEntrega');
+
+    if (tipoEntrega === 'delivery') {
+      camposEntrega.style.display = 'grid';
+
+      const rua = document.getElementById('ruaEntrega').value.trim();
+      const numero = document.getElementById('numeroEntrega').value.trim();
+      const bairro = document.getElementById('bairroEntrega').value.trim();
+      const cidade = document.getElementById('cidadeEntrega').value.trim();
+
+      if (!rua || !numero || !bairro || !cidade) {
+        taxaEntrega = 0;
+        distanciaEntregaKm = null;
+        tempoEntregaTexto = null;
+        avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+      } else {
+        agendarCalculoEntrega();
+      }
+    } else {
+      camposEntrega.style.display = 'none';
+      document.getElementById('cepEntrega').value = '';
+      document.getElementById('ruaEntrega').value = '';
+      document.getElementById('numeroEntrega').value = '';
+      document.getElementById('bairroEntrega').value = '';
+      document.getElementById('cidadeEntrega').value = 'Sorocaba';
+      document.getElementById('complementoEntrega').value = '';
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      tempoEntregaTexto = null;
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    }
+
+    renderizarCarrinho();
+  }
+
+  function renderizarCarrinho() {
+    const lista = document.getElementById('listaCarrinho');
+    const subtotal = calcularSubtotal();
+    const total = calcularTotal();
+
+    if (carrinho.length === 0) {
+      lista.innerHTML = '<div class="carrinho-vazio">Seu carrinho está vazio.</div>';
+    } else {
+      lista.innerHTML = `
+        <div class="lista-carrinho">
+          ${carrinho.map((item, index) => `
+            <div class="item-carrinho">
+              <div>
+                <strong>${item.nome}</strong>
+                <small>${formatarPreco(item.preco)} cada</small>
+              </div>
+              <div class="acoes-carrinho">
+                <div class="qtd-box">
+                  <button class="qtd-btn" onclick="diminuirQuantidade(${index})">-</button>
+                  <strong>${item.quantidade}</strong>
+                  <button class="qtd-btn" onclick="aumentarQuantidade(${index})">+</button>
+                </div>
+                <strong>${formatarPreco(item.preco * item.quantidade)}</strong>
+                <button class="btn-remover" onclick="removerItem(${index})">Remover</button>
+              </div>
+            </div>
+          `).join('')}
         </div>
       `;
+    }
 
-      listaCarrinho.appendChild(div);
+    document.getElementById('resumoItens').innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+    document.getElementById('resumoSubtotal').innerText = formatarPreco(subtotal);
+    document.getElementById('resumoTaxaEntrega').innerText = formatarPreco(taxaEntrega);
+    document.getElementById('resumoTotal').innerText = formatarPreco(total);
+
+    atualizarContadores();
+    atualizarStatusLoja();
+  }
+
+  function abrirCarrinho() {
+    renderizarCarrinho();
+    document.getElementById('modalCarrinho').classList.add('ativo');
+  }
+
+  function fecharCarrinho() {
+    document.getElementById('modalCarrinho').classList.remove('ativo');
+  }
+
+  function limparCarrinho() {
+    carrinho = [];
+    taxaEntrega = 0;
+    distanciaEntregaKm = null;
+    tempoEntregaTexto = null;
+    document.getElementById('nomeCliente').value = '';
+    document.getElementById('tipoEntrega').value = 'retirada';
+    document.getElementById('cepEntrega').value = '';
+    document.getElementById('ruaEntrega').value = '';
+    document.getElementById('numeroEntrega').value = '';
+    document.getElementById('bairroEntrega').value = '';
+    document.getElementById('cidadeEntrega').value = 'Sorocaba';
+    document.getElementById('complementoEntrega').value = '';
+    document.getElementById('formaPagamento').value = '';
+    document.getElementById('observacoes').value = '';
+    atualizarEntrega();
+    renderizarCarrinho();
+  }
+
+  async function carregarRegrasEntrega() {
+    if (!supabaseClient) {
+      regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('delivery_rules')
+        .select('*')
+        .eq('active', true)
+        .order('km_min', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao carregar regras de entrega:', error);
+        regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
+        return;
+      }
+
+      regrasEntrega = data && data.length > 0 ? data : [...REGRAS_ENTREGA_PADRAO];
+    } catch (erro) {
+      console.error('Falha ao carregar regras:', erro);
+      regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
+    }
+  }
+
+  async function carregarConfiguracaoLoja() {
+    if (!supabaseClient) {
+      configuracaoLoja = {
+        store_address: ENDERECO_LOJA_PADRAO,
+        store_lat: null,
+        store_lng: null
+      };
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient
+        .from('store_settings')
+        .select('*')
+        .limit(1);
+
+      if (error) {
+        console.error('Erro ao carregar configuração da loja:', error);
+        configuracaoLoja = {
+          store_address: ENDERECO_LOJA_PADRAO,
+          store_lat: null,
+          store_lng: null
+        };
+        return;
+      }
+
+      configuracaoLoja = (data && data.length > 0)
+        ? data[0]
+        : {
+            store_address: ENDERECO_LOJA_PADRAO,
+            store_lat: null,
+            store_lng: null
+          };
+    } catch (erro) {
+      console.error('Falha ao carregar configuração:', erro);
+      configuracaoLoja = {
+        store_address: ENDERECO_LOJA_PADRAO,
+        store_lat: null,
+        store_lng: null
+      };
+    }
+  }
+
+  function carregarGoogleMapsScript() {
+    if (googleMapsReady && window.google && window.google.maps) {
+      return Promise.resolve();
+    }
+
+    if (carregandoGoogleMaps) {
+      return carregandoGoogleMaps;
+    }
+
+    carregandoGoogleMaps = new Promise((resolve, reject) => {
+      if (!window.APP_CONFIG || !window.APP_CONFIG.googleMapsApiKey) {
+        reject(new Error('Google Maps API Key não configurada no config.js.'));
+        return;
+      }
+
+      if (window.google && window.google.maps) {
+        googleMapsReady = true;
+        geocoder = new google.maps.Geocoder();
+        distanceMatrixService = new google.maps.DistanceMatrixService();
+        resolve();
+        return;
+      }
+
+      window.__initGoogleMapsDelivery = function () {
+        googleMapsReady = true;
+        geocoder = new google.maps.Geocoder();
+        distanceMatrixService = new google.maps.DistanceMatrixService();
+        resolve();
+      };
+
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${window.APP_CONFIG.googleMapsApiKey}&libraries=places&callback=__initGoogleMapsDelivery`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = function () {
+        reject(new Error('Erro ao carregar Google Maps.'));
+      };
+      document.head.appendChild(script);
+    });
+
+    return carregandoGoogleMaps;
+  }
+
+  function geocodificarComGoogle(endereco) {
+    return new Promise((resolve, reject) => {
+      if (!geocoder) {
+        reject(new Error('Geocoder não inicializado.'));
+        return;
+      }
+
+      geocoder.geocode(
+        {
+          address: endereco,
+          region: 'BR'
+        },
+        (results, status) => {
+          if (status === 'OK' && results && results.length > 0) {
+            const location = results[0].geometry.location;
+            resolve({
+              lat: location.lat(),
+              lng: location.lng(),
+              display_name: results[0].formatted_address || endereco
+            });
+            return;
+          }
+
+          resolve(null);
+        }
+      );
     });
   }
 
-  const subtotal = calcularSubtotal();
-  const taxaEntrega = calcularTaxaEntrega();
-  const total = subtotal + taxaEntrega;
+  async function geocodificarEnderecoProfissional(endereco) {
+    let resultado = await geocodificarComGoogle(endereco);
 
-  if (subtotalEl) subtotalEl.textContent = `R$ ${formatarMoeda(subtotal)}`;
-  if (taxaEntregaEl) taxaEntregaEl.textContent = `R$ ${formatarMoeda(taxaEntrega)}`;
-  if (totalEl) totalEl.textContent = `R$ ${formatarMoeda(total)}`;
-}
+    if (resultado) return resultado;
 
-function calcularSubtotal() {
-  return carrinho.reduce((acc, item) => {
-    return acc + (item.preco * item.quantidade);
-  }, 0);
-}
+    const enderecoSemNumero = endereco.replace(/,\s*\d+\s*,/g, ', ');
+    resultado = await geocodificarComGoogle(enderecoSemNumero);
 
-// =========================
-// ENTREGA
-// =========================
-function calcularTaxaEntrega() {
-  const tipoEntrega = tipoEntregaInput ? tipoEntregaInput.value : "retirada";
+    if (resultado) return resultado;
 
-  if (tipoEntrega !== "delivery") {
-    return 0;
+    return null;
   }
 
-  const distancia = parseFloat(distanciaInput?.value || "0");
+  function calcularRotaRealGoogle(origem, destino) {
+    return new Promise((resolve, reject) => {
+      if (!distanceMatrixService) {
+        reject(new Error('Distance Matrix não inicializado.'));
+        return;
+      }
 
-  if (isNaN(distancia) || distancia <= 0) {
-    return APP_CONFIG.taxaMinima;
+      distanceMatrixService.getDistanceMatrix(
+        {
+          origins: [origem],
+          destinations: [destino],
+          travelMode: google.maps.TravelMode.DRIVING,
+          unitSystem: google.maps.UnitSystem.METRIC,
+          region: 'BR',
+          avoidHighways: false,
+          avoidTolls: false
+        },
+        (response, status) => {
+          if (status !== 'OK' || !response || !response.rows || !response.rows.length) {
+            reject(new Error('Não foi possível calcular a rota.'));
+            return;
+          }
+
+          const elemento = response.rows[0].elements[0];
+
+          if (!elemento || elemento.status !== 'OK') {
+            reject(new Error('Rota não encontrada para este endereço.'));
+            return;
+          }
+
+          resolve({
+            distanciaMetros: elemento.distance.value,
+            distanciaTexto: elemento.distance.text,
+            duracaoSegundos: elemento.duration.value,
+            duracaoTexto: elemento.duration.text
+          });
+        }
+      );
+    });
   }
 
-  if (distancia <= APP_CONFIG.raioMinimoKm) {
-    return APP_CONFIG.taxaMinima;
-  }
-
-  const excedente = Math.ceil(distancia - APP_CONFIG.raioMinimoKm);
-  return APP_CONFIG.taxaMinima + (excedente * APP_CONFIG.valorPorKm);
-}
-
-function atualizarVisibilidadeEntrega() {
-  const tipoEntrega = tipoEntregaInput ? tipoEntregaInput.value : "retirada";
-
-  const camposDelivery = document.querySelectorAll(".campo-delivery");
-
-  camposDelivery.forEach((campo) => {
-    campo.style.display = tipoEntrega === "delivery" ? "block" : "none";
-  });
-}
-
-// =========================
-// STATUS LOJA
-// =========================
-function atualizarStatusLoja() {
-  if (!statusLojaEl) return;
-
-  const aberta = lojaEstaAberta(
-    APP_CONFIG.horarioAbertura,
-    APP_CONFIG.horarioFechamento
-  );
-
-  statusLojaEl.textContent = aberta ? "Aberto agora" : "Fechado agora";
-  statusLojaEl.classList.remove("aberto", "fechado");
-  statusLojaEl.classList.add(aberta ? "aberto" : "fechado");
-}
-
-function lojaEstaAberta(horaAbertura, horaFechamento) {
-  const agora = new Date();
-
-  const [abH, abM] = horaAbertura.split(":").map(Number);
-  const [fcH, fcM] = horaFechamento.split(":").map(Number);
-
-  const abertura = new Date();
-  abertura.setHours(abH, abM, 0, 0);
-
-  const fechamento = new Date();
-  fechamento.setHours(fcH, fcM, 0, 0);
-
-  if (fechamento <= abertura) {
-    if (agora >= abertura) {
-      fechamento.setDate(fechamento.getDate() + 1);
-    } else {
-      abertura.setDate(abertura.getDate() - 1);
+  function descobrirTaxaPorDistancia(distanciaKm) {
+    if (!Number.isFinite(distanciaKm) || distanciaKm <= 0) {
+      return 0;
     }
+
+    if (regrasEntrega && regrasEntrega.length > 0) {
+      const regra = regrasEntrega.find(r => {
+        const min = Number(r.km_min);
+        const max = Number(r.km_max);
+        return distanciaKm >= min && distanciaKm <= max;
+      });
+
+      if (regra) {
+        return Number(regra.fee);
+      }
+    }
+
+    if (distanciaKm <= 3) {
+      return 4;
+    }
+
+    return 4 + Math.ceil(distanciaKm - 3);
   }
 
-  return agora >= abertura && agora <= fechamento;
-}
+  async function calcularEntregaAutomaticamente() {
+    const tipoEntrega = document.getElementById('tipoEntrega').value;
+    const avisoEntrega = document.getElementById('avisoEntrega');
 
-// =========================
-// WHATSAPP
-// =========================
-function enviarPedidoWhatsApp() {
-  if (carrinho.length === 0) {
-    alert("Adicione pelo menos um item ao carrinho.");
-    return;
-  }
-
-  const nome = nomeInput?.value.trim() || "";
-  const endereco = enderecoInput?.value.trim() || "";
-  const numero = numeroInput?.value.trim() || "";
-  const bairro = bairroInput?.value.trim() || "";
-  const referencia = referenciaInput?.value.trim() || "";
-  const pagamento = pagamentoInput?.value.trim() || "";
-  const observacao = observacaoInput?.value.trim() || "";
-  const tipoEntrega = tipoEntregaInput?.value || "retirada";
-  const distancia = distanciaInput?.value.trim() || "";
-
-  if (!nome) {
-    alert("Preencha o nome do cliente.");
-    return;
-  }
-
-  if (tipoEntrega === "delivery") {
-    if (!endereco || !numero || !bairro) {
-      alert("Preencha endereço, número e bairro para delivery.");
+    if (tipoEntrega !== 'delivery') {
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      tempoEntregaTexto = null;
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+      renderizarCarrinho();
       return;
     }
-  }
 
-  const subtotal = calcularSubtotal();
-  const taxaEntrega = calcularTaxaEntrega();
-  const total = subtotal + taxaEntrega;
+    const cep = document.getElementById('cepEntrega').value.trim();
+    const rua = document.getElementById('ruaEntrega').value.trim();
+    const numero = document.getElementById('numeroEntrega').value.trim();
+    const bairro = document.getElementById('bairroEntrega').value.trim();
+    const cidade = document.getElementById('cidadeEntrega').value.trim();
 
-  salvarPedidoLocal({
-    nome,
-    tipoEntrega: tipoEntrega === "delivery" ? "Delivery" : "Retirada",
-    endereco,
-    numero,
-    bairro,
-    referencia,
-    distancia,
-    pagamento,
-    observacao,
-    itens: carrinho.map((item) => ({ ...item })),
-    subtotal,
-    taxaEntrega,
-    total
-  });
+    if (!cep || !rua || !numero || !bairro || !cidade) {
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      tempoEntregaTexto = null;
+      avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+      renderizarCarrinho();
+      return;
+    }
 
-  let mensagem = `🍔 *NOVO PEDIDO - CHAPA LANCHES*%0A%0A`;
-  mensagem += `👤 *Cliente:* ${encodeURIComponent(nome)}%0A`;
-  mensagem += `🛍️ *Tipo:* ${encodeURIComponent(tipoEntrega === "delivery" ? "Delivery" : "Retirada")}%0A%0A`;
+    avisoEntrega.innerText = 'Calculando rota real e taxa de entrega...';
 
-  mensagem += `📋 *Itens do pedido:*%0A`;
+    try {
+      await carregarGoogleMapsScript();
 
-  carrinho.forEach((item) => {
-    mensagem += `- ${item.quantidade}x ${encodeURIComponent(item.nome)} = R$ ${formatarMoeda(item.preco * item.quantidade)}%0A`;
-  });
+      const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO;
+      const enderecoCliente = montarEnderecoCompletoCliente();
 
-  mensagem += `%0A`;
-  mensagem += `💰 *Subtotal:* R$ ${formatarMoeda(subtotal)}%0A`;
+      let coordenadaLoja = null;
 
-  if (tipoEntrega === "delivery") {
-    mensagem += `🚚 *Taxa de entrega:* R$ ${formatarMoeda(taxaEntrega)}%0A`;
+      if (configuracaoLoja?.store_lat && configuracaoLoja?.store_lng) {
+        coordenadaLoja = {
+          lat: Number(configuracaoLoja.store_lat),
+          lng: Number(configuracaoLoja.store_lng),
+          display_name: enderecoLoja
+        };
+      } else {
+        coordenadaLoja = await geocodificarEnderecoProfissional(enderecoLoja);
+      }
 
-    if (distancia) {
-      mensagem += `📍 *Distância informada:* ${encodeURIComponent(distancia)} km%0A`;
+      const coordenadaCliente = await geocodificarEnderecoProfissional(enderecoCliente);
+
+      if (!coordenadaLoja || !coordenadaCliente) {
+        taxaEntrega = 0;
+        distanciaEntregaKm = null;
+        tempoEntregaTexto = null;
+        avisoEntrega.innerText = 'Não foi possível localizar o endereço. Confira os dados digitados.';
+        renderizarCarrinho();
+        return;
+      }
+
+      const rota = await calcularRotaRealGoogle(
+        new google.maps.LatLng(coordenadaLoja.lat, coordenadaLoja.lng),
+        new google.maps.LatLng(coordenadaCliente.lat, coordenadaCliente.lng)
+      );
+
+      distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
+      tempoEntregaTexto = rota.duracaoTexto || null;
+      taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
+
+      avisoEntrega.innerText =
+        `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
+
+      renderizarCarrinho();
+    } catch (erro) {
+      console.error('Erro ao calcular entrega profissional:', erro);
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      tempoEntregaTexto = null;
+      avisoEntrega.innerText = 'Erro ao calcular a entrega. Verifique a chave do Google Maps e o endereço.';
+      renderizarCarrinho();
     }
   }
 
-  mensagem += `🧾 *Total:* R$ ${formatarMoeda(total)}%0A%0A`;
+  async function salvarPedidoNoBanco(payload) {
+    if (!supabaseClient) {
+      return { id: Date.now() };
+    }
 
-  if (tipoEntrega === "delivery") {
-    mensagem += `🏠 *Endereço:* ${encodeURIComponent(endereco)}, ${encodeURIComponent(numero)} - ${encodeURIComponent(bairro)}%0A`;
+    const { data, error } = await supabaseClient
+      .from('orders')
+      .insert([payload])
+      .select()
+      .single();
 
-    if (referencia) {
-      mensagem += `📌 *Referência:* ${encodeURIComponent(referencia)}%0A`;
+    if (error) {
+      console.error('Erro ao salvar pedido:', error);
+      throw error;
+    }
+
+    return data;
+  }
+
+  async function finalizarPedido() {
+    if (carrinho.length === 0) {
+      alert('Seu carrinho está vazio.');
+      return;
+    }
+
+    if (!lojaAbertaAgora()) {
+      alert('A loja está fechada no momento.');
+      return;
+    }
+
+    const nome = document.getElementById('nomeCliente').value.trim();
+    const tipoEntrega = document.getElementById('tipoEntrega').value;
+    const pagamento = document.getElementById('formaPagamento').value;
+    const observacoes = document.getElementById('observacoes').value.trim();
+    const avisoEntrega = document.getElementById('avisoEntrega');
+    const btnFinalizar = document.getElementById('btnFinalizar');
+
+    const endereco = enderecoClienteTextoHumano();
+
+    if (!nome) {
+      alert('Digite seu nome.');
+      return;
+    }
+
+    if (tipoEntrega === 'delivery') {
+      const cep = document.getElementById('cepEntrega').value.trim();
+      const rua = document.getElementById('ruaEntrega').value.trim();
+      const numero = document.getElementById('numeroEntrega').value.trim();
+      const bairro = document.getElementById('bairroEntrega').value.trim();
+      const cidade = document.getElementById('cidadeEntrega').value.trim();
+
+      if (!cep || !rua || !numero || !bairro || !cidade) {
+        alert('Preencha CEP, rua, número, bairro e cidade.');
+        return;
+      }
+
+      if (distanciaEntregaKm === null) {
+        await calcularEntregaAutomaticamente();
+      }
+
+      if (distanciaEntregaKm === null) {
+        alert('Não foi possível calcular a entrega. Verifique o endereço.');
+        return;
+      }
+    }
+
+    const subtotal = calcularSubtotal();
+    const total = calcularTotal();
+
+    const payload = {
+      customer_name: nome,
+      customer_phone: '',
+      order_type: tipoEntrega,
+      customer_address: tipoEntrega === 'delivery' ? endereco : null,
+      customer_neighborhood: tipoEntrega === 'delivery' ? document.getElementById('bairroEntrega').value.trim() : null,
+      customer_city: tipoEntrega === 'delivery' ? document.getElementById('cidadeEntrega').value.trim() : 'Sorocaba',
+      customer_notes: [
+        pagamento ? `Pagamento: ${pagamento}` : '',
+        observacoes ? `Observações: ${observacoes}` : '',
+        tipoEntrega === 'delivery' && document.getElementById('complementoEntrega').value.trim()
+          ? `Complemento: ${document.getElementById('complementoEntrega').value.trim()}`
+          : '',
+        tipoEntrega === 'delivery' && tempoEntregaTexto
+          ? `Tempo estimado: ${tempoEntregaTexto}`
+          : ''
+      ].filter(Boolean).join(' | '),
+      items: carrinho.map(item => ({
+        nome: item.nome,
+        preco: item.preco,
+        quantidade: item.quantidade
+      })),
+      subtotal: subtotal,
+      delivery_fee: taxaEntrega,
+      total: total,
+      delivery_distance_km: tipoEntrega === 'delivery' ? distanciaEntregaKm : null,
+      status: 'novo'
+    };
+
+    try {
+      btnFinalizar.disabled = true;
+      btnFinalizar.innerText = 'Salvando pedido...';
+
+      const pedidoSalvo = await salvarPedidoNoBanco(payload);
+
+      let mensagem = '🍔 *Pedido - ' + encodeURIComponent(nomeLoja) + '*%0A%0A';
+      mensagem += '*Pedido:* #' + pedidoSalvo.id + '%0A';
+      mensagem += '*Cliente:* ' + encodeURIComponent(nome) + '%0A';
+      mensagem += '*Tipo do pedido:* ' + encodeURIComponent(formatarTipoEntregaTexto(tipoEntrega)) + '%0A';
+
+      if (tipoEntrega === 'delivery') {
+        mensagem += '*Endereço:* ' + encodeURIComponent(endereco) + '%0A';
+        mensagem += '*Distância real:* ' + encodeURIComponent(distanciaEntregaKm.toFixed(2) + ' km') + '%0A';
+
+        if (tempoEntregaTexto) {
+          mensagem += '*Tempo estimado:* ' + encodeURIComponent(tempoEntregaTexto) + '%0A';
+        }
+      }
+
+      mensagem += '%0A*Itens do pedido:*%0A';
+
+      carrinho.forEach(item => {
+        mensagem += '- ' + encodeURIComponent(item.quantidade + 'x ' + item.nome + ' — ' + formatarPreco(item.preco * item.quantidade)) + '%0A';
+      });
+
+      mensagem += '%0A*Subtotal:* ' + encodeURIComponent(formatarPreco(subtotal)) + '%0A';
+      mensagem += '*Taxa de entrega:* ' + encodeURIComponent(formatarPreco(taxaEntrega)) + '%0A';
+      mensagem += '*Total:* ' + encodeURIComponent(formatarPreco(total)) + '%0A';
+
+      if (pagamento) {
+        mensagem += '*Pagamento:* ' + encodeURIComponent(pagamento) + '%0A';
+      }
+
+      if (observacoes) {
+        mensagem += '*Observações:* ' + encodeURIComponent(observacoes) + '%0A';
+      }
+
+      window.open('https://wa.me/' + numeroWhatsapp + '?text=' + mensagem, '_blank');
+
+      carrinho = [];
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      tempoEntregaTexto = null;
+      document.getElementById('nomeCliente').value = '';
+      document.getElementById('tipoEntrega').value = 'retirada';
+      document.getElementById('cepEntrega').value = '';
+      document.getElementById('ruaEntrega').value = '';
+      document.getElementById('numeroEntrega').value = '';
+      document.getElementById('bairroEntrega').value = '';
+      document.getElementById('cidadeEntrega').value = 'Sorocaba';
+      document.getElementById('complementoEntrega').value = '';
+      document.getElementById('formaPagamento').value = '';
+      document.getElementById('observacoes').value = '';
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+      fecharCarrinho();
+      renderizarCarrinho();
+
+      alert('Pedido salvo com sucesso no painel!');
+    } catch (erro) {
+      alert('Erro ao salvar o pedido. Verifique a configuração do Supabase.');
+      console.error(erro);
+    } finally {
+      btnFinalizar.innerText = 'Finalizar no WhatsApp';
+      btnFinalizar.disabled = !lojaAbertaAgora();
     }
   }
 
-  if (pagamento) {
-    mensagem += `💳 *Pagamento:* ${encodeURIComponent(pagamento)}%0A`;
-  }
-
-  if (observacao) {
-    mensagem += `📝 *Observação:* ${encodeURIComponent(observacao)}%0A`;
-  }
-
-  const url = `https://wa.me/${APP_CONFIG.telefone}?text=${mensagem}`;
-  window.open(url, "_blank");
-
-  limparFormularioAposPedido();
-}
-
-// =========================
-// SALVAR PEDIDO LOCAL
-// =========================
-function salvarPedidoLocal(dadosPedido) {
-  const chave = "chapa_lanches_pedidos";
-
-  let pedidos = [];
-
-  try {
-    pedidos = JSON.parse(localStorage.getItem(chave)) || [];
-  } catch (error) {
-    pedidos = [];
-  }
-
-  const agora = new Date();
-
-  const novoPedido = {
-    id: Date.now(),
-    dataIso: agora.toISOString(),
-    dataFormatada: agora.toLocaleString("pt-BR"),
-    status: "Recebido",
-    ...dadosPedido
+  window.onclick = function (event) {
+    const modal = document.getElementById('modalCarrinho');
+    if (event.target === modal) {
+      fecharCarrinho();
+    }
   };
 
-  pedidos.push(novoPedido);
-  localStorage.setItem(chave, JSON.stringify(pedidos));
-}
+  async function iniciarSistema() {
+    await carregarConfiguracaoLoja();
+    await carregarRegrasEntrega();
+    aplicarMascaraCep();
+    aplicarEventosEntrega();
+    atualizarContadores();
+    atualizarEntrega();
+    atualizarStatusLoja();
+    setInterval(atualizarStatusLoja, 60000);
 
-// =========================
-// LIMPAR FORMULÁRIO
-// =========================
-function limparFormularioAposPedido() {
-  carrinho = [];
-  atualizarCarrinho();
-
-  if (nomeInput) nomeInput.value = "";
-  if (enderecoInput) enderecoInput.value = "";
-  if (numeroInput) numeroInput.value = "";
-  if (bairroInput) bairroInput.value = "";
-  if (referenciaInput) referenciaInput.value = "";
-  if (pagamentoInput) pagamentoInput.value = "";
-  if (observacaoInput) observacaoInput.value = "";
-  if (distanciaInput) distanciaInput.value = "";
-
-  if (tipoEntregaInput) {
-    tipoEntregaInput.value = "retirada";
+    try {
+      await carregarGoogleMapsScript();
+      console.log('Google Maps carregado com sucesso.');
+    } catch (erro) {
+      console.error('Google Maps não carregado:', erro);
+    }
   }
 
-  atualizarVisibilidadeEntrega();
-  atualizarCarrinho();
-}
-
-// =========================
-// UTILITÁRIOS
-// =========================
-function formatarMoeda(valor) {
-  return Number(valor).toFixed(2).replace(".", ",");
-}
-
-function escapeAspas(texto) {
-  return String(texto).replace(/'/g, "\\'");
-}
+  iniciarSistema();
