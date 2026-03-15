@@ -1,6 +1,6 @@
 const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) || '5515996179172';
 const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa Lanches';
-const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Vila Gabriel, Sorocaba, SP, Brasil, 18081-000';
+const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
 
 const REGRAS_ENTREGA_PADRAO = [
   { km_min: 0, km_max: 3, fee: 4, active: true },
@@ -64,6 +64,8 @@ function aplicarMascaraCep() {
     input.value = valor;
     agendarCalculoEntrega();
   });
+
+  input.addEventListener('blur', buscarCepEntrega);
 }
 
 function aplicarEventosEntrega() {
@@ -95,11 +97,10 @@ function agendarCalculoEntrega() {
 function montarEnderecoCompletoCliente() {
   const rua = document.getElementById('ruaEntrega').value.trim();
   const numero = document.getElementById('numeroEntrega').value.trim();
-  const bairro = document.getElementById('bairroEntrega').value.trim();
   const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
   const cep = document.getElementById('cepEntrega').value.trim();
 
-  return `${rua}, ${numero}, ${bairro}, ${cidade}, SP, Brasil, ${cep}`;
+  return `${rua}, ${numero}, ${cidade}, SP, ${cep}`;
 }
 
 function enderecoClienteTextoHumano() {
@@ -110,13 +111,16 @@ function enderecoClienteTextoHumano() {
   const cep = document.getElementById('cepEntrega').value.trim();
   const complemento = document.getElementById('complementoEntrega').value.trim();
 
-  let texto = `${rua}, ${numero}, ${bairro}, ${cidade}, CEP ${cep}`;
+  let partes = [];
 
-  if (complemento) {
-    texto += `, ${complemento}`;
-  }
+  if (rua) partes.push(rua);
+  if (numero) partes.push(numero);
+  if (bairro) partes.push(bairro);
+  if (cidade) partes.push(cidade);
+  if (cep) partes.push(`CEP ${cep}`);
+  if (complemento) partes.push(complemento);
 
-  return texto;
+  return partes.join(', ');
 }
 
 async function buscarCepEntrega() {
@@ -472,6 +476,7 @@ async function geocodificarEnderecoOpenStreetMap(endereco) {
   }
 
   const dados = await resposta.json();
+  console.log('Geocodificando:', endereco, dados);
 
   if (!Array.isArray(dados) || dados.length === 0) {
     return null;
@@ -485,19 +490,30 @@ async function geocodificarEnderecoOpenStreetMap(endereco) {
 }
 
 async function geocodificarEnderecoProfissional(endereco) {
-  try {
-    let resultado = await geocodificarEnderecoOpenStreetMap(endereco);
-    if (resultado) return resultado;
-  } catch (erro) {
-    console.warn('Tentativa 1 falhou:', erro.message);
-  }
+  const tentativas = [
+    endereco,
+    endereco.replace(/,\s*\d+\s*,/g, ', '),
+    endereco.replace(/,\s*\d+\s*,/g, ', ').replace(/,\s*\d{5}-?\d{3}/g, ''),
+    endereco.replace(/,\s*\d{5}-?\d{3}/g, ''),
+    endereco.replace(/,\s*Brasil/gi, ''),
+    endereco.replace(/,\s*\d+\s*,/g, ', ').replace(/,\s*Brasil/gi, '').replace(/,\s*\d{5}-?\d{3}/g, '')
+  ];
 
-  try {
-    const enderecoSemNumero = endereco.replace(/,\s*\d+\s*,/g, ', ');
-    let resultado = await geocodificarEnderecoOpenStreetMap(enderecoSemNumero);
-    if (resultado) return resultado;
-  } catch (erro) {
-    console.warn('Tentativa 2 falhou:', erro.message);
+  for (const tentativa of tentativas) {
+    const texto = tentativa
+      .replace(/\s+,/g, ',')
+      .replace(/,\s*,/g, ',')
+      .replace(/,\s*$/, '')
+      .trim();
+
+    if (!texto) continue;
+
+    try {
+      const resultado = await geocodificarEnderecoOpenStreetMap(texto);
+      if (resultado) return resultado;
+    } catch (erro) {
+      console.warn('Falha ao geocodificar:', texto, erro.message);
+    }
   }
 
   return null;
