@@ -1,14 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chapa Lanches</title>
+  <link rel="icon" href="img/logofull.svg">
 
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-<title>Chapa Lanches</title>
-
-<link rel="icon" href="img/logofull.svg">
-  
   <style>
     * {
       box-sizing: border-box;
@@ -600,7 +597,7 @@
       font-size: 13px;
       line-height: 1.5;
     }
-      
+
     .logo-topo {
       display: flex;
       align-items: center;
@@ -659,746 +656,943 @@
 <body>
 
 <header>
+  <div class="logo-topo">
+    <img src="img/logofull-126.svg" alt="Logo Chapa Lanches">
+    <h1>Chapa Lanches</h1>
+  </div>
 
-<div class="logo-topo">
-  <img src="img/logofull-126.svg" alt="Logo Chapa Lanches">
-  <h1>Chapa Lanches</h1>
-</div>
+  <p>Nosso magnífico cardápio</p>
 
-<p>Nosso magnífico cardápio</p>
+  <div class="topo-info">
+    <div><strong>WhatsApp:</strong> (15) 99617-9172</div>
+    <div><strong>Horário:</strong> Quarta a domingo 19h às 22h30</div>
+  </div>
 
-<div class="topo-info">
-  <div><strong>WhatsApp:</strong> (15) 99617-9172</div>
-  <div><strong>Horário:</strong> Quarta e quinta 19h às 23h | Sexta e sábado 19h às 24h | Domingo 19h às 23h</div>
-</div>
-
-<div id="statusLoja" class="status-loja fechado">
-  🔴 Fechado no momento
-</div>
-
+  <div id="statusLoja" class="status-loja fechado">
+    🔴 Fechado no momento
+  </div>
 </header>
 
-  <main class="container">
+<main class="container">
 
-    <section class="secao">
-      <h2>Hot Dog</h2>
-      <div class="grid">
+  <section class="secao">
+    <h2>Hot Dog</h2>
+    <div class="grid">
 
-        <div class="item">
-          <div class="codigo">01</div>
-          <h3>Simples</h3>
-          <p>Salsicha, maionese, batata palha, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 13,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Simples%20-%20R$%2013,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Simples', 13)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">02</div>
-          <h3>Duplo</h3>
-          <p>2 salsichas, catupiry ou cheddar ou mussarela, maionese, batata palha, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 16,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Duplo%20-%20R$%2016,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Duplo', 16)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">03</div>
-          <h3>Cachorrão Três Queijo</h3>
-          <p>2 salsichas, cheddar, catupiry, mussarela, vinagrete, palha, maionese, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 17,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Cachorrão%20Três%20Queijo%20-%20R$%2017,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Cachorrão Três Queijo', 17)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">04</div>
-          <h3>Dogfrango</h3>
-          <p>2 salsichas, frango desfiado, catupiry, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 18,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Dogfrango%20-%20R$%2018,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Dogfrango', 18)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">05</div>
-          <h3>Especial</h3>
-          <p>2 salsichas, calabresa, bacon, mussarela, catupiry, maionese, batata palha, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 20,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Especial%20-%20R$%2020,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Especial', 20)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">06</div>
-          <h3>Vegetariano</h3>
-          <p>Ovo, mussarela, catupiry, maionese, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 17,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Vegetariano%20-%20R$%2017,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Vegetariano', 17)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <section class="secao">
-      <h2>Burgers</h2>
-      <div class="grid">
-
-        <div class="item">
-          <div class="codigo">07</div>
-          <h3>X-Burguer</h3>
-          <p>Hambúrguer, mussarela, maionese, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 18,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Burguer%20-%20R$%2018,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Burguer', 18)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">08</div>
-          <h3>X-Salada</h3>
-          <p>Hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 18,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Salada%20-%20R$%2018,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Salada', 18)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">09</div>
-          <h3>X-Egg</h3>
-          <p>2 ovos, hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 20,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Egg%20-%20R$%2020,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Egg', 20)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">10</div>
-          <h3>Egg Especial</h3>
-          <p>Hambúrguer, 2 ovos, catupiry, presunto, mussarela, bacon, vinagrete, alface, maionese, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 23,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Egg%20Especial%20-%20R$%2023,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Egg Especial', 23)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">11</div>
-          <h3>X-Bacon</h3>
-          <p>Bacon, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 22,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Bacon%20-%20R$%2022,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Bacon', 22)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">12</div>
-          <h3>X-Calabresa</h3>
-          <p>Calabresa, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 22,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Calabresa%20-%20R$%2022,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Calabresa', 22)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">13</div>
-          <h3>X-Frango</h3>
-          <p>Frango desfiado, catupiry ou cheddar ou mussarela, maionese, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 21,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20-%20R$%2021,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango', 21)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">14</div>
-          <h3>Frango Três Queijo</h3>
-          <p>Frango desfiado, catupiry, cheddar, mussarela, vinagrete, maionese.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 21,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Frango%20Três%20Queijo%20-%20R$%2021,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Frango Três Queijo', 21)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">15</div>
-          <h3>X-Frango Especial</h3>
-          <p>Frango desfiado, bacon ou calabresa, catupiry, maionese, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 22,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20Especial%20-%20R$%2022,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango Especial', 22)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">16</div>
-          <h3>Omelete</h3>
-          <p>Hambúrguer, ovo, calabresa, bacon, presunto, mussarela, maionese, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 23,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Omelete%20-%20R$%2023,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Omelete', 23)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">17</div>
-          <h3>O Chapeiro</h3>
-          <p>Hambúrguer, catupiry, frango desfiado, mussarela, calabresa, bacon, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 27,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20O%20Chapeiro%20-%20R$%2027,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('O Chapeiro', 27)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">18</div>
-          <h3>X-Tudo</h3>
-          <p>Salsicha, ovo, calabresa, bacon, hambúrguer, frango desfiado, mussarela, catupiry, presunto, maionese, tomate, cebola, ketchup.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 32,00</div>
-            <div class="acoes-item">
-              <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Tudo%20-%20R$%2032,00" target="_blank">Pedir direto</a>
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Tudo', 32)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-    <section class="secao">
-      <h2>Adicionais</h2>
-      <div class="extras-box lista-opcoes">
-        <div class="linha-opcao">
-          <div class="info-opcao">
-            <span>Hambúrguer</span>
-            <small>Adicional extra no lanche</small>
-          </div>
-          <div class="direita-opcao">
-            <div class="preco-opcao">R$ 5,00</div>
-            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Hambúrguer', 5)">+ Carrinho</button>
-          </div>
-        </div>
-
-        <div class="linha-opcao">
-          <div class="info-opcao">
-            <span>Catupiry / Cheddar / Mussarela</span>
-            <small>Escolha o queijo desejado</small>
-          </div>
-          <div class="direita-opcao">
-            <div class="preco-opcao">R$ 3,00</div>
-            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Catupiry / Cheddar / Mussarela', 3)">+ Carrinho</button>
-          </div>
-        </div>
-
-        <div class="linha-opcao">
-          <div class="info-opcao">
-            <span>Calabresa e Bacon</span>
-            <small>Mais sabor no seu pedido</small>
-          </div>
-          <div class="direita-opcao">
-            <div class="preco-opcao">R$ 3,00</div>
-            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Calabresa e Bacon', 3)">+ Carrinho</button>
-          </div>
-        </div>
-
-        <div class="linha-opcao">
-          <div class="info-opcao">
-            <span>Ovo e Salsicha</span>
-            <small>Adicional econômico</small>
-          </div>
-          <div class="direita-opcao">
-            <div class="preco-opcao">R$ 2,00</div>
-            <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Ovo e Salsicha', 2)">+ Carrinho</button>
+      <div class="item">
+        <div class="codigo">01</div>
+        <h3>Simples</h3>
+        <p>Salsicha, maionese, batata palha, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 13,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Simples%20-%20R$%2013,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Simples', 13)">+ Carrinho</button>
           </div>
         </div>
       </div>
-    </section>
 
-    <section class="secao">
-      <h2>Bebidas</h2>
-      <div class="grid">
-        <div class="item">
-          <div class="codigo">B01</div>
-          <h3>Coca Cola 2L</h3>
-          <p>Perfeita para acompanhar seu pedido.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 14,00</div>
-            <div class="acoes-item">
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola 2L', 14)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">B02</div>
-          <h3>Coca Cola Lata</h3>
-          <p>Bebida gelada para seu combo.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 6,00</div>
-            <div class="acoes-item">
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola Lata', 6)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">B03</div>
-          <h3>Sprite Lata</h3>
-          <p>Refrescante e leve.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 5,00</div>
-            <div class="acoes-item">
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Sprite Lata', 5)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">B04</div>
-          <h3>Fanta 2L</h3>
-          <p>Ideal para dividir com a galera.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 12,00</div>
-            <div class="acoes-item">
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta 2L', 12)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">B05</div>
-          <h3>Fanta Lata</h3>
-          <p>Sabor clássico e geladinho.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 6,00</div>
-            <div class="acoes-item">
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta Lata', 6)">+ Carrinho</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="item">
-          <div class="codigo">B06</div>
-          <h3>Guaraná Lata</h3>
-          <p>Combina muito com hambúrguer.</p>
-          <div class="rodape-item">
-            <div class="preco">R$ 5,00</div>
-            <div class="acoes-item">
-              <button class="btn btn-add" onclick="adicionarAoCarrinho('Guaraná Lata', 5)">+ Carrinho</button>
-            </div>
+      <div class="item">
+        <div class="codigo">02</div>
+        <h3>Duplo</h3>
+        <p>2 salsichas, catupiry ou cheddar ou mussarela, maionese, batata palha, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 16,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Duplo%20-%20R$%2016,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Duplo', 16)">+ Carrinho</button>
           </div>
         </div>
       </div>
-    </section>
 
-  </main>
-
-  <button class="carrinho-flutuante" onclick="abrirCarrinho()">
-    🛒 Carrinho (<span id="cartCount">0</span>)
-  </button>
-
-  <div class="modal" id="modalCarrinho">
-    <div class="modal-conteudo">
-      <div class="modal-topo">
-        <h3>Seu pedido</h3>
-        <button class="fechar" onclick="fecharCarrinho()">×</button>
+      <div class="item">
+        <div class="codigo">03</div>
+        <h3>Cachorrão Três Queijo</h3>
+        <p>2 salsichas, cheddar, catupiry, mussarela, vinagrete, palha, maionese, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 17,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Cachorrão%20Três%20Queijo%20-%20R$%2017,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Cachorrão Três Queijo', 17)">+ Carrinho</button>
+          </div>
+        </div>
       </div>
 
-      <div class="modal-corpo">
-        <div id="listaCarrinho"></div>
-
-        <div class="resumo">
-          <div class="linha-resumo">
-            <span>Itens</span>
-            <strong id="resumoItens">0</strong>
-          </div>
-
-          <div class="linha-resumo">
-            <span>Subtotal</span>
-            <strong id="resumoSubtotal">R$ 0,00</strong>
-          </div>
-
-          <div class="linha-resumo">
-            <span>Taxa de entrega</span>
-            <strong id="resumoTaxaEntrega">R$ 0,00</strong>
-          </div>
-
-          <div class="linha-resumo total">
-            <span>Total</span>
-            <strong id="resumoTotal">R$ 0,00</strong>
+      <div class="item">
+        <div class="codigo">04</div>
+        <h3>Dogfrango</h3>
+        <p>2 salsichas, frango desfiado, catupiry, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 18,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Dogfrango%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Dogfrango', 18)">+ Carrinho</button>
           </div>
         </div>
+      </div>
 
-        <div class="dados-pedido">
-          <div class="campo">
-            <label for="nomeCliente">Seu nome</label>
-            <input type="text" id="nomeCliente" placeholder="Digite seu nome">
-          </div>
-
-          <div class="campo">
-            <label for="tipoEntrega">Tipo do pedido</label>
-            <select id="tipoEntrega" onchange="atualizarEntrega()">
-              <option value="retirada">Retirada no local</option>
-              <option value="delivery">Delivery</option>
-            </select>
-          </div>
-
-          <div class="entrega-box">
-            <div class="campo" id="campoBairro" style="display: none;">
-              <label for="bairroEntrega">Bairro</label>
-              <select id="bairroEntrega" onchange="atualizarEntrega()">
-                <option value="">Selecione o bairro</option>
-                <option value="Centro">Centro</option>
-                <option value="Vila Nova">Vila Nova</option>
-                <option value="Jardim Europa">Jardim Europa</option>
-                <option value="Jardim São Luiz">Jardim São Luiz</option>
-                <option value="Outro">Outro bairro</option>
-              </select>
-            </div>
-
-            <div class="campo" id="campoEndereco" style="display: none;">
-              <label for="enderecoEntrega">Endereço</label>
-              <input type="text" id="enderecoEntrega" placeholder="Rua, número, complemento">
-            </div>
-
-            <div class="aviso-entrega" id="avisoEntrega">
-              Retirada no local sem taxa de entrega.
-            </div>
-          </div>
-
-          <div class="campo">
-            <label for="formaPagamento">Forma de pagamento</label>
-            <select id="formaPagamento">
-              <option value="">Selecione</option>
-              <option value="Dinheiro">Dinheiro</option>
-              <option value="Pix">Pix</option>
-              <option value="Cartão">Cartão</option>
-            </select>
-          </div>
-
-          <div class="campo">
-            <label for="observacoes">Observações do pedido</label>
-            <textarea id="observacoes" rows="4" placeholder="Ex.: sem cebola, tirar ketchup, enviar troco para R$ 50, etc."></textarea>
+      <div class="item">
+        <div class="codigo">05</div>
+        <h3>Especial</h3>
+        <p>2 salsichas, calabresa, bacon, mussarela, catupiry, maionese, batata palha, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 20,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Especial%20-%20R$%2020,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Especial', 20)">+ Carrinho</button>
           </div>
         </div>
+      </div>
 
-        <div class="acoes-final">
-          <button class="btn btn-limpar" onclick="limparCarrinho()">Limpar carrinho</button>
-          <button class="btn btn-finalizar" id="btnFinalizar" onclick="finalizarPedido()">Finalizar no WhatsApp</button>
+      <div class="item">
+        <div class="codigo">06</div>
+        <h3>Vegetariano</h3>
+        <p>Ovo, mussarela, catupiry, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 17,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Vegetariano%20-%20R$%2017,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Vegetariano', 17)">+ Carrinho</button>
+          </div>
         </div>
+      </div>
 
-        <div class="obs">
-          Confira o pedido antes de finalizar. Ao clicar em finalizar, o WhatsApp abrirá com a mensagem pronta.
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2>Burgers</h2>
+    <div class="grid">
+
+      <div class="item">
+        <div class="codigo">07</div>
+        <h3>X-Burguer</h3>
+        <p>Hambúrguer, mussarela, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 18,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Burguer%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Burguer', 18)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">08</div>
+        <h3>X-Salada</h3>
+        <p>Hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 18,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Salada%20-%20R$%2018,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Salada', 18)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">09</div>
+        <h3>X-Egg</h3>
+        <p>2 ovos, hambúrguer, mussarela, presunto, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 20,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Egg%20-%20R$%2020,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Egg', 20)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">10</div>
+        <h3>Egg Especial</h3>
+        <p>Hambúrguer, 2 ovos, catupiry, presunto, mussarela, bacon, vinagrete, alface, maionese, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 23,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Egg%20Especial%20-%20R$%2023,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Egg Especial', 23)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">11</div>
+        <h3>X-Bacon</h3>
+        <p>Bacon, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 22,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Bacon%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Bacon', 22)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">12</div>
+        <h3>X-Calabresa</h3>
+        <p>Calabresa, hambúrguer, mussarela, maionese, tomate, cebola, alface, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 22,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Calabresa%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Calabresa', 22)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">13</div>
+        <h3>X-Frango</h3>
+        <p>Frango desfiado, catupiry ou cheddar ou mussarela, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 21,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20-%20R$%2021,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango', 21)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">14</div>
+        <h3>Frango Três Queijo</h3>
+        <p>Frango desfiado, catupiry, cheddar, mussarela, vinagrete, maionese.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 21,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Frango%20Três%20Queijo%20-%20R$%2021,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Frango Três Queijo', 21)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">15</div>
+        <h3>X-Frango Especial</h3>
+        <p>Frango desfiado, bacon ou calabresa, catupiry, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 22,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20Especial%20-%20R$%2022,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango Especial', 22)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">16</div>
+        <h3>Omelete</h3>
+        <p>Hambúrguer, ovo, calabresa, bacon, presunto, mussarela, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 23,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Omelete%20-%20R$%2023,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Omelete', 23)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">17</div>
+        <h3>O Chapeiro</h3>
+        <p>Hambúrguer, catupiry, frango desfiado, mussarela, calabresa, bacon, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 27,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20O%20Chapeiro%20-%20R$%2027,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('O Chapeiro', 27)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">18</div>
+        <h3>X-Tudo</h3>
+        <p>Salsicha, ovo, calabresa, bacon, hambúrguer, frango desfiado, mussarela, catupiry, presunto, maionese, tomate, cebola, ketchup.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 32,00</div>
+          <div class="acoes-item">
+            <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Tudo%20-%20R$%2032,00" target="_blank">Pedir direto</a>
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Tudo', 32)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2>Adicionais</h2>
+    <div class="extras-box lista-opcoes">
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Hambúrguer</span>
+          <small>Adicional extra no lanche</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 5,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Hambúrguer', 5)">+ Carrinho</button>
+        </div>
+      </div>
+
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Catupiry / Cheddar / Mussarela</span>
+          <small>Escolha o queijo desejado</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 3,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Catupiry / Cheddar / Mussarela', 3)">+ Carrinho</button>
+        </div>
+      </div>
+
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Calabresa e Bacon</span>
+          <small>Mais sabor no seu pedido</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 3,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Calabresa e Bacon', 3)">+ Carrinho</button>
+        </div>
+      </div>
+
+      <div class="linha-opcao">
+        <div class="info-opcao">
+          <span>Ovo e Salsicha</span>
+          <small>Adicional econômico</small>
+        </div>
+        <div class="direita-opcao">
+          <div class="preco-opcao">R$ 2,00</div>
+          <button class="btn btn-add" onclick="adicionarAoCarrinho('Adicional: Ovo e Salsicha', 2)">+ Carrinho</button>
         </div>
       </div>
     </div>
+  </section>
+
+  <section class="secao">
+    <h2>Bebidas</h2>
+    <div class="grid">
+      <div class="item">
+        <div class="codigo">B01</div>
+        <h3>Coca Cola 2L</h3>
+        <p>Perfeita para acompanhar seu pedido.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 14,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola 2L', 14)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B02</div>
+        <h3>Coca Cola Lata</h3>
+        <p>Bebida gelada para seu combo.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 6,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Coca Cola Lata', 6)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B03</div>
+        <h3>Sprite Lata</h3>
+        <p>Refrescante e leve.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 5,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Sprite Lata', 5)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B04</div>
+        <h3>Fanta 2L</h3>
+        <p>Ideal para dividir com a galera.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 12,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta 2L', 12)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B05</div>
+        <h3>Fanta Lata</h3>
+        <p>Sabor clássico e geladinho.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 6,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Fanta Lata', 6)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="item">
+        <div class="codigo">B06</div>
+        <h3>Guaraná Lata</h3>
+        <p>Combina muito com hambúrguer.</p>
+        <div class="rodape-item">
+          <div class="preco">R$ 5,00</div>
+          <div class="acoes-item">
+            <button class="btn btn-add" onclick="adicionarAoCarrinho('Guaraná Lata', 5)">+ Carrinho</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<button class="carrinho-flutuante" onclick="abrirCarrinho()">
+  🛒 Carrinho (<span id="cartCount">0</span>)
+</button>
+
+<div class="modal" id="modalCarrinho">
+  <div class="modal-conteudo">
+    <div class="modal-topo">
+      <h3>Seu pedido</h3>
+      <button class="fechar" onclick="fecharCarrinho()">×</button>
+    </div>
+
+    <div class="modal-corpo">
+      <div id="listaCarrinho"></div>
+
+      <div class="resumo">
+        <div class="linha-resumo">
+          <span>Itens</span>
+          <strong id="resumoItens">0</strong>
+        </div>
+
+        <div class="linha-resumo">
+          <span>Subtotal</span>
+          <strong id="resumoSubtotal">R$ 0,00</strong>
+        </div>
+
+        <div class="linha-resumo">
+          <span>Taxa de entrega</span>
+          <strong id="resumoTaxaEntrega">R$ 0,00</strong>
+        </div>
+
+        <div class="linha-resumo total">
+          <span>Total</span>
+          <strong id="resumoTotal">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="dados-pedido">
+        <div class="campo">
+          <label for="nomeCliente">Seu nome</label>
+          <input type="text" id="nomeCliente" placeholder="Digite seu nome">
+        </div>
+
+        <div class="campo">
+          <label for="tipoEntrega">Tipo do pedido</label>
+          <select id="tipoEntrega" onchange="atualizarEntrega()">
+            <option value="retirada">Retirada no local</option>
+            <option value="delivery">Delivery</option>
+          </select>
+        </div>
+
+        <div class="entrega-box">
+          <div class="campo" id="campoEndereco" style="display: none;">
+            <label for="enderecoEntrega">Endereço completo</label>
+            <input
+              type="text"
+              id="enderecoEntrega"
+              placeholder="Rua, número, bairro, cidade"
+              onblur="calcularEntregaAutomaticamente()"
+            >
+          </div>
+
+          <div class="aviso-entrega" id="avisoEntrega">
+            Retirada no local sem taxa de entrega.
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="formaPagamento">Forma de pagamento</label>
+          <select id="formaPagamento">
+            <option value="">Selecione</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="Pix">Pix</option>
+            <option value="Cartão">Cartão</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="observacoes">Observações do pedido</label>
+          <textarea id="observacoes" rows="4" placeholder="Ex.: sem cebola, tirar ketchup, enviar troco para R$ 50, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="acoes-final">
+        <button class="btn btn-limpar" onclick="limparCarrinho()">Limpar carrinho</button>
+        <button class="btn btn-finalizar" id="btnFinalizar" onclick="finalizarPedido()">Finalizar no WhatsApp</button>
+      </div>
+
+      <div class="obs">
+        Confira o pedido antes de finalizar. Ao clicar em finalizar, o WhatsApp abrirá com a mensagem pronta.
+      </div>
+    </div>
   </div>
+</div>
 
-  <footer>
-    <p><strong>Delivery:</strong> (15) 99617-9172</p>
-    <p>Chapa Lanches © 2026</p>
-  </footer>
+<footer>
+  <p><strong>Delivery:</strong> (15) 99617-9172</p>
+  <p>Chapa Lanches © 2026</p>
+</footer>
 
-  <script>
-    const numeroWhatsapp = '5515996179172';
-    let carrinho = [];
-    let taxaEntrega = 0;
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
 
-    const taxasPorBairro = {
-      'Centro': 5,
-      'Vila Nova': 7,
-      'Jardim Europa': 8,
-      'Jardim São Luiz': 10,
-      'Outro': 12
-    };
+<script>
+  const numeroWhatsapp = '5515996179172';
+  const ENDERECO_LOJA = 'Av. Doutor A. Bernardes, Vila Gabriel, 235, Sorocaba, Brazil 18081-000';
 
-    function formatarPreco(valor) {
-      return valor.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
+  const supabaseClient = window.supabase.createClient(
+    APP_CONFIG.supabaseUrl,
+    APP_CONFIG.supabaseAnonKey
+  );
+
+  let carrinho = [];
+  let taxaEntrega = 0;
+  let distanciaEntregaKm = null;
+  let regrasEntrega = [];
+  let configuracaoLoja = null;
+
+  function formatarPreco(valor) {
+    return Number(valor || 0).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    });
+  }
+
+  function atualizarContadores() {
+    const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+    document.getElementById('cartCount').innerText = totalItens;
+  }
+
+  function adicionarAoCarrinho(nome, preco) {
+    const itemExistente = carrinho.find(item => item.nome === nome);
+
+    if (itemExistente) {
+      itemExistente.quantidade += 1;
+    } else {
+      carrinho.push({
+        nome,
+        preco,
+        quantidade: 1
       });
     }
 
-    function atualizarContadores() {
-      const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-      document.getElementById('cartCount').innerText = totalItens;
-    }
+    atualizarContadores();
+  }
 
-    function adicionarAoCarrinho(nome, preco) {
-      const itemExistente = carrinho.find(item => item.nome === nome);
+  function aumentarQuantidade(index) {
+    carrinho[index].quantidade += 1;
+    renderizarCarrinho();
+  }
 
-      if (itemExistente) {
-        itemExistente.quantidade += 1;
-      } else {
-        carrinho.push({
-          nome,
-          preco,
-          quantidade: 1
-        });
-      }
+  function diminuirQuantidade(index) {
+    carrinho[index].quantidade -= 1;
 
-      atualizarContadores();
-    }
-
-    function aumentarQuantidade(index) {
-      carrinho[index].quantidade += 1;
-      renderizarCarrinho();
-    }
-
-    function diminuirQuantidade(index) {
-      carrinho[index].quantidade -= 1;
-
-      if (carrinho[index].quantidade <= 0) {
-        carrinho.splice(index, 1);
-      }
-
-      renderizarCarrinho();
-    }
-
-    function removerItem(index) {
+    if (carrinho[index].quantidade <= 0) {
       carrinho.splice(index, 1);
-      renderizarCarrinho();
     }
 
-    function calcularSubtotal() {
-      return carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+    renderizarCarrinho();
+  }
+
+  function removerItem(index) {
+    carrinho.splice(index, 1);
+    renderizarCarrinho();
+  }
+
+  function calcularSubtotal() {
+    return carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+  }
+
+  function calcularTotal() {
+    return calcularSubtotal() + taxaEntrega;
+  }
+
+  function lojaAbertaAgora() {
+    const agora = new Date();
+    const dia = agora.getDay();
+
+    if (dia !== 0 && dia !== 3 && dia !== 4 && dia !== 5 && dia !== 6) {
+      return false;
     }
 
-    function calcularTotal() {
-      return calcularSubtotal() + taxaEntrega;
+    const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    const abre = 19 * 60;
+    const fecha = 22 * 60 + 30;
+
+    return minutosAgora >= abre && minutosAgora < fecha;
+  }
+
+  function atualizarStatusLoja() {
+    const statusLoja = document.getElementById('statusLoja');
+    const btnFinalizar = document.getElementById('btnFinalizar');
+    const aberta = lojaAbertaAgora();
+
+    if (aberta) {
+      statusLoja.classList.remove('fechado');
+      statusLoja.classList.add('aberto');
+      statusLoja.innerText = '🟢 Aberto agora';
+      btnFinalizar.disabled = false;
+    } else {
+      statusLoja.classList.remove('aberto');
+      statusLoja.classList.add('fechado');
+      statusLoja.innerText = '🔴 Fechado no momento';
+      btnFinalizar.disabled = true;
     }
+  }
 
-    function atualizarEntrega() {
-      const tipoEntrega = document.getElementById('tipoEntrega').value;
-      const bairro = document.getElementById('bairroEntrega').value;
-      const campoBairro = document.getElementById('campoBairro');
-      const campoEndereco = document.getElementById('campoEndereco');
-      const avisoEntrega = document.getElementById('avisoEntrega');
+  function atualizarEntrega() {
+    const tipoEntrega = document.getElementById('tipoEntrega').value;
+    const campoEndereco = document.getElementById('campoEndereco');
+    const avisoEntrega = document.getElementById('avisoEntrega');
 
-      if (tipoEntrega === 'delivery') {
-        campoBairro.style.display = 'grid';
-        campoEndereco.style.display = 'grid';
+    if (tipoEntrega === 'delivery') {
+      campoEndereco.style.display = 'grid';
 
-        taxaEntrega = taxasPorBairro[bairro] || 0;
-
-        if (bairro) {
-          avisoEntrega.innerText = 'Taxa de entrega para ' + bairro + ': ' + formatarPreco(taxaEntrega);
-        } else {
-          avisoEntrega.innerText = 'Selecione o bairro para calcular a taxa de entrega.';
-        }
-      } else {
-        campoBairro.style.display = 'none';
-        campoEndereco.style.display = 'none';
-        document.getElementById('bairroEntrega').value = '';
-        document.getElementById('enderecoEntrega').value = '';
+      if (!document.getElementById('enderecoEntrega').value.trim()) {
         taxaEntrega = 0;
-        avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+        distanciaEntregaKm = null;
+        avisoEntrega.innerText = 'Digite o endereço completo para calcular a distância e a taxa.';
       }
-
-      renderizarCarrinho();
+    } else {
+      campoEndereco.style.display = 'none';
+      document.getElementById('enderecoEntrega').value = '';
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
     }
 
-    function lojaAbertaAgora() {
-      const agora = new Date();
-      const dia = agora.getDay(); // 0 domingo | 1 segunda | 2 terça | 3 quarta | 4 quinta | 5 sexta | 6 sábado
-      const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    renderizarCarrinho();
+  }
 
-      let abre = null;
-      let fecha = null;
+  function renderizarCarrinho() {
+    const lista = document.getElementById('listaCarrinho');
+    const subtotal = calcularSubtotal();
+    const total = calcularTotal();
 
-      if (dia === 3 || dia === 4) {
-        abre = 19 * 60;
-        fecha = 23 * 60;
-      } else if (dia === 5 || dia === 6) {
-        abre = 19 * 60;
-        fecha = 24 * 60;
-      } else if (dia === 0) {
-        abre = 19 * 60;
-        fecha = 23 * 60;
-      } else {
-        return false;
-      }
-
-      return minutosAgora >= abre && minutosAgora < fecha;
-    }
-
-    function atualizarStatusLoja() {
-      const statusLoja = document.getElementById('statusLoja');
-      const btnFinalizar = document.getElementById('btnFinalizar');
-      const aberta = lojaAbertaAgora();
-
-      if (aberta) {
-        statusLoja.classList.remove('fechado');
-        statusLoja.classList.add('aberto');
-        statusLoja.innerText = '🟢 Aberto agora';
-        btnFinalizar.disabled = false;
-      } else {
-        statusLoja.classList.remove('aberto');
-        statusLoja.classList.add('fechado');
-        statusLoja.innerText = '🔴 Fechado no momento';
-        btnFinalizar.disabled = true;
-      }
-    }
-
-    function renderizarCarrinho() {
-      const lista = document.getElementById('listaCarrinho');
-      const subtotal = calcularSubtotal();
-      const total = calcularTotal();
-
-      if (carrinho.length === 0) {
-        lista.innerHTML = '<div class="carrinho-vazio">Seu carrinho está vazio.</div>';
-      } else {
-        lista.innerHTML = `
-          <div class="lista-carrinho">
-            ${carrinho.map((item, index) => `
-              <div class="item-carrinho">
-                <div>
-                  <strong>${item.nome}</strong>
-                  <small>${formatarPreco(item.preco)} cada</small>
-                </div>
-
-                <div class="acoes-carrinho">
-                  <div class="qtd-box">
-                    <button class="qtd-btn" onclick="diminuirQuantidade(${index})">-</button>
-                    <strong>${item.quantidade}</strong>
-                    <button class="qtd-btn" onclick="aumentarQuantidade(${index})">+</button>
-                  </div>
-                  <strong>${formatarPreco(item.preco * item.quantidade)}</strong>
-                  <button class="btn-remover" onclick="removerItem(${index})">Remover</button>
-                </div>
+    if (carrinho.length === 0) {
+      lista.innerHTML = '<div class="carrinho-vazio">Seu carrinho está vazio.</div>';
+    } else {
+      lista.innerHTML = `
+        <div class="lista-carrinho">
+          ${carrinho.map((item, index) => `
+            <div class="item-carrinho">
+              <div>
+                <strong>${item.nome}</strong>
+                <small>${formatarPreco(item.preco)} cada</small>
               </div>
-            `).join('')}
-          </div>
-        `;
+
+              <div class="acoes-carrinho">
+                <div class="qtd-box">
+                  <button class="qtd-btn" onclick="diminuirQuantidade(${index})">-</button>
+                  <strong>${item.quantidade}</strong>
+                  <button class="qtd-btn" onclick="aumentarQuantidade(${index})">+</button>
+                </div>
+                <strong>${formatarPreco(item.preco * item.quantidade)}</strong>
+                <button class="btn-remover" onclick="removerItem(${index})">Remover</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    document.getElementById('resumoItens').innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+    document.getElementById('resumoSubtotal').innerText = formatarPreco(subtotal);
+    document.getElementById('resumoTaxaEntrega').innerText = formatarPreco(taxaEntrega);
+    document.getElementById('resumoTotal').innerText = formatarPreco(total);
+
+    atualizarContadores();
+    atualizarStatusLoja();
+  }
+
+  function abrirCarrinho() {
+    renderizarCarrinho();
+    document.getElementById('modalCarrinho').classList.add('ativo');
+  }
+
+  function fecharCarrinho() {
+    document.getElementById('modalCarrinho').classList.remove('ativo');
+  }
+
+  function limparCarrinho() {
+    carrinho = [];
+    taxaEntrega = 0;
+    distanciaEntregaKm = null;
+    document.getElementById('nomeCliente').value = '';
+    document.getElementById('tipoEntrega').value = 'retirada';
+    document.getElementById('enderecoEntrega').value = '';
+    document.getElementById('formaPagamento').value = '';
+    document.getElementById('observacoes').value = '';
+    atualizarEntrega();
+    renderizarCarrinho();
+  }
+
+  async function carregarRegrasEntrega() {
+    const { data, error } = await supabaseClient
+      .from('delivery_rules')
+      .select('*')
+      .eq('active', true)
+      .order('km_min', { ascending: true });
+
+    if (error) {
+      console.error('Erro ao carregar regras de entrega:', error);
+      return;
+    }
+
+    regrasEntrega = data || [];
+  }
+
+  async function carregarConfiguracaoLoja() {
+    const { data, error } = await supabaseClient
+      .from('store_settings')
+      .select('*')
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error('Erro ao carregar configuração da loja:', error);
+      return;
+    }
+
+    configuracaoLoja = data;
+  }
+
+  async function geocodificarEndereco(endereco) {
+    const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=' + encodeURIComponent(endereco);
+
+    const resposta = await fetch(url, {
+      headers: {
+        'Accept': 'application/json'
       }
+    });
 
-      document.getElementById('resumoItens').innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-      document.getElementById('resumoSubtotal').innerText = formatarPreco(subtotal);
-      document.getElementById('resumoTaxaEntrega').innerText = formatarPreco(taxaEntrega);
-      document.getElementById('resumoTotal').innerText = formatarPreco(total);
-
-      atualizarContadores();
-      atualizarStatusLoja();
+    if (!resposta.ok) {
+      throw new Error('Falha ao consultar localização.');
     }
 
-    function abrirCarrinho() {
+    const dados = await resposta.json();
+
+    if (!dados || !dados.length) {
+      return null;
+    }
+
+    return {
+      lat: parseFloat(dados[0].lat),
+      lng: parseFloat(dados[0].lon),
+      display_name: dados[0].display_name || endereco
+    };
+  }
+
+  function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  function descobrirTaxaPorDistancia(distanciaKm) {
+    const regra = regrasEntrega.find(r => {
+      const min = Number(r.km_min);
+      const max = Number(r.km_max);
+      return distanciaKm >= min && distanciaKm <= max;
+    });
+
+    return regra ? Number(regra.fee) : null;
+  }
+
+  async function calcularEntregaAutomaticamente() {
+    const tipoEntrega = document.getElementById('tipoEntrega').value;
+    const enderecoCliente = document.getElementById('enderecoEntrega').value.trim();
+    const avisoEntrega = document.getElementById('avisoEntrega');
+
+    if (tipoEntrega !== 'delivery') {
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
       renderizarCarrinho();
-      document.getElementById('modalCarrinho').classList.add('ativo');
+      return;
     }
 
-    function fecharCarrinho() {
-      document.getElementById('modalCarrinho').classList.remove('ativo');
-    }
-
-    function limparCarrinho() {
-      carrinho = [];
+    if (!enderecoCliente) {
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      avisoEntrega.innerText = 'Digite o endereço completo para calcular a distância e a taxa.';
       renderizarCarrinho();
+      return;
     }
 
-    function finalizarPedido() {
-      if (carrinho.length === 0) {
-        alert('Seu carrinho está vazio.');
+    avisoEntrega.innerText = 'Calculando distância e taxa de entrega...';
+
+    try {
+      const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA;
+
+      const [coordenadaLoja, coordenadaCliente] = await Promise.all([
+        geocodificarEndereco(enderecoLoja),
+        geocodificarEndereco(enderecoCliente + ', Sorocaba, SP, Brasil')
+      ]);
+
+      if (!coordenadaLoja || !coordenadaCliente) {
+        taxaEntrega = 0;
+        distanciaEntregaKm = null;
+        avisoEntrega.innerText = 'Não foi possível localizar um dos endereços. Confira o endereço digitado.';
+        renderizarCarrinho();
         return;
       }
 
-      if (!lojaAbertaAgora()) {
-        alert('A loja está fechada no momento.');
+      const distancia = calcularDistanciaKm(
+        coordenadaLoja.lat,
+        coordenadaLoja.lng,
+        coordenadaCliente.lat,
+        coordenadaCliente.lng
+      );
+
+      const taxa = descobrirTaxaPorDistancia(distancia);
+
+      distanciaEntregaKm = Number(distancia.toFixed(2));
+
+      if (taxa === null) {
+        taxaEntrega = 0;
+        avisoEntrega.innerText = `Distância estimada: ${distanciaEntregaKm.toFixed(2)} km. Entrega fora da área configurada.`;
+      } else {
+        taxaEntrega = taxa;
+        avisoEntrega.innerText = `Distância estimada: ${distanciaEntregaKm.toFixed(2)} km | Taxa de entrega: ${formatarPreco(taxaEntrega)}`;
+      }
+
+      renderizarCarrinho();
+    } catch (erro) {
+      console.error(erro);
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      avisoEntrega.innerText = 'Erro ao calcular a entrega. Tente novamente em alguns segundos.';
+      renderizarCarrinho();
+    }
+  }
+
+  async function salvarPedidoNoBanco(payload) {
+    const { data, error } = await supabaseClient
+      .from('orders')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao salvar pedido:', error);
+      throw error;
+    }
+
+    return data;
+  }
+
+  async function finalizarPedido() {
+    if (carrinho.length === 0) {
+      alert('Seu carrinho está vazio.');
+      return;
+    }
+
+    if (!lojaAbertaAgora()) {
+      alert('A loja está fechada no momento.');
+      return;
+    }
+
+    const nome = document.getElementById('nomeCliente').value.trim();
+    const tipoEntrega = document.getElementById('tipoEntrega').value;
+    const endereco = document.getElementById('enderecoEntrega').value.trim();
+    const pagamento = document.getElementById('formaPagamento').value;
+    const observacoes = document.getElementById('observacoes').value.trim();
+    const avisoEntrega = document.getElementById('avisoEntrega');
+    const btnFinalizar = document.getElementById('btnFinalizar');
+
+    if (!nome) {
+      alert('Digite seu nome.');
+      return;
+    }
+
+    if (tipoEntrega === 'delivery') {
+      if (!endereco) {
+        alert('Digite o endereço de entrega.');
         return;
       }
 
-      const nome = document.getElementById('nomeCliente').value.trim();
-      const tipoEntrega = document.getElementById('tipoEntrega').value;
-      const bairro = document.getElementById('bairroEntrega').value;
-      const endereco = document.getElementById('enderecoEntrega').value.trim();
-      const pagamento = document.getElementById('formaPagamento').value;
-      const observacoes = document.getElementById('observacoes').value.trim();
-
-      if (tipoEntrega === 'delivery') {
-        if (!bairro) {
-          alert('Selecione o bairro para entrega.');
-          return;
-        }
-
-        if (!endereco) {
-          alert('Digite o endereço de entrega.');
-          return;
-        }
+      if (!distanciaEntregaKm) {
+        await calcularEntregaAutomaticamente();
       }
+
+      if (!distanciaEntregaKm) {
+        alert('Não foi possível calcular a entrega. Verifique o endereço.');
+        return;
+      }
+
+      if (taxaEntrega <= 0) {
+        alert('Esse endereço está fora da área de entrega configurada.');
+        return;
+      }
+    }
+
+    const subtotal = calcularSubtotal();
+    const total = calcularTotal();
+
+    const payload = {
+      customer_name: nome,
+      customer_phone: '',
+      order_type: tipoEntrega,
+      customer_address: tipoEntrega === 'delivery' ? endereco : null,
+      customer_neighborhood: null,
+      customer_city: 'Sorocaba',
+      customer_notes: [
+        pagamento ? `Pagamento: ${pagamento}` : '',
+        observacoes ? `Observações: ${observacoes}` : ''
+      ].filter(Boolean).join(' | '),
+      items: carrinho.map(item => ({
+        nome: item.nome,
+        preco: item.preco,
+        quantidade: item.quantidade
+      })),
+      subtotal: subtotal,
+      delivery_fee: taxaEntrega,
+      total: total,
+      delivery_distance_km: tipoEntrega === 'delivery' ? distanciaEntregaKm : null,
+      status: 'novo'
+    };
+
+    try {
+      btnFinalizar.disabled = true;
+      btnFinalizar.innerText = 'Salvando pedido...';
+
+      const pedidoSalvo = await salvarPedidoNoBanco(payload);
 
       let mensagem = '🍔 *Pedido - Chapa Lanches*%0A%0A';
-
-      if (nome) {
-        mensagem += '*Cliente:* ' + encodeURIComponent(nome) + '%0A';
-      }
-
+      mensagem += '*Pedido:* #' + pedidoSalvo.id + '%0A';
+      mensagem += '*Cliente:* ' + encodeURIComponent(nome) + '%0A';
       mensagem += '*Tipo do pedido:* ' + encodeURIComponent(tipoEntrega === 'delivery' ? 'Delivery' : 'Retirada no local') + '%0A';
 
       if (tipoEntrega === 'delivery') {
-        mensagem += '*Bairro:* ' + encodeURIComponent(bairro) + '%0A';
         mensagem += '*Endereço:* ' + encodeURIComponent(endereco) + '%0A';
+        mensagem += '*Distância estimada:* ' + encodeURIComponent(distanciaEntregaKm.toFixed(2) + ' km') + '%0A';
       }
 
       mensagem += '%0A*Itens do pedido:*%0A';
@@ -1407,9 +1601,9 @@
         mensagem += '- ' + encodeURIComponent(item.quantidade + 'x ' + item.nome + ' — ' + formatarPreco(item.preco * item.quantidade)) + '%0A';
       });
 
-      mensagem += '%0A*Subtotal:* ' + encodeURIComponent(formatarPreco(calcularSubtotal())) + '%0A';
+      mensagem += '%0A*Subtotal:* ' + encodeURIComponent(formatarPreco(subtotal)) + '%0A';
       mensagem += '*Taxa de entrega:* ' + encodeURIComponent(formatarPreco(taxaEntrega)) + '%0A';
-      mensagem += '*Total:* ' + encodeURIComponent(formatarPreco(calcularTotal())) + '%0A';
+      mensagem += '*Total:* ' + encodeURIComponent(formatarPreco(total)) + '%0A';
 
       if (pagamento) {
         mensagem += '*Pagamento:* ' + encodeURIComponent(pagamento) + '%0A';
@@ -1420,20 +1614,47 @@
       }
 
       window.open('https://wa.me/' + numeroWhatsapp + '?text=' + mensagem, '_blank');
+
+      carrinho = [];
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      document.getElementById('nomeCliente').value = '';
+      document.getElementById('tipoEntrega').value = 'retirada';
+      document.getElementById('enderecoEntrega').value = '';
+      document.getElementById('formaPagamento').value = '';
+      document.getElementById('observacoes').value = '';
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+      fecharCarrinho();
+      renderizarCarrinho();
+
+      alert('Pedido salvo com sucesso no painel!');
+    } catch (erro) {
+      alert('Erro ao salvar o pedido. Verifique a configuração do Supabase.');
+      console.error(erro);
+    } finally {
+      btnFinalizar.innerText = 'Finalizar no WhatsApp';
+      btnFinalizar.disabled = !lojaAbertaAgora();
     }
+  }
 
-    window.onclick = function(event) {
-      const modal = document.getElementById('modalCarrinho');
-      if (event.target === modal) {
-        fecharCarrinho();
-      }
-    };
+  window.onclick = function(event) {
+    const modal = document.getElementById('modalCarrinho');
+    if (event.target === modal) {
+      fecharCarrinho();
+    }
+  };
 
+  async function iniciarSistema() {
+    await carregarConfiguracaoLoja();
+    await carregarRegrasEntrega();
     atualizarContadores();
     atualizarEntrega();
     atualizarStatusLoja();
     setInterval(atualizarStatusLoja, 60000);
-  </script>
+  }
+
+  iniciarSistema();
+</script>
 
 </body>
 </html>
