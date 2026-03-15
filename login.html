@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Admin - Chapa Lanches</title>
+  <link rel="icon" href="img/logofull.svg">
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+
+  <main class="login-page">
+    <section class="login-card">
+      <div class="login-logo">
+        <img src="img/logofull-126.svg" alt="Logo Chapa Lanches">
+        <h1>Painel Admin</h1>
+        <p>Faça login para acessar o controle de pedidos</p>
+      </div>
+
+      <form id="loginForm" class="login-form" autocomplete="off">
+        <div class="form-group">
+          <label for="usuario">Usuário</label>
+          <input type="text" id="usuario" name="usuario" placeholder="Digite o usuário" required>
+        </div>
+
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <div class="senha-wrap">
+            <input type="password" id="senha" name="senha" placeholder="Digite a senha" required>
+            <button type="button" id="toggleSenha" class="toggle-senha">Mostrar</button>
+          </div>
+        </div>
+
+        <div id="mensagemLogin" class="mensagem-login"></div>
+
+        <button type="submit" class="btn-login">Entrar</button>
+      </form>
+
+      <div class="login-info">
+        <small>Acesso restrito ao administrador</small>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
