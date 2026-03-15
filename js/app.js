@@ -460,34 +460,24 @@ const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) |
     return carregandoGoogleMaps;
   }
 
-  function geocodificarComGoogle(endereco) {
-    return new Promise((resolve, reject) => {
-      if (!geocoder) {
-        reject(new Error('Geocoder não inicializado.'));
-        return;
-      }
-
-      geocoder.geocode(
-        {
-          address: endereco,
-          region: 'BR'
-        },
-        (results, status) => {
-          if (status === 'OK' && results && results.length > 0) {
-            const location = results[0].geometry.location;
-            resolve({
-              lat: location.lat(),
-              lng: location.lng(),
-              display_name: results[0].formatted_address || endereco
-            });
-            return;
-          }
-
-          resolve(null);
-        }
-      );
-    });
+async function geocodificarEnderecoProfissional(endereco) {
+  try {
+    let resultado = await geocodificarComGoogle(endereco);
+    if (resultado) return resultado;
+  } catch (erro) {
+    console.warn('Tentativa 1 falhou:', erro.message);
   }
+
+  try {
+    const enderecoSemNumero = endereco.replace(/,\s*\d+\s*,/g, ', ');
+    let resultado = await geocodificarComGoogle(enderecoSemNumero);
+    if (resultado) return resultado;
+  } catch (erro) {
+    console.warn('Tentativa 2 falhou:', erro.message);
+  }
+
+  return null;
+}
 
   async function geocodificarEnderecoProfissional(endereco) {
     let resultado = await geocodificarComGoogle(endereco);
