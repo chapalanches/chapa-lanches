@@ -6,8 +6,31 @@ const LOJA_STATUS_KEY = "chapa_loja_aberta";
 const LOJA_OVERRIDE_KEY = "chapa_loja_override";
 const LOGIN_STORAGE_KEY = "chapa_admin_logado";
 
+let supabaseClient = null;
+
+if (
+  window.supabase &&
+  window.APP_CONFIG &&
+  window.APP_CONFIG.supabaseUrl &&
+  window.APP_CONFIG.supabaseAnonKey
+) {
+  supabaseClient = window.supabase.createClient(
+    window.APP_CONFIG.supabaseUrl,
+    window.APP_CONFIG.supabaseAnonKey
+  );
+}
+
 function byId(id) {
   return document.getElementById(id);
+}
+
+function escaparHtml(texto) {
+  return String(texto ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 function obterChavePedidosUsada() {
@@ -103,69 +126,182 @@ function normalizarTipoEntrega(valor) {
   return texto || "não informado";
 }
 
-function normalizarPedido(pedido, index) {
-  const itens = Array.isArray(pedido.itens) ? pedido.itens : [];
-  const dataObj = converterDataSegura(pedido.data || pedido.criadoEm || pedido.createdAt);
+function normalizarStatus(valor) {
+  const texto = String(valor || "").toLowerCase().trim();
 
-  const totalCalculadoItens = itens.reduce((acc, item) => {
-    const quantidade = Number(item.quantidade || 1);
-    const preco = Number(item.preco || item.valor || 0);
+  if (texto === "novo") return "pendente";
+  if (texto === "pendente") return "pendente";
+  if (texto === "em preparo") return "em preparo";
+  if (texto === "em entrega") return "em entrega";
+  if (texto === "finalizado") return "finalizado";
+
+  return "pendente";
+}
+
+function extrairCampoDeNotas(notas, prefixo) {
+  if (!notas) return "";
+  const partes = String(notas).split(" | ");
+  const encontrada = partes.find(parte => parte.toLowerCase().startsWith(prefixo.toLowerCase() + ":"));
+  if (!encontrada) return "";
+  return encontrada.split(":").slice(1).join(":").trim();
+}
+
+function removerCampoDeNotas(notas, prefixos) {
+  if (!notas) return "";
+  const listaPrefixos = prefixos.map(p => p.toLowerCase());
+  const partes = String(notas)
+    .split(" | ")
+    .map(p => p.trim())
+    .filter(Boolean)
+    .filter(parte => {
+      const lower = parte.toLowerCase();
+      return !listaPrefixos.some(prefixo => lower.startsWith(prefixo + ":"));
+    });
+
+  return partes.join(" | ");
+}
+
+function normalizarPedido(pedido, index) {
+  const itensOriginais = Array.isArray(pedido.itens)
+    ? pedido.itens
+    : Array.isArray(pedido.items)
+    ? pedido.items
+    : [];
+
+  const dataObj = converterDataSegura(
+    pedido.data ||
+    pedido.criadoEm ||
+    pedido.createdAt ||
+    pedido.created_at
+  );
+
+  const totalCalculadoItens = itensOriginais.reduce((acc, item) => {
+    const quantidade = Number(item.quantidade || item.quantity || 1);
+    const preco = Number(item.preco || item.valor || item.price || 0);
     return acc + (quantidade * preco);
   }, 0);
 
   let subtotal = Number(pedido.subtotal || 0);
   if (!subtotal && totalCalculadoItens) subtotal = totalCalculadoItens;
 
-  const taxaEntrega = Number(pedido.taxaEntrega || pedido.taxa || 0);
+  const taxaEntrega = Number(
+    pedido.taxaEntrega ||
+    pedido.taxa ||
+    pedido.delivery_fee ||
+    0
+  );
+
   let total = Number(pedido.total || 0);
   if (!total) total = subtotal + taxaEntrega;
 
   const id = pedido.id || gerarId(index);
+  const customerNotes = pedido.customer_notes || "";
+  const pagamentoExtraido = extrairCampoDeNotas(customerNotes, "Pagamento");
+  const complementoExtraido = extrairCampoDeNotas(customerNotes, "Complemento");
+
+  const observacaoLimpa = removerCampoDeNotas(customerNotes, [
+    "Pagamento",
+    "Complemento",
+    "Tempo estimado"
+  ]);
+
+  const itens = itensOriginais.map(item => ({
+    nome: item.nome || item.titulo || item.name || "Item",
+    quantidade: Number(item.quantidade || item.quantity || 1),
+    preco: Number(item.preco || item.valor || item.price || 0),
+    observacao: item.observacao || item.observacoes || ""
+  }));
+
+  const tipoEntregaBruto =
+    pedido.entrega ||
+    pedido.tipoEntrega ||
+    pedido.tipo ||
+    pedido.order_type ||
+    "Não informado";
+
+  const enderecoCompleto =
+    pedido.endereco ||
+    pedido.customer_address ||
+    "";
 
   return {
     uid: gerarUidPedido({ id }, index, dataObj),
     id,
-    cliente: pedido.cliente || pedido.nome || "Cliente não informado",
-    telefone: pedido.telefone || pedido.whatsapp || "",
-    entrega: pedido.entrega || pedido.tipoEntrega || pedido.tipo || "Não informado",
-    tipoEntrega: normalizarTipoEntrega(pedido.entrega || pedido.tipoEntrega || pedido.tipo || ""),
-    endereco: pedido.endereco || "",
+    bancoId: pedido.id || null,
+    cliente: pedido.cliente || pedido.nome || pedido.customer_name || "Cliente não informado",
+    telefone: pedido.telefone || pedido.whatsapp || pedido.customer_phone || "",
+    entrega: tipoEntregaBruto,
+    tipoEntrega: normalizarTipoEntrega(tipoEntregaBruto),
+    endereco: enderecoCompleto,
     numero: pedido.numero || "",
-    bairro: pedido.bairro || "",
-    complemento: pedido.complemento || "",
-    pagamento: pedido.pagamento || pedido.formaPagamento || "Não informado",
+    bairro: pedido.bairro || pedido.customer_neighborhood || "",
+    complemento: pedido.complemento || complementoExtraido || "",
+    pagamento: pedido.pagamento || pedido.formaPagamento || pagamentoExtraido || "Não informado",
     troco: pedido.troco || "",
-    observacao: pedido.observacao || pedido.observacoes || "",
+    observacao: pedido.observacao || pedido.observacoes || observacaoLimpa || "",
     subtotal,
     taxaEntrega,
     total,
-    status: String(pedido.status || "pendente").toLowerCase(),
-    dataOriginal: pedido.data || pedido.criadoEm || pedido.createdAt || formatarDataBR(dataObj),
+    status: normalizarStatus(pedido.status),
+    dataOriginal:
+      pedido.data ||
+      pedido.criadoEm ||
+      pedido.createdAt ||
+      pedido.created_at ||
+      formatarDataBR(dataObj),
     dataObj,
     dataTexto: formatarDataBR(dataObj),
-    itens: itens.map(item => ({
-      nome: item.nome || item.titulo || "Item",
-      quantidade: Number(item.quantidade || 1),
-      preco: Number(item.preco || item.valor || 0),
-      observacao: item.observacao || ""
-    }))
+    itens
   };
 }
 
-function carregarPedidos() {
-  const dados = obterPedidosStorage();
-  const pedidosBrutos = Array.isArray(dados.pedidos) ? dados.pedidos : [];
+async function buscarPedidosDoBanco() {
+  if (!supabaseClient) return null;
 
-  const quantidadeAnterior = ultimaQuantidadePedidos;
-  pedidos = pedidosBrutos.map((pedido, index) => normalizarPedido(pedido, index));
+  const { data, error } = await supabaseClient
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  if (quantidadeAnterior > 0 && pedidos.length > quantidadeAnterior) {
-    tocarNotificacaoNovoPedido();
+  if (error) {
+    console.error("Erro ao buscar pedidos no Supabase:", error);
+    throw error;
   }
 
-  ultimaQuantidadePedidos = pedidos.length;
-  atualizarResumo();
-  renderizarQuadro();
+  return Array.isArray(data) ? data : [];
+}
+
+async function carregarPedidos() {
+  try {
+    let pedidosBrutos = [];
+
+    if (supabaseClient) {
+      pedidosBrutos = await buscarPedidosDoBanco();
+    } else {
+      const dados = obterPedidosStorage();
+      pedidosBrutos = Array.isArray(dados.pedidos) ? dados.pedidos : [];
+    }
+
+    const quantidadeAnterior = ultimaQuantidadePedidos;
+    pedidos = pedidosBrutos.map((pedido, index) => normalizarPedido(pedido, index));
+
+    if (quantidadeAnterior > 0 && pedidos.length > quantidadeAnterior) {
+      tocarNotificacaoNovoPedido();
+    }
+
+    ultimaQuantidadePedidos = pedidos.length;
+    atualizarResumo();
+    renderizarQuadro();
+  } catch (erro) {
+    console.error("Falha ao carregar pedidos:", erro);
+
+    const dados = obterPedidosStorage();
+    const pedidosBrutos = Array.isArray(dados.pedidos) ? dados.pedidos : [];
+    pedidos = pedidosBrutos.map((pedido, index) => normalizarPedido(pedido, index));
+
+    atualizarResumo();
+    renderizarQuadro();
+  }
 }
 
 function atualizarResumo() {
@@ -281,11 +417,11 @@ function criarItensHtml(pedido) {
   return pedido.itens.map(item => `
     <div class="item-row">
       <div class="item-row-top">
-        <span>${item.quantidade}x ${item.nome}</span>
+        <span>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</span>
         <span>${formatarMoeda(item.preco * item.quantidade)}</span>
       </div>
       <small>Unitário: ${formatarMoeda(item.preco)}</small>
-      ${item.observacao ? `<small>Obs.: ${item.observacao}</small>` : ""}
+      ${item.observacao ? `<small>Obs.: ${escaparHtml(item.observacao)}</small>` : ""}
     </div>
   `).join("");
 }
@@ -321,13 +457,13 @@ function criarCardPedido(pedido) {
       <div class="order-top">
         <div class="order-header-row">
           <div>
-            <div class="order-id">${pedido.id}</div>
-            <div class="order-customer">${pedido.cliente}</div>
+            <div class="order-id">${escaparHtml(pedido.id)}</div>
+            <div class="order-customer">${escaparHtml(pedido.cliente)}</div>
           </div>
         </div>
 
         <div class="order-meta">
-          <span class="badge badge-time">${tempoDecorridoTexto(pedido.dataObj)}</span>
+          <span class="badge badge-time">${escaparHtml(tempoDecorridoTexto(pedido.dataObj))}</span>
           ${novo ? `<span class="badge badge-new">Novo pedido</span>` : ""}
           ${atrasado ? `<span class="badge badge-delay">Atenção</span>` : ""}
         </div>
@@ -336,19 +472,19 @@ function criarCardPedido(pedido) {
       <div class="order-body">
         <div class="mini-block">
           <h4>Informações</h4>
-          <div class="line"><strong>Hora:</strong> ${formatarHora(pedido.dataObj)}</div>
-          <div class="line"><strong>Entrega:</strong> ${pedido.entrega}</div>
-          <div class="line"><strong>Pagamento:</strong> ${pedido.pagamento}</div>
-          <div class="line"><strong>Telefone:</strong> ${pedido.telefone || "Não informado"}</div>
-          ${pedido.troco ? `<div class="line"><strong>Troco:</strong> ${pedido.troco}</div>` : ""}
+          <div class="line"><strong>Hora:</strong> ${escaparHtml(formatarHora(pedido.dataObj))}</div>
+          <div class="line"><strong>Entrega:</strong> ${escaparHtml(pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada")}</div>
+          <div class="line"><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</div>
+          <div class="line"><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "Não informado")}</div>
+          ${pedido.troco ? `<div class="line"><strong>Troco:</strong> ${escaparHtml(pedido.troco)}</div>` : ""}
         </div>
 
         <div class="mini-block">
           <h4>Endereço</h4>
-          <div class="line"><strong>Rua:</strong> ${pedido.endereco || "Não informado"}</div>
-          <div class="line"><strong>Número:</strong> ${pedido.numero || "-"}</div>
-          <div class="line"><strong>Bairro:</strong> ${pedido.bairro || "-"}</div>
-          <div class="line"><strong>Comp.:</strong> ${pedido.complemento || "-"}</div>
+          <div class="line"><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "Não informado")}</div>
+          <div class="line"><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</div>
+          <div class="line"><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</div>
+          <div class="line"><strong>Comp.:</strong> ${escaparHtml(pedido.complemento || "-")}</div>
         </div>
 
         <div class="mini-block">
@@ -363,7 +499,7 @@ function criarCardPedido(pedido) {
           <div class="line"><strong>Subtotal:</strong> ${formatarMoeda(pedido.subtotal)}</div>
           <div class="line"><strong>Taxa:</strong> ${formatarMoeda(pedido.taxaEntrega)}</div>
           <div class="line"><strong>Total:</strong> ${formatarMoeda(pedido.total)}</div>
-          <div class="line"><strong>Obs.:</strong> ${pedido.observacao || "-"}</div>
+          <div class="line"><strong>Obs.:</strong> ${escaparHtml(pedido.observacao || "-")}</div>
         </div>
       </div>
 
@@ -414,40 +550,88 @@ function renderizarQuadro() {
   renderizarColuna("colFinalizado", finalizados);
 }
 
-function alterarStatus(indice, novoStatus) {
-  if (indice < 0 || indice >= pedidos.length) return;
+async function alterarStatusNoBanco(pedido, novoStatus) {
+  if (!supabaseClient || !pedido || !pedido.bancoId) return false;
 
-  pedidos[indice].status = novoStatus;
-  salvarPedidosStorage();
-  atualizarResumo();
-  renderizarQuadro();
+  const { error } = await supabaseClient
+    .from("orders")
+    .update({ status: novoStatus })
+    .eq("id", pedido.bancoId);
+
+  if (error) {
+    console.error("Erro ao atualizar status no Supabase:", error);
+    throw error;
+  }
+
+  return true;
 }
 
-function excluirPedido(indice) {
+async function alterarStatus(indice, novoStatus) {
+  if (indice < 0 || indice >= pedidos.length) return;
+
+  try {
+    const pedido = pedidos[indice];
+    const statusNormalizado = normalizarStatus(novoStatus);
+
+    if (supabaseClient && pedido.bancoId) {
+      await alterarStatusNoBanco(pedido, statusNormalizado);
+      await carregarPedidos();
+      return;
+    }
+
+    pedidos[indice].status = statusNormalizado;
+    salvarPedidosStorage();
+    atualizarResumo();
+    renderizarQuadro();
+  } catch (erro) {
+    console.error(erro);
+    alert("Não foi possível atualizar o status do pedido.");
+  }
+}
+
+async function excluirPedidoNoBanco(pedido) {
+  if (!supabaseClient || !pedido || !pedido.bancoId) return false;
+
+  const { error } = await supabaseClient
+    .from("orders")
+    .delete()
+    .eq("id", pedido.bancoId);
+
+  if (error) {
+    console.error("Erro ao excluir pedido no Supabase:", error);
+    throw error;
+  }
+
+  return true;
+}
+
+async function excluirPedido(indice) {
   if (indice < 0 || indice >= pedidos.length) return;
 
   const confirmar = confirm("Deseja realmente excluir este pedido?");
   if (!confirmar) return;
 
-  pedidos.splice(indice, 1);
-  salvarPedidosStorage();
-  atualizarResumo();
-  renderizarQuadro();
+  try {
+    const pedido = pedidos[indice];
+
+    if (supabaseClient && pedido.bancoId) {
+      await excluirPedidoNoBanco(pedido);
+      await carregarPedidos();
+      return;
+    }
+
+    pedidos.splice(indice, 1);
+    salvarPedidosStorage();
+    atualizarResumo();
+    renderizarQuadro();
+  } catch (erro) {
+    console.error(erro);
+    alert("Não foi possível excluir o pedido.");
+  }
 }
 
 function limparTodosPedidos() {
-  if (!pedidos.length) {
-    alert("Não há pedidos para apagar.");
-    return;
-  }
-
-  const confirmar = confirm("Tem certeza que deseja apagar TODOS os pedidos?");
-  if (!confirmar) return;
-
-  pedidos = [];
-  salvarPedidosStorage();
-  atualizarResumo();
-  renderizarQuadro();
+  alert("Para evitar apagar tudo sem querer no banco, use o botão Excluir em cada pedido.");
 }
 
 function exportarPedidos() {
@@ -484,7 +668,7 @@ function imprimirPedido(uidPedido) {
     <html>
       <head>
         <meta charset="UTF-8">
-        <title>Impressão - ${pedido.id}</title>
+        <title>Impressão - ${escaparHtml(pedido.id)}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 24px; color: #000; }
           h1 { margin-bottom: 10px; }
@@ -496,27 +680,27 @@ function imprimirPedido(uidPedido) {
       </head>
       <body>
         <h1>Chapa Lanches</h1>
-        <p><strong>Pedido:</strong> ${pedido.id}</p>
-        <p><strong>Cliente:</strong> ${pedido.cliente}</p>
-        <p><strong>Telefone:</strong> ${pedido.telefone || "-"}</p>
-        <p><strong>Hora:</strong> ${pedido.dataTexto}</p>
-        <p><strong>Entrega:</strong> ${pedido.entrega}</p>
-        <p><strong>Pagamento:</strong> ${pedido.pagamento}</p>
-        <p><strong>Troco:</strong> ${pedido.troco || "-"}</p>
+        <p><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</p>
+        <p><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</p>
+        <p><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "-")}</p>
+        <p><strong>Hora:</strong> ${escaparHtml(pedido.dataTexto)}</p>
+        <p><strong>Entrega:</strong> ${escaparHtml(pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada")}</p>
+        <p><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</p>
+        <p><strong>Troco:</strong> ${escaparHtml(pedido.troco || "-")}</p>
 
         <h2>Endereço</h2>
-        <p><strong>Rua:</strong> ${pedido.endereco || "-"}</p>
-        <p><strong>Número:</strong> ${pedido.numero || "-"}</p>
-        <p><strong>Bairro:</strong> ${pedido.bairro || "-"}</p>
-        <p><strong>Complemento:</strong> ${pedido.complemento || "-"}</p>
+        <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
+        <p><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</p>
+        <p><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</p>
+        <p><strong>Complemento:</strong> ${escaparHtml(pedido.complemento || "-")}</p>
 
         <h2>Itens</h2>
         ${pedido.itens.map(item => `
           <div class="item">
-            <p><strong>${item.quantidade}x ${item.nome}</strong></p>
+            <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
             <p>Unitário: ${formatarMoeda(item.preco)}</p>
             <p>Total item: ${formatarMoeda(item.preco * item.quantidade)}</p>
-            ${item.observacao ? `<p>Obs.: ${item.observacao}</p>` : ""}
+            ${item.observacao ? `<p>Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
           </div>
         `).join("")}
 
@@ -526,7 +710,7 @@ function imprimirPedido(uidPedido) {
         <p class="total">Total: ${formatarMoeda(pedido.total)}</p>
 
         <h2>Observação</h2>
-        <p>${pedido.observacao || "-"}</p>
+        <p>${escaparHtml(pedido.observacao || "-")}</p>
 
         <script>
           window.onload = function() {
@@ -548,7 +732,7 @@ function copiarPedido(uidPedido) {
 Pedido ${pedido.id}
 Cliente: ${pedido.cliente}
 Telefone: ${pedido.telefone || "-"}
-Entrega: ${pedido.entrega}
+Entrega: ${pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"}
 Endereço: ${pedido.endereco || "-"}, ${pedido.numero || "-"} - ${pedido.bairro || "-"} ${pedido.complemento ? "- " + pedido.complemento : ""}
 Pagamento: ${pedido.pagamento}
 Troco: ${pedido.troco || "-"}
@@ -685,6 +869,7 @@ const ordenacao = byId("ordenacao");
 if (btnAtualizar) btnAtualizar.addEventListener("click", carregarPedidos);
 if (btnExportar) btnExportar.addEventListener("click", exportarPedidos);
 if (btnLimparTudo) btnLimparTudo.addEventListener("click", limparTodosPedidos);
+
 if (btnToggleLoja) {
   btnToggleLoja.addEventListener("click", alternarStatusLoja);
   btnToggleLoja.addEventListener("contextmenu", function (event) {
@@ -694,6 +879,7 @@ if (btnToggleLoja) {
     removerOverrideLoja();
   });
 }
+
 if (btnSair) btnSair.addEventListener("click", sairDoPainel);
 
 if (buscaPedido) buscaPedido.addEventListener("input", renderizarQuadro);
@@ -705,6 +891,12 @@ window.addEventListener("storage", () => {
   carregarPedidos();
   carregarStatusLoja();
 });
+
+window.alterarStatus = alterarStatus;
+window.excluirPedido = excluirPedido;
+window.abrirWhatsapp = abrirWhatsapp;
+window.imprimirPedido = imprimirPedido;
+window.copiarPedido = copiarPedido;
 
 carregarStatusLoja();
 carregarPedidos();
