@@ -822,7 +822,7 @@ async function finalizarPedido() {
 *Observações:* ${observacoes}`;
     }
 
-    const emojiUrl = '%F0%9F%8D%94%20';
+    const emojiUrl = '🍔';
     const textoWhatsapp = emojiUrl + encodeURIComponent(mensagem);
 
     window.open(
