@@ -1,78 +1,75 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel Admin - Chapa Lanches</title>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Painel de Pedidos - Chapa Lanches</title>
-
-<link rel="icon" href="img/logofull.svg">
-<link rel="stylesheet" href="css/style.css">
-
+  <link rel="icon" href="img/logofull.svg">
+  <link rel="stylesheet" href="css/admin.css">
 </head>
-
 <body>
 
-<header>
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <img src="img/logofull-126.svg" alt="Logo Chapa Lanches">
+        <span>Painel Admin</span>
+      </div>
 
-<div class="header-container">
+      <div class="top-actions">
+        <button class="btn btn-yellow" id="btnAtualizar">Atualizar</button>
+        <button class="btn btn-blue" id="btnExportar">Exportar JSON</button>
+        <button class="btn btn-red" id="btnLimparTudo">Limpar Tudo</button>
+      </div>
+    </div>
+  </header>
 
-<div class="logo">
-<img src="img/logofull-126.svg">
-<span>Painel - Chapa Lanches</span>
-</div>
+  <main class="container">
+    <h1 class="titulo">Pedidos</h1>
 
-</div>
+    <section class="stats-grid">
+      <div class="stat-card">
+        <p>Total</p>
+        <strong id="totalPedidos">0</strong>
+      </div>
 
-</header>
+      <div class="stat-card">
+        <p>Pendentes</p>
+        <strong id="totalPendentes">0</strong>
+      </div>
 
-<div class="container">
+      <div class="stat-card">
+        <p>Em preparo</p>
+        <strong id="totalPreparo">0</strong>
+      </div>
 
-<h1 class="titulo">Painel de Pedidos</h1>
+      <div class="stat-card">
+        <p>Em entrega</p>
+        <strong id="totalEntrega">0</strong>
+      </div>
 
-<div class="grid-cardapio" style="margin-bottom:25px;">
+      <div class="stat-card">
+        <p>Finalizados</p>
+        <strong id="totalFinalizados">0</strong>
+      </div>
+    </section>
 
-<div class="card">
-<h3>Total de pedidos</h3>
-<div class="preco" id="total-pedidos">0</div>
-</div>
+    <section class="filtros">
+      <input type="text" id="buscaPedido" placeholder="Buscar por cliente, telefone, bairro, entrega...">
+      
+      <select id="filtroStatus">
+        <option value="">Todos os status</option>
+        <option value="pendente">Pendente</option>
+        <option value="em preparo">Em preparo</option>
+        <option value="em entrega">Em entrega</option>
+        <option value="finalizado">Finalizado</option>
+      </select>
+    </section>
 
-<div class="card">
-<h3>Pedidos hoje</h3>
-<div class="preco" id="total-hoje">0</div>
-</div>
+    <section id="listaPedidos" class="lista-pedidos"></section>
+  </main>
 
-<div class="card">
-<h3>Faturamento hoje</h3>
-<div class="preco" id="faturamento-hoje">R$ 0,00</div>
-</div>
-
-</div>
-
-<button
-id="btn-limpar-pedidos"
-class="btn-whatsapp"
-style="max-width:300px;margin-bottom:25px;"
->
-Limpar todos os pedidos
-</button>
-
-<h2 style="margin-bottom:15px;">Pedidos recebidos</h2>
-
-<div id="pedidos-container" class="admin-pedidos">
-
-<div class="pedido">
-<h4>Nenhum pedido ainda</h4>
-<p>Quando os pedidos chegarem eles aparecerão aqui.</p>
-</div>
-
-</div>
-
-</div>
-
-<script src="js/admin.js"></script>
-
+  <script src="js/admin.js"></script>
 </body>
 </html>
