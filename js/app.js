@@ -35,11 +35,6 @@ let regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
 let configuracaoLoja = null;
 let timeoutCalculoEntrega = null;
 
-let googleMapsReady = false;
-let geocoder = null;
-let distanceMatrixService = null;
-let carregandoGoogleMaps = null;
-
 function formatarPreco(valor) {
   return Number(valor || 0).toLocaleString('pt-BR', {
     style: 'currency',
@@ -125,8 +120,12 @@ function enderecoClienteTextoHumano() {
 }
 
 async function buscarCepEntrega() {
-  const cep = somenteNumeros(document.getElementById('cepEntrega').value);
+  const campoCep = document.getElementById('cepEntrega');
   const avisoEntrega = document.getElementById('avisoEntrega');
+
+  if (!campoCep || !avisoEntrega) return;
+
+  const cep = somenteNumeros(campoCep.value);
 
   if (cep.length !== 8) return;
 
@@ -163,7 +162,10 @@ async function buscarCepEntrega() {
 
 function atualizarContadores() {
   const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-  document.getElementById('cartCount').innerText = totalItens;
+  const cartCount = document.getElementById('cartCount');
+  if (cartCount) {
+    cartCount.innerText = totalItens;
+  }
 }
 
 function adicionarAoCarrinho(nome, preco) {
@@ -230,16 +232,20 @@ function atualizarStatusLoja() {
   const btnFinalizar = document.getElementById('btnFinalizar');
   const aberta = lojaAbertaAgora();
 
-  if (aberta) {
-    statusLoja.classList.remove('fechado');
-    statusLoja.classList.add('aberto');
-    statusLoja.innerText = '🟢 Aberto agora';
-    btnFinalizar.disabled = false;
-  } else {
-    statusLoja.classList.remove('aberto');
-    statusLoja.classList.add('fechado');
-    statusLoja.innerText = '🔴 Fechado no momento';
-    btnFinalizar.disabled = true;
+  if (statusLoja) {
+    if (aberta) {
+      statusLoja.classList.remove('fechado');
+      statusLoja.classList.add('aberto');
+      statusLoja.innerText = '🟢 Aberto agora';
+    } else {
+      statusLoja.classList.remove('aberto');
+      statusLoja.classList.add('fechado');
+      statusLoja.innerText = '🔴 Fechado no momento';
+    }
+  }
+
+  if (btnFinalizar) {
+    btnFinalizar.disabled = !aberta;
   }
 }
 
@@ -249,7 +255,9 @@ function atualizarEntrega() {
   const avisoEntrega = document.getElementById('avisoEntrega');
 
   if (tipoEntrega === 'delivery') {
-    camposEntrega.style.display = 'grid';
+    if (camposEntrega) {
+      camposEntrega.style.display = 'grid';
+    }
 
     const rua = document.getElementById('ruaEntrega').value.trim();
     const numero = document.getElementById('numeroEntrega').value.trim();
@@ -260,12 +268,17 @@ function atualizarEntrega() {
       taxaEntrega = 0;
       distanciaEntregaKm = null;
       tempoEntregaTexto = null;
-      avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+      if (avisoEntrega) {
+        avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+      }
     } else {
       agendarCalculoEntrega();
     }
   } else {
-    camposEntrega.style.display = 'none';
+    if (camposEntrega) {
+      camposEntrega.style.display = 'none';
+    }
+
     document.getElementById('cepEntrega').value = '';
     document.getElementById('ruaEntrega').value = '';
     document.getElementById('numeroEntrega').value = '';
@@ -275,7 +288,10 @@ function atualizarEntrega() {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
-    avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    }
   }
 
   renderizarCarrinho();
@@ -286,36 +302,54 @@ function renderizarCarrinho() {
   const subtotal = calcularSubtotal();
   const total = calcularTotal();
 
-  if (carrinho.length === 0) {
-    lista.innerHTML = '<div class="carrinho-vazio">Seu carrinho está vazio.</div>';
-  } else {
-    lista.innerHTML = `
-      <div class="lista-carrinho">
-        ${carrinho.map((item, index) => `
-          <div class="item-carrinho">
-            <div>
-              <strong>${item.nome}</strong>
-              <small>${formatarPreco(item.preco)} cada</small>
-            </div>
-            <div class="acoes-carrinho">
-              <div class="qtd-box">
-                <button class="qtd-btn" onclick="diminuirQuantidade(${index})">-</button>
-                <strong>${item.quantidade}</strong>
-                <button class="qtd-btn" onclick="aumentarQuantidade(${index})">+</button>
+  if (lista) {
+    if (carrinho.length === 0) {
+      lista.innerHTML = '<div class="carrinho-vazio">Seu carrinho está vazio.</div>';
+    } else {
+      lista.innerHTML = `
+        <div class="lista-carrinho">
+          ${carrinho.map((item, index) => `
+            <div class="item-carrinho">
+              <div>
+                <strong>${item.nome}</strong>
+                <small>${formatarPreco(item.preco)} cada</small>
               </div>
-              <strong>${formatarPreco(item.preco * item.quantidade)}</strong>
-              <button class="btn-remover" onclick="removerItem(${index})">Remover</button>
+              <div class="acoes-carrinho">
+                <div class="qtd-box">
+                  <button class="qtd-btn" onclick="diminuirQuantidade(${index})">-</button>
+                  <strong>${item.quantidade}</strong>
+                  <button class="qtd-btn" onclick="aumentarQuantidade(${index})">+</button>
+                </div>
+                <strong>${formatarPreco(item.preco * item.quantidade)}</strong>
+                <button class="btn-remover" onclick="removerItem(${index})">Remover</button>
+              </div>
             </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
+          `).join('')}
+        </div>
+      `;
+    }
   }
 
-  document.getElementById('resumoItens').innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-  document.getElementById('resumoSubtotal').innerText = formatarPreco(subtotal);
-  document.getElementById('resumoTaxaEntrega').innerText = formatarPreco(taxaEntrega);
-  document.getElementById('resumoTotal').innerText = formatarPreco(total);
+  const resumoItens = document.getElementById('resumoItens');
+  const resumoSubtotal = document.getElementById('resumoSubtotal');
+  const resumoTaxaEntrega = document.getElementById('resumoTaxaEntrega');
+  const resumoTotal = document.getElementById('resumoTotal');
+
+  if (resumoItens) {
+    resumoItens.innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+  }
+
+  if (resumoSubtotal) {
+    resumoSubtotal.innerText = formatarPreco(subtotal);
+  }
+
+  if (resumoTaxaEntrega) {
+    resumoTaxaEntrega.innerText = formatarPreco(taxaEntrega);
+  }
+
+  if (resumoTotal) {
+    resumoTotal.innerText = formatarPreco(total);
+  }
 
   atualizarContadores();
   atualizarStatusLoja();
@@ -323,11 +357,17 @@ function renderizarCarrinho() {
 
 function abrirCarrinho() {
   renderizarCarrinho();
-  document.getElementById('modalCarrinho').classList.add('ativo');
+  const modal = document.getElementById('modalCarrinho');
+  if (modal) {
+    modal.classList.add('ativo');
+  }
 }
 
 function fecharCarrinho() {
-  document.getElementById('modalCarrinho').classList.remove('ativo');
+  const modal = document.getElementById('modalCarrinho');
+  if (modal) {
+    modal.classList.remove('ativo');
+  }
 }
 
 function limparCarrinho() {
@@ -418,83 +458,35 @@ async function carregarConfiguracaoLoja() {
   }
 }
 
-function carregarGoogleMapsScript() {
-  if (googleMapsReady && window.google && window.google.maps) {
-    return Promise.resolve();
-  }
+async function geocodificarEnderecoOpenStreetMap(endereco) {
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
 
-  if (carregandoGoogleMaps) {
-    return carregandoGoogleMaps;
-  }
-
-  carregandoGoogleMaps = new Promise((resolve, reject) => {
-    if (!window.APP_CONFIG || !window.APP_CONFIG.googleMapsApiKey) {
-      reject(new Error('Google Maps API Key não configurada no config.js.'));
-      return;
+  const resposta = await fetch(url, {
+    headers: {
+      'Accept': 'application/json'
     }
-
-    if (window.google && window.google.maps) {
-      googleMapsReady = true;
-      geocoder = new google.maps.Geocoder();
-      distanceMatrixService = new google.maps.DistanceMatrixService();
-      resolve();
-      return;
-    }
-
-    window.__initGoogleMapsDelivery = function () {
-      googleMapsReady = true;
-      geocoder = new google.maps.Geocoder();
-      distanceMatrixService = new google.maps.DistanceMatrixService();
-      resolve();
-    };
-
-    const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${window.APP_CONFIG.googleMapsApiKey}&libraries=places&callback=__initGoogleMapsDelivery`;
-    script.async = true;
-    script.defer = true;
-    script.onerror = function () {
-      reject(new Error('Erro ao carregar Google Maps.'));
-    };
-    document.head.appendChild(script);
   });
 
-  return carregandoGoogleMaps;
-}
+  if (!resposta.ok) {
+    throw new Error('Erro ao consultar geocodificação no OpenStreetMap.');
+  }
 
-function geocodificarComGoogle(endereco) {
-  return new Promise((resolve, reject) => {
-    if (!geocoder) {
-      reject(new Error('Geocoder não inicializado.'));
-      return;
-    }
+  const dados = await resposta.json();
 
-    geocoder.geocode(
-      {
-        address: endereco,
-        region: 'BR'
-      },
-      (results, status) => {
-        if (status === 'OK' && results && results.length > 0) {
-          const location = results[0].geometry.location;
+  if (!Array.isArray(dados) || dados.length === 0) {
+    return null;
+  }
 
-          resolve({
-            lat: location.lat(),
-            lng: location.lng(),
-            display_name: results[0].formatted_address || endereco
-          });
-          return;
-        }
-
-        console.warn('Falha ao geocodificar endereço:', status, endereco);
-        resolve(null);
-      }
-    );
-  });
+  return {
+    lat: Number(dados[0].lat),
+    lng: Number(dados[0].lon),
+    display_name: dados[0].display_name || endereco
+  };
 }
 
 async function geocodificarEnderecoProfissional(endereco) {
   try {
-    let resultado = await geocodificarComGoogle(endereco);
+    let resultado = await geocodificarEnderecoOpenStreetMap(endereco);
     if (resultado) return resultado;
   } catch (erro) {
     console.warn('Tentativa 1 falhou:', erro.message);
@@ -502,7 +494,7 @@ async function geocodificarEnderecoProfissional(endereco) {
 
   try {
     const enderecoSemNumero = endereco.replace(/,\s*\d+\s*,/g, ', ');
-    let resultado = await geocodificarComGoogle(enderecoSemNumero);
+    let resultado = await geocodificarEnderecoOpenStreetMap(enderecoSemNumero);
     if (resultado) return resultado;
   } catch (erro) {
     console.warn('Tentativa 2 falhou:', erro.message);
@@ -511,45 +503,46 @@ async function geocodificarEnderecoProfissional(endereco) {
   return null;
 }
 
-function calcularRotaRealGoogle(origem, destino) {
-  return new Promise((resolve, reject) => {
-    if (!distanceMatrixService) {
-      reject(new Error('Distance Matrix não inicializado.'));
-      return;
-    }
+async function calcularRotaRealOSRM(origem, destino) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${origem.lng},${origem.lat};${destino.lng},${destino.lat}?overview=false&steps=false`;
 
-    distanceMatrixService.getDistanceMatrix(
-      {
-        origins: [origem],
-        destinations: [destino],
-        travelMode: google.maps.TravelMode.DRIVING,
-        unitSystem: google.maps.UnitSystem.METRIC,
-        region: 'BR',
-        avoidHighways: false,
-        avoidTolls: false
-      },
-      (response, status) => {
-        if (status !== 'OK' || !response || !response.rows || !response.rows.length) {
-          reject(new Error('Não foi possível calcular a rota.'));
-          return;
-        }
+  const resposta = await fetch(url);
 
-        const elemento = response.rows[0].elements[0];
+  if (!resposta.ok) {
+    throw new Error('Erro ao calcular rota no OSRM.');
+  }
 
-        if (!elemento || elemento.status !== 'OK') {
-          reject(new Error('Rota não encontrada para este endereço.'));
-          return;
-        }
+  const dados = await resposta.json();
 
-        resolve({
-          distanciaMetros: elemento.distance.value,
-          distanciaTexto: elemento.distance.text,
-          duracaoSegundos: elemento.duration.value,
-          duracaoTexto: elemento.duration.text
-        });
-      }
-    );
-  });
+  if (!dados || dados.code !== 'Ok' || !dados.routes || !dados.routes.length) {
+    throw new Error('Não foi possível calcular a rota.');
+  }
+
+  const rota = dados.routes[0];
+
+  return {
+    distanciaMetros: rota.distance,
+    distanciaTexto: `${(rota.distance / 1000).toFixed(2)} km`,
+    duracaoSegundos: rota.duration,
+    duracaoTexto: formatarDuracao(rota.duration)
+  };
+}
+
+function formatarDuracao(segundos) {
+  const totalMin = Math.round(Number(segundos || 0) / 60);
+
+  if (totalMin < 60) {
+    return `${totalMin} min`;
+  }
+
+  const horas = Math.floor(totalMin / 60);
+  const minutos = totalMin % 60;
+
+  if (minutos === 0) {
+    return `${horas}h`;
+  }
+
+  return `${horas}h ${minutos}min`;
 }
 
 function descobrirTaxaPorDistancia(distanciaKm) {
@@ -584,7 +577,9 @@ async function calcularEntregaAutomaticamente() {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
-    avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    }
     renderizarCarrinho();
     return;
   }
@@ -599,16 +594,18 @@ async function calcularEntregaAutomaticamente() {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
-    avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+    }
     renderizarCarrinho();
     return;
   }
 
-  avisoEntrega.innerText = 'Calculando rota real e taxa de entrega...';
+  if (avisoEntrega) {
+    avisoEntrega.innerText = 'Calculando rota real e taxa de entrega...';
+  }
 
   try {
-    await carregarGoogleMapsScript();
-
     const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO;
     const enderecoCliente = montarEnderecoCompletoCliente();
 
@@ -630,30 +627,33 @@ async function calcularEntregaAutomaticamente() {
       taxaEntrega = 0;
       distanciaEntregaKm = null;
       tempoEntregaTexto = null;
-      avisoEntrega.innerText = 'Não foi possível localizar o endereço. Confira os dados digitados.';
+      if (avisoEntrega) {
+        avisoEntrega.innerText = 'Não foi possível localizar o endereço. Confira os dados digitados.';
+      }
       renderizarCarrinho();
       return;
     }
 
-    const rota = await calcularRotaRealGoogle(
-      new google.maps.LatLng(coordenadaLoja.lat, coordenadaLoja.lng),
-      new google.maps.LatLng(coordenadaCliente.lat, coordenadaCliente.lng)
-    );
+    const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
 
     distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
     tempoEntregaTexto = rota.duracaoTexto || null;
     taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
 
-    avisoEntrega.innerText =
-      `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
+    if (avisoEntrega) {
+      avisoEntrega.innerText =
+        `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
+    }
 
     renderizarCarrinho();
   } catch (erro) {
-    console.error('Erro ao calcular entrega profissional:', erro);
+    console.error('Erro ao calcular entrega:', erro);
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
-    avisoEntrega.innerText = 'Erro ao calcular a entrega. Verifique a chave do Google Maps e o endereço.';
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Erro ao calcular a entrega. Tente novamente em instantes.';
+    }
     renderizarCarrinho();
   }
 }
@@ -757,8 +757,10 @@ async function finalizarPedido() {
   };
 
   try {
-    btnFinalizar.disabled = true;
-    btnFinalizar.innerText = 'Salvando pedido...';
+    if (btnFinalizar) {
+      btnFinalizar.disabled = true;
+      btnFinalizar.innerText = 'Salvando pedido...';
+    }
 
     const pedidoSalvo = await salvarPedidoNoBanco(payload);
 
@@ -810,7 +812,9 @@ async function finalizarPedido() {
     document.getElementById('complementoEntrega').value = '';
     document.getElementById('formaPagamento').value = '';
     document.getElementById('observacoes').value = '';
-    avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    }
     fecharCarrinho();
     renderizarCarrinho();
 
@@ -819,8 +823,10 @@ async function finalizarPedido() {
     alert('Erro ao salvar o pedido. Verifique a configuração do Supabase.');
     console.error(erro);
   } finally {
-    btnFinalizar.innerText = 'Finalizar no WhatsApp';
-    btnFinalizar.disabled = !lojaAbertaAgora();
+    if (btnFinalizar) {
+      btnFinalizar.innerText = 'Finalizar no WhatsApp';
+      btnFinalizar.disabled = !lojaAbertaAgora();
+    }
   }
 }
 
@@ -841,12 +847,7 @@ async function iniciarSistema() {
   atualizarStatusLoja();
   setInterval(atualizarStatusLoja, 60000);
 
-  try {
-    await carregarGoogleMapsScript();
-    console.log('Google Maps carregado com sucesso.');
-  } catch (erro) {
-    console.error('Google Maps não carregado:', erro);
-  }
+  console.log('Sistema iniciado com OpenStreetMap + OSRM.');
 }
 
 iniciarSistema();
