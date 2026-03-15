@@ -1,143 +1,263 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Chapa Lanches</title>
-
-<link rel="icon" href="img/logofull.svg">
-<link rel="stylesheet" href="css/style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chapa Lanches</title>
+  <link rel="icon" href="img/logofull.svg">
+  <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
 
-<header>
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <img src="img/logofull-126.svg" alt="Chapa Lanches">
+        <span>Chapa Lanches</span>
+      </div>
 
-<div class="header-container">
+      <div id="status-loja" class="status-loja fechado">Fechado</div>
+    </div>
+  </header>
 
-<div class="logo">
-<img src="img/logofull-126.svg">
-<span>Chapa Lanches</span>
-</div>
+  <main>
+    <section class="hero">
+      <div class="container hero-container">
+        <div class="hero-texto">
+          <p class="hero-tag">Delivery • Retirada • Pedido rápido</p>
+          <h1>Os melhores lanches da cidade, feitos na chapa e com muito sabor.</h1>
+          <p class="hero-subtexto">
+            Monte seu pedido, escolha retirada ou delivery e envie direto pelo WhatsApp.
+          </p>
 
-<div id="status-loja" class="status-loja fechado">
-Fechado
-</div>
+          <div class="hero-acoes">
+            <a href="#cardapio" class="btn-hero">Ver cardápio</a>
+            <a href="#pedido" class="btn-hero btn-hero-outline">Fazer pedido</a>
+          </div>
+        </div>
 
-</div>
+        <div class="hero-box">
+          <div class="hero-card">
+            <h3>Pedido fácil</h3>
+            <p>Escolha os itens, preencha os dados e envie em poucos cliques.</p>
+          </div>
 
-</header>
+          <div class="hero-card">
+            <h3>Taxa automática</h3>
+            <p>O sistema calcula a taxa conforme a distância informada.</p>
+          </div>
 
-<div class="container">
+          <div class="hero-card">
+            <h3>Loja em tempo real</h3>
+            <p>O status de aberto ou fechado aparece automaticamente.</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<h1 class="titulo">Cardápio</h1>
+    <section class="container" id="cardapio">
+      <h2 class="titulo">Cardápio</h2>
+      <p class="subtitulo">
+        Escolha seus favoritos e monte seu pedido.
+      </p>
 
-<div class="grid-cardapio">
+      <div class="categoria-bloco">
+        <h3 class="categoria-titulo">Lanches</h3>
 
-<div class="card">
-<h3>X-Burguer</h3>
-<p>Pão, hambúrguer, queijo e molho especial</p>
-<div class="preco">R$ 18,00</div>
-<button class="btn-add" data-nome="X-Burguer" data-preco="18">Adicionar</button>
-</div>
+        <div class="grid-cardapio">
+          <div class="card">
+            <h3>X-Burguer</h3>
+            <p>Pão, hambúrguer, queijo e molho especial.</p>
+            <div class="preco">R$ 18,00</div>
+            <button class="btn-add" data-nome="X-Burguer" data-preco="18">Adicionar</button>
+          </div>
 
-<div class="card">
-<h3>X-Salada</h3>
-<p>Pão, hambúrguer, queijo, alface e tomate</p>
-<div class="preco">R$ 20,00</div>
-<button class="btn-add" data-nome="X-Salada" data-preco="20">Adicionar</button>
-</div>
+          <div class="card">
+            <h3>X-Salada</h3>
+            <p>Pão, hambúrguer, queijo, alface, tomate e molho.</p>
+            <div class="preco">R$ 20,00</div>
+            <button class="btn-add" data-nome="X-Salada" data-preco="20">Adicionar</button>
+          </div>
 
-<div class="card">
-<h3>X-Bacon</h3>
-<p>Pão, hambúrguer, queijo, bacon crocante</p>
-<div class="preco">R$ 23,00</div>
-<button class="btn-add" data-nome="X-Bacon" data-preco="23">Adicionar</button>
-</div>
+          <div class="card">
+            <h3>X-Bacon</h3>
+            <p>Pão, hambúrguer, queijo e bacon crocante.</p>
+            <div class="preco">R$ 23,00</div>
+            <button class="btn-add" data-nome="X-Bacon" data-preco="23">Adicionar</button>
+          </div>
 
-<div class="card">
-<h3>Batata Frita</h3>
-<p>Porção de batata frita crocante</p>
-<div class="preco">R$ 15,00</div>
-<button class="btn-add" data-nome="Batata Frita" data-preco="15">Adicionar</button>
-</div>
+          <div class="card">
+            <h3>X-Tudo</h3>
+            <p>Pão, hambúrguer, queijo, presunto, bacon, ovo, alface e tomate.</p>
+            <div class="preco">R$ 28,00</div>
+            <button class="btn-add" data-nome="X-Tudo" data-preco="28">Adicionar</button>
+          </div>
+        </div>
+      </div>
 
-<div class="card">
-<h3>Coca-Cola 2L</h3>
-<p>Refrigerante Coca-Cola 2 Litros</p>
-<div class="preco">R$ 12,00</div>
-<button class="btn-add" data-nome="Coca-Cola 2L" data-preco="12">Adicionar</button>
-</div>
+      <div class="categoria-bloco">
+        <h3 class="categoria-titulo">Porções</h3>
 
-</div>
+        <div class="grid-cardapio">
+          <div class="card">
+            <h3>Batata Frita P</h3>
+            <p>Porção pequena de batata frita crocante.</p>
+            <div class="preco">R$ 12,00</div>
+            <button class="btn-add" data-nome="Batata Frita P" data-preco="12">Adicionar</button>
+          </div>
 
+          <div class="card">
+            <h3>Batata Frita G</h3>
+            <p>Porção grande de batata frita crocante.</p>
+            <div class="preco">R$ 18,00</div>
+            <button class="btn-add" data-nome="Batata Frita G" data-preco="18">Adicionar</button>
+          </div>
 
-<div class="carrinho">
+          <div class="card">
+            <h3>Calabresa Acebolada</h3>
+            <p>Porção de calabresa acebolada na chapa.</p>
+            <div class="preco">R$ 22,00</div>
+            <button class="btn-add" data-nome="Calabresa Acebolada" data-preco="22">Adicionar</button>
+          </div>
+        </div>
+      </div>
 
-<h2>Seu Pedido</h2>
+      <div class="categoria-bloco">
+        <h3 class="categoria-titulo">Bebidas</h3>
 
-<div id="lista-carrinho"></div>
+        <div class="grid-cardapio">
+          <div class="card">
+            <h3>Coca-Cola Lata</h3>
+            <p>Refrigerante Coca-Cola lata 350ml.</p>
+            <div class="preco">R$ 6,00</div>
+            <button class="btn-add" data-nome="Coca-Cola Lata" data-preco="6">Adicionar</button>
+          </div>
 
-<div class="total">
-Subtotal: <span id="subtotal">R$ 0,00</span>
-</div>
+          <div class="card">
+            <h3>Coca-Cola 2L</h3>
+            <p>Refrigerante Coca-Cola 2 litros.</p>
+            <div class="preco">R$ 12,00</div>
+            <button class="btn-add" data-nome="Coca-Cola 2L" data-preco="12">Adicionar</button>
+          </div>
 
-<div class="total">
-Taxa de entrega: <span id="taxa-entrega">R$ 0,00</span>
-</div>
+          <div class="card">
+            <h3>Guaraná 2L</h3>
+            <p>Refrigerante Guaraná 2 litros.</p>
+            <div class="preco">R$ 11,00</div>
+            <button class="btn-add" data-nome="Guaraná 2L" data-preco="11">Adicionar</button>
+          </div>
 
-<div class="total">
-Total: <span id="total">R$ 0,00</span>
-</div>
+          <div class="card">
+            <h3>Água</h3>
+            <p>Água gelada sem gás.</p>
+            <div class="preco">R$ 3,50</div>
+            <button class="btn-add" data-nome="Água" data-preco="3.5">Adicionar</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<div class="form">
+    <section class="container" id="pedido">
+      <div class="carrinho">
+        <h2>Seu Pedido</h2>
+        <p class="subtitulo-carrinho">
+          Confira os itens escolhidos e finalize pelo WhatsApp.
+        </p>
 
-<input id="nome" type="text" placeholder="Seu nome">
+        <div id="lista-carrinho"></div>
 
-<select id="tipo-entrega">
-<option value="retirada">Retirar no local</option>
-<option value="delivery">Delivery</option>
-</select>
+        <div class="resumo-valores">
+          <div class="total">
+            <span>Subtotal:</span>
+            <span id="subtotal">R$ 0,00</span>
+          </div>
 
-<div class="campo-delivery">
-<input id="endereco" type="text" placeholder="Rua">
-</div>
+          <div class="total">
+            <span>Taxa de entrega:</span>
+            <span id="taxa-entrega">R$ 0,00</span>
+          </div>
 
-<div class="campo-delivery">
-<input id="numero" type="text" placeholder="Número">
-</div>
+          <div class="total total-geral">
+            <span>Total:</span>
+            <span id="total">R$ 0,00</span>
+          </div>
+        </div>
 
-<div class="campo-delivery">
-<input id="bairro" type="text" placeholder="Bairro">
-</div>
+        <div class="form">
+          <input id="nome" type="text" placeholder="Seu nome">
 
-<div class="campo-delivery">
-<input id="referencia" type="text" placeholder="Referência">
-</div>
+          <select id="tipo-entrega">
+            <option value="retirada">Retirar no local</option>
+            <option value="delivery">Delivery</option>
+          </select>
 
-<div class="campo-delivery">
-<input id="distancia" type="number" step="0.1" placeholder="Distância (km)">
-</div>
+          <div class="campo-delivery">
+            <input id="endereco" type="text" placeholder="Rua / Avenida">
+          </div>
 
-<input id="pagamento" type="text" placeholder="Forma de pagamento">
+          <div class="form-linha">
+            <div class="campo-delivery">
+              <input id="numero" type="text" placeholder="Número">
+            </div>
 
-<input id="observacao" type="text" placeholder="Observação do pedido">
+            <div class="campo-delivery">
+              <input id="bairro" type="text" placeholder="Bairro">
+            </div>
+          </div>
 
-<button id="btn-whatsapp" class="btn-whatsapp">
-Enviar pedido pelo WhatsApp
-</button>
+          <div class="campo-delivery">
+            <input id="referencia" type="text" placeholder="Ponto de referência">
+          </div>
 
-</div>
+          <div class="campo-delivery">
+            <input id="distancia" type="number" step="0.1" placeholder="Distância em km">
+          </div>
 
-</div>
+          <input id="pagamento" type="text" placeholder="Forma de pagamento (dinheiro, pix, cartão...)">
 
-</div>
+          <input id="observacao" type="text" placeholder="Observação do pedido">
 
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
+          <button id="btn-whatsapp" class="btn-whatsapp">
+            Enviar pedido pelo WhatsApp
+          </button>
+        </div>
+      </div>
+    </section>
 
+    <section class="container info-loja">
+      <div class="info-grid">
+        <div class="info-card">
+          <h3>Horário</h3>
+          <p>Consulte acima se a loja está aberta agora.</p>
+        </div>
+
+        <div class="info-card">
+          <h3>Retirada</h3>
+          <p>Peça pelo site e retire direto no balcão.</p>
+        </div>
+
+        <div class="info-card">
+          <h3>Delivery</h3>
+          <p>Informe seu endereço e calcule a taxa de entrega.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="container rodape-container">
+      <div>
+        <strong>Chapa Lanches</strong>
+        <p>Lanches, porções e bebidas com pedido rápido pelo WhatsApp.</p>
+      </div>
+
+      <div>
+        <p>Desenvolvido para atendimento simples e rápido.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
