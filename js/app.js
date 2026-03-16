@@ -793,7 +793,7 @@ async function finalizarPedido() {
 
     const pedidoSalvo = await salvarPedidoNoBanco(payload);
 
-    let mensagem = `*Pedido - ${nomeLoja}*
+    let mensagem = `*Pedido 🍔 - ${nomeLoja}*
 
 *Pedido:* #${pedidoSalvo.id}
 *Cliente:* ${nome}
@@ -835,8 +835,7 @@ async function finalizarPedido() {
 *Observações:* ${observacoes}`;
     }
 
-    const mensagemFinal = `🍔 ${mensagem}`;
-    const textoWhatsapp = encodeURIComponent(mensagemFinal);
+    const textoWhatsapp = encodeURIComponent(mensagem);
     const urlWhatsapp = `https://wa.me/${numeroWhatsapp}?text=${textoWhatsapp}`;
 
     carrinho = [];
