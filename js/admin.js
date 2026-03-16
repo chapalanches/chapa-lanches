@@ -5,6 +5,7 @@ const STORAGE_KEYS = ["pedidos", "chapa_pedidos", "pedidos_chapa"];
 const LOJA_STATUS_KEY = "chapa_loja_aberta";
 const LOJA_OVERRIDE_KEY = "chapa_loja_override";
 const LOGIN_STORAGE_KEY = "chapa_admin_logado";
+const TABELA_PEDIDOS = "orders";
 
 let supabaseClient = null;
 let realtimeChannel = null;
@@ -122,7 +123,7 @@ function formatarMoeda(valor) {
 }
 
 function normalizarTipoEntrega(valor) {
-  const texto = String(valor || "").toLowerCase();
+  const texto = String(valor || "").toLowerCase().trim();
 
   if (texto.includes("retirada")) return "retirada";
   if (texto.includes("delivery")) return "delivery";
@@ -132,13 +133,21 @@ function normalizarTipoEntrega(valor) {
 }
 
 function normalizarStatus(valor) {
-  const texto = String(valor || "").toLowerCase().trim();
+  const texto = String(valor || "")
+    .toLowerCase()
+    .trim()
+    .replace(/_/g, " ");
 
   if (texto === "novo") return "pendente";
   if (texto === "pendente") return "pendente";
   if (texto === "em preparo") return "em preparo";
+  if (texto === "preparo") return "em preparo";
   if (texto === "em entrega") return "em entrega";
+  if (texto === "entrega") return "em entrega";
   if (texto === "finalizado") return "finalizado";
+  if (texto === "finalizado ") return "finalizado";
+  if (texto === "concluido") return "finalizado";
+  if (texto === "concluído") return "finalizado";
 
   return "pendente";
 }
@@ -195,7 +204,14 @@ function normalizarPedido(pedido, index) {
   let total = Number(pedido.total || 0);
   if (!total) total = subtotal + taxaEntrega;
 
-  const id = pedido.id || gerarId(index);
+  const bancoIdNormalizado =
+    pedido.bancoId ??
+    pedido.id ??
+    pedido.uuid ??
+    pedido.order_id ??
+    pedido.orderId ??
+    null;
+
   const customerNotes = pedido.customer_notes || "";
   const pagamentoExtraido = extrairCampoDeNotas(customerNotes, "Pagamento");
   const complementoExtraido = extrairCampoDeNotas(customerNotes, "Complemento");
@@ -220,31 +236,38 @@ function normalizarPedido(pedido, index) {
     pedido.order_type ||
     "Não informado";
 
-  const enderecoCompleto = pedido.endereco || pedido.customer_address || "";
+  const enderecoCompleto =
+    pedido.endereco || pedido.customer_address || "";
 
-  const bancoIdNormalizado =
-    pedido.bancoId ??
-    pedido.id ??
-    pedido.uuid ??
-    pedido.order_id ??
-    pedido.orderId ??
-    null;
+  const idExibicao =
+    pedido.codigo ||
+    pedido.code ||
+    pedido.order_code ||
+    `PED-${String(bancoIdNormalizado ?? index + 1).padStart(4, "0")}`;
 
   return {
-    uid: gerarUidPedido({ id }, index, dataObj),
-    id,
-    bancoId: bancoIdNormalizado,
+    uid: gerarUidPedido({ id: bancoIdNormalizado || idExibicao }, index, dataObj),
+    id: idExibicao,
+    bancoId:
+      bancoIdNormalizado !== null && bancoIdNormalizado !== undefined
+        ? Number(bancoIdNormalizado)
+        : null,
     cliente:
       pedido.cliente ||
       pedido.nome ||
       pedido.customer_name ||
       "Cliente não informado",
-    telefone: pedido.telefone || pedido.whatsapp || pedido.customer_phone || "",
+    telefone:
+      pedido.telefone ||
+      pedido.whatsapp ||
+      pedido.customer_phone ||
+      "",
     entrega: tipoEntregaBruto,
     tipoEntrega: normalizarTipoEntrega(tipoEntregaBruto),
     endereco: enderecoCompleto,
     numero: pedido.numero || "",
     bairro: pedido.bairro || pedido.customer_neighborhood || "",
+    cidade: pedido.cidade || pedido.customer_city || "",
     complemento: pedido.complemento || complementoExtraido || "",
     pagamento:
       pedido.pagamento ||
@@ -257,6 +280,7 @@ function normalizarPedido(pedido, index) {
     subtotal,
     taxaEntrega,
     total,
+    distanciaKm: Number(pedido.delivery_distance_km || 0),
     status: normalizarStatus(pedido.status),
     dataOriginal:
       pedido.data ||
@@ -291,7 +315,7 @@ async function buscarPedidosDoBanco() {
   if (!supabaseClient) return null;
 
   const { data, error } = await supabaseClient
-    .from("orders")
+    .from(TABELA_PEDIDOS)
     .select("*")
     .order("created_at", { ascending: false });
 
@@ -402,6 +426,7 @@ function obterPedidosFiltrados() {
   const filtrados = pedidos.filter((pedido) => {
     const texto = `
       ${pedido.id}
+      ${pedido.bancoId}
       ${pedido.cliente}
       ${pedido.telefone}
       ${pedido.entrega}
@@ -409,6 +434,7 @@ function obterPedidosFiltrados() {
       ${pedido.endereco}
       ${pedido.numero}
       ${pedido.bairro}
+      ${pedido.cidade}
       ${pedido.complemento}
       ${pedido.pagamento}
       ${pedido.observacao}
@@ -556,6 +582,7 @@ function criarCardPedido(pedido) {
           <div class="line"><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "Não informado")}</div>
           <div class="line"><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</div>
           <div class="line"><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</div>
+          <div class="line"><strong>Cidade:</strong> ${escaparHtml(pedido.cidade || "-")}</div>
           <div class="line"><strong>Comp.:</strong> ${escaparHtml(pedido.complemento || "-")}</div>
         </div>
 
@@ -640,16 +667,42 @@ function atualizarContadoresTempo() {
 }
 
 async function alterarStatusNoBanco(pedido, novoStatus) {
-  if (!supabaseClient || !pedido || !pedido.bancoId) return false;
+  if (!supabaseClient) {
+    throw new Error("Supabase não configurado.");
+  }
 
-  const { error } = await supabaseClient
-    .from("orders")
-    .update({ status: novoStatus })
-    .eq("id", pedido.bancoId);
+  if (!pedido) {
+    throw new Error("Pedido inválido para atualização.");
+  }
+
+  if (pedido.bancoId === null || pedido.bancoId === undefined || Number.isNaN(Number(pedido.bancoId))) {
+    throw new Error("Pedido sem ID válido no banco.");
+  }
+
+  const statusNormalizado = normalizarStatus(novoStatus);
+
+  console.log("Atualizando status no banco:", {
+    tabela: TABELA_PEDIDOS,
+    bancoId: pedido.bancoId,
+    statusEnviado: statusNormalizado,
+    pedido
+  });
+
+  const { data, error } = await supabaseClient
+    .from(TABELA_PEDIDOS)
+    .update({ status: statusNormalizado })
+    .eq("id", Number(pedido.bancoId))
+    .select();
+
+  console.log("Retorno update status:", { data, error });
 
   if (error) {
     console.error("Erro ao atualizar status no Supabase:", error);
     throw error;
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error("Nenhuma linha foi atualizada. Verifique RLS/policies ou o ID do pedido.");
   }
 
   return true;
@@ -662,7 +715,7 @@ async function alterarStatus(indice, novoStatus) {
     const pedido = pedidos[indice];
     const statusNormalizado = normalizarStatus(novoStatus);
 
-    if (supabaseClient && pedido.bancoId) {
+    if (supabaseClient) {
       await alterarStatusNoBanco(pedido, statusNormalizado);
       await carregarPedidos();
       return;
@@ -673,18 +726,36 @@ async function alterarStatus(indice, novoStatus) {
     atualizarResumo();
     renderizarQuadro();
   } catch (erro) {
-    console.error(erro);
+    console.error("Falha ao alterar status:", erro);
     alert("Não foi possível atualizar o status do pedido.");
   }
 }
 
 async function excluirPedidoNoBanco(pedido) {
-  if (!supabaseClient || !pedido || !pedido.bancoId) return false;
+  if (!supabaseClient) {
+    throw new Error("Supabase não configurado.");
+  }
+
+  if (!pedido) {
+    throw new Error("Pedido inválido para exclusão.");
+  }
+
+  if (pedido.bancoId === null || pedido.bancoId === undefined || Number.isNaN(Number(pedido.bancoId))) {
+    throw new Error("Pedido sem ID válido no banco.");
+  }
+
+  console.log("Excluindo pedido no banco:", {
+    tabela: TABELA_PEDIDOS,
+    bancoId: pedido.bancoId,
+    pedido
+  });
 
   const { error } = await supabaseClient
-    .from("orders")
+    .from(TABELA_PEDIDOS)
     .delete()
-    .eq("id", pedido.bancoId);
+    .eq("id", Number(pedido.bancoId));
+
+  console.log("Retorno delete pedido:", { error });
 
   if (error) {
     console.error("Erro ao excluir pedido no Supabase:", error);
@@ -708,7 +779,7 @@ async function excluirPedido(indice) {
   }
 
   try {
-    if (supabaseClient && pedido.bancoId) {
+    if (supabaseClient) {
       await excluirPedidoNoBanco(pedido);
       await carregarPedidos();
       return;
@@ -719,7 +790,7 @@ async function excluirPedido(indice) {
     atualizarResumo();
     renderizarQuadro();
   } catch (erro) {
-    console.error(erro);
+    console.error("Falha ao excluir pedido:", erro);
     alert("Não foi possível excluir o pedido.");
   }
 }
@@ -836,6 +907,7 @@ function imprimirPedidoCompleto(uidPedido) {
       <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
       <p><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</p>
       <p><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</p>
+      <p><strong>Cidade:</strong> ${escaparHtml(pedido.cidade || "-")}</p>
       <p><strong>Complemento:</strong> ${escaparHtml(pedido.complemento || "-")}</p>
 
       <h2>Itens</h2>
@@ -1104,7 +1176,7 @@ function iniciarRealtimeSupabase() {
         {
           event: "*",
           schema: "public",
-          table: "orders"
+          table: TABELA_PEDIDOS
         },
         async (payload) => {
           console.log("Mudança recebida do Supabase:", payload);
