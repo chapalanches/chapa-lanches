@@ -701,12 +701,9 @@ async function excluirPedido(indice) {
   if (!pedido) return;
 
   const identificador = pedido.id || pedido.bancoId || `pedido ${indice + 1}`;
-  const confirmacaoTexto = prompt(
-    `Exclusão segura\n\nDigite EXCLUIR para remover o pedido ${identificador}:`
-  );
+  const confirmar = confirm(`Deseja realmente excluir o pedido ${identificador}?`);
 
-  if (confirmacaoTexto !== "EXCLUIR") {
-    alert("Exclusão cancelada.");
+  if (!confirmar) {
     return;
   }
 
