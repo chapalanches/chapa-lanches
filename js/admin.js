@@ -7,6 +7,9 @@ const LOJA_OVERRIDE_KEY = "chapa_loja_override";
 const LOGIN_STORAGE_KEY = "chapa_admin_logado";
 
 let supabaseClient = null;
+let realtimeChannel = null;
+let carregandoPedidos = false;
+let ultimoHashPedidos = "";
 
 if (
   window.supabase &&
@@ -86,7 +89,9 @@ function converterDataSegura(valor) {
   if (!isNaN(dataDireta.getTime())) return dataDireta;
 
   if (typeof valor === "string") {
-    const partes = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/);
+    const partes = valor.match(
+      /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
+    );
     if (partes) {
       const dia = Number(partes[1]);
       const mes = Number(partes[2]) - 1;
@@ -141,21 +146,23 @@ function normalizarStatus(valor) {
 function extrairCampoDeNotas(notas, prefixo) {
   if (!notas) return "";
   const partes = String(notas).split(" | ");
-  const encontrada = partes.find(parte => parte.toLowerCase().startsWith(prefixo.toLowerCase() + ":"));
+  const encontrada = partes.find((parte) =>
+    parte.toLowerCase().startsWith(prefixo.toLowerCase() + ":")
+  );
   if (!encontrada) return "";
   return encontrada.split(":").slice(1).join(":").trim();
 }
 
 function removerCampoDeNotas(notas, prefixos) {
   if (!notas) return "";
-  const listaPrefixos = prefixos.map(p => p.toLowerCase());
+  const listaPrefixos = prefixos.map((p) => p.toLowerCase());
   const partes = String(notas)
     .split(" | ")
-    .map(p => p.trim())
+    .map((p) => p.trim())
     .filter(Boolean)
-    .filter(parte => {
+    .filter((parte) => {
       const lower = parte.toLowerCase();
-      return !listaPrefixos.some(prefixo => lower.startsWith(prefixo + ":"));
+      return !listaPrefixos.some((prefixo) => lower.startsWith(prefixo + ":"));
     });
 
   return partes.join(" | ");
@@ -169,26 +176,20 @@ function normalizarPedido(pedido, index) {
     : [];
 
   const dataObj = converterDataSegura(
-    pedido.data ||
-    pedido.criadoEm ||
-    pedido.createdAt ||
-    pedido.created_at
+    pedido.data || pedido.criadoEm || pedido.createdAt || pedido.created_at
   );
 
   const totalCalculadoItens = itensOriginais.reduce((acc, item) => {
     const quantidade = Number(item.quantidade || item.quantity || 1);
     const preco = Number(item.preco || item.valor || item.price || 0);
-    return acc + (quantidade * preco);
+    return acc + quantidade * preco;
   }, 0);
 
   let subtotal = Number(pedido.subtotal || 0);
   if (!subtotal && totalCalculadoItens) subtotal = totalCalculadoItens;
 
   const taxaEntrega = Number(
-    pedido.taxaEntrega ||
-    pedido.taxa ||
-    pedido.delivery_fee ||
-    0
+    pedido.taxaEntrega || pedido.taxa || pedido.delivery_fee || 0
   );
 
   let total = Number(pedido.total || 0);
@@ -205,7 +206,7 @@ function normalizarPedido(pedido, index) {
     "Tempo estimado"
   ]);
 
-  const itens = itensOriginais.map(item => ({
+  const itens = itensOriginais.map((item) => ({
     nome: item.nome || item.titulo || item.name || "Item",
     quantidade: Number(item.quantidade || item.quantity || 1),
     preco: Number(item.preco || item.valor || item.price || 0),
@@ -219,16 +220,25 @@ function normalizarPedido(pedido, index) {
     pedido.order_type ||
     "Não informado";
 
-  const enderecoCompleto =
-    pedido.endereco ||
-    pedido.customer_address ||
-    "";
+  const enderecoCompleto = pedido.endereco || pedido.customer_address || "";
+
+  const bancoIdNormalizado =
+    pedido.bancoId ??
+    pedido.id ??
+    pedido.uuid ??
+    pedido.order_id ??
+    pedido.orderId ??
+    null;
 
   return {
     uid: gerarUidPedido({ id }, index, dataObj),
     id,
-    bancoId: pedido.id || null,
-    cliente: pedido.cliente || pedido.nome || pedido.customer_name || "Cliente não informado",
+    bancoId: bancoIdNormalizado,
+    cliente:
+      pedido.cliente ||
+      pedido.nome ||
+      pedido.customer_name ||
+      "Cliente não informado",
     telefone: pedido.telefone || pedido.whatsapp || pedido.customer_phone || "",
     entrega: tipoEntregaBruto,
     tipoEntrega: normalizarTipoEntrega(tipoEntregaBruto),
@@ -236,9 +246,14 @@ function normalizarPedido(pedido, index) {
     numero: pedido.numero || "",
     bairro: pedido.bairro || pedido.customer_neighborhood || "",
     complemento: pedido.complemento || complementoExtraido || "",
-    pagamento: pedido.pagamento || pedido.formaPagamento || pagamentoExtraido || "Não informado",
+    pagamento:
+      pedido.pagamento ||
+      pedido.formaPagamento ||
+      pagamentoExtraido ||
+      "Não informado",
     troco: pedido.troco || "",
-    observacao: pedido.observacao || pedido.observacoes || observacaoLimpa || "",
+    observacao:
+      pedido.observacao || pedido.observacoes || observacaoLimpa || "",
     subtotal,
     taxaEntrega,
     total,
@@ -253,6 +268,23 @@ function normalizarPedido(pedido, index) {
     dataTexto: formatarDataBR(dataObj),
     itens
   };
+}
+
+function gerarHashPedidos(lista) {
+  try {
+    return JSON.stringify(
+      lista.map((p) => ({
+        uid: p.uid,
+        bancoId: p.bancoId,
+        id: p.id,
+        status: p.status,
+        total: p.total,
+        data: p.dataTexto
+      }))
+    );
+  } catch (e) {
+    return String(Date.now());
+  }
 }
 
 async function buscarPedidosDoBanco() {
@@ -271,7 +303,10 @@ async function buscarPedidosDoBanco() {
   return Array.isArray(data) ? data : [];
 }
 
-async function carregarPedidos() {
+async function carregarPedidos(forcarSomNovoPedido = false) {
+  if (carregandoPedidos) return;
+  carregandoPedidos = true;
+
   try {
     let pedidosBrutos = [];
 
@@ -283,40 +318,67 @@ async function carregarPedidos() {
     }
 
     const quantidadeAnterior = ultimaQuantidadePedidos;
-    pedidos = pedidosBrutos.map((pedido, index) => normalizarPedido(pedido, index));
+    const pedidosNormalizados = pedidosBrutos.map((pedido, index) =>
+      normalizarPedido(pedido, index)
+    );
 
-    if (quantidadeAnterior > 0 && pedidos.length > quantidadeAnterior) {
+    const novoHash = gerarHashPedidos(pedidosNormalizados);
+    const houveMudanca = novoHash !== ultimoHashPedidos;
+
+    if (
+      (forcarSomNovoPedido || quantidadeAnterior > 0) &&
+      pedidosNormalizados.length > quantidadeAnterior
+    ) {
       tocarNotificacaoNovoPedido();
     }
 
+    pedidos = pedidosNormalizados;
     ultimaQuantidadePedidos = pedidos.length;
+    ultimoHashPedidos = novoHash;
+
     atualizarResumo();
-    renderizarQuadro();
+
+    if (houveMudanca) {
+      renderizarQuadro();
+    } else {
+      atualizarContadoresTempo();
+    }
   } catch (erro) {
     console.error("Falha ao carregar pedidos:", erro);
 
     const dados = obterPedidosStorage();
     const pedidosBrutos = Array.isArray(dados.pedidos) ? dados.pedidos : [];
     pedidos = pedidosBrutos.map((pedido, index) => normalizarPedido(pedido, index));
+    ultimaQuantidadePedidos = pedidos.length;
+    ultimoHashPedidos = gerarHashPedidos(pedidos);
 
     atualizarResumo();
     renderizarQuadro();
+  } finally {
+    carregandoPedidos = false;
   }
 }
 
 function atualizarResumo() {
   const hoje = new Date();
 
-  const pedidosHojeLista = pedidos.filter(p => p.dataObj.toDateString() === hoje.toDateString());
+  const pedidosHojeLista = pedidos.filter(
+    (p) => p.dataObj.toDateString() === hoje.toDateString()
+  );
 
-  const faturamento = pedidosHojeLista.reduce((acc, pedido) => acc + Number(pedido.total || 0), 0);
-  const ticket = pedidosHojeLista.length ? (faturamento / pedidosHojeLista.length) : 0;
-  const delivery = pedidos.filter(p => p.tipoEntrega === "delivery").length;
-  const retirada = pedidos.filter(p => p.tipoEntrega === "retirada").length;
-  const pendentes = pedidos.filter(p => p.status === "pendente").length;
-  const preparo = pedidos.filter(p => p.status === "em preparo").length;
-  const entrega = pedidos.filter(p => p.status === "em entrega").length;
-  const finalizados = pedidos.filter(p => p.status === "finalizado").length;
+  const faturamento = pedidosHojeLista.reduce(
+    (acc, pedido) => acc + Number(pedido.total || 0),
+    0
+  );
+  const ticket = pedidosHojeLista.length
+    ? faturamento / pedidosHojeLista.length
+    : 0;
+  const delivery = pedidos.filter((p) => p.tipoEntrega === "delivery").length;
+  const retirada = pedidos.filter((p) => p.tipoEntrega === "retirada").length;
+  const pendentes = pedidos.filter((p) => p.status === "pendente").length;
+  const preparo = pedidos.filter((p) => p.status === "em preparo").length;
+  const entrega = pedidos.filter((p) => p.status === "em entrega").length;
+  const finalizados = pedidos.filter((p) => p.status === "finalizado").length;
 
   if (byId("totalPedidos")) byId("totalPedidos").textContent = pedidos.length;
   if (byId("pedidosHoje")) byId("pedidosHoje").textContent = pedidosHojeLista.length;
@@ -337,7 +399,7 @@ function obterPedidosFiltrados() {
   const filtroTipo = byId("filtroTipo")?.value || "";
   const ordenacao = byId("ordenacao")?.value || "mais-novo";
 
-  const filtrados = pedidos.filter(pedido => {
+  const filtrados = pedidos.filter((pedido) => {
     const texto = `
       ${pedido.id}
       ${pedido.cliente}
@@ -414,7 +476,9 @@ function criarItensHtml(pedido) {
     return `<div class="item-row"><small>Nenhum item detalhado neste pedido.</small></div>`;
   }
 
-  return pedido.itens.map(item => `
+  return pedido.itens
+    .map(
+      (item) => `
     <div class="item-row">
       <div class="item-row-top">
         <span>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</span>
@@ -423,7 +487,9 @@ function criarItensHtml(pedido) {
       <small>Unitário: ${formatarMoeda(item.preco)}</small>
       ${item.observacao ? `<small>Obs.: ${escaparHtml(item.observacao)}</small>` : ""}
     </div>
-  `).join("");
+  `
+    )
+    .join("");
 }
 
 function botaoProximoStatus(indice, statusAtual) {
@@ -443,7 +509,7 @@ function botaoProximoStatus(indice, statusAtual) {
 }
 
 function criarCardPedido(pedido) {
-  const indiceReal = pedidos.findIndex(p => p.uid === pedido.uid);
+  const indiceReal = pedidos.findIndex((p) => p.uid === pedido.uid);
   const telefoneLimpo = String(pedido.telefone || "").replace(/\D/g, "");
   const novo = pedidoEhNovo(pedido);
   const atrasado = pedidoAtrasado(pedido);
@@ -453,7 +519,7 @@ function criarCardPedido(pedido) {
   if (atrasado) extraClasses += " delay-order";
 
   return `
-    <article class="order-card${extraClasses}">
+    <article class="order-card${extraClasses}" data-pedido-uid="${escaparHtml(pedido.uid)}">
       <div class="order-top">
         <div class="order-header-row">
           <div>
@@ -463,7 +529,9 @@ function criarCardPedido(pedido) {
         </div>
 
         <div class="order-meta">
-          <span class="badge badge-time">${escaparHtml(tempoDecorridoTexto(pedido.dataObj))}</span>
+          <span class="badge badge-time js-tempo-decorrido" data-pedido-uid="${escaparHtml(pedido.uid)}">${escaparHtml(
+    tempoDecorridoTexto(pedido.dataObj)
+  )}</span>
           ${novo ? `<span class="badge badge-new">Novo pedido</span>` : ""}
           ${atrasado ? `<span class="badge badge-delay">Atenção</span>` : ""}
         </div>
@@ -473,9 +541,13 @@ function criarCardPedido(pedido) {
         <div class="mini-block">
           <h4>Informações</h4>
           <div class="line"><strong>Hora:</strong> ${escaparHtml(formatarHora(pedido.dataObj))}</div>
-          <div class="line"><strong>Entrega:</strong> ${escaparHtml(pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada")}</div>
+          <div class="line"><strong>Entrega:</strong> ${escaparHtml(
+            pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
+          )}</div>
           <div class="line"><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</div>
-          <div class="line"><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "Não informado")}</div>
+          <div class="line"><strong>Telefone:</strong> ${escaparHtml(
+            pedido.telefone || "Não informado"
+          )}</div>
           ${pedido.troco ? `<div class="line"><strong>Troco:</strong> ${escaparHtml(pedido.troco)}</div>` : ""}
         </div>
 
@@ -514,8 +586,13 @@ function criarCardPedido(pedido) {
         </select>
 
         <div class="action-grid">
-          ${telefoneLimpo ? `<button class="btn btn-green btn-small" onclick="abrirWhatsapp('${telefoneLimpo}')">WhatsApp</button>` : `<button class="btn btn-dark btn-small" disabled>Sem WhatsApp</button>`}
-          <button class="btn btn-dark btn-small" onclick="imprimirPedido('${pedido.uid}')">Imprimir</button>
+          ${
+            telefoneLimpo
+              ? `<button class="btn btn-green btn-small" onclick="abrirWhatsapp('${telefoneLimpo}')">WhatsApp</button>`
+              : `<button class="btn btn-dark btn-small" disabled>Sem WhatsApp</button>`
+          }
+          <button class="btn btn-dark btn-small" onclick="imprimirPedidoCompleto('${pedido.uid}')">Impressão completa</button>
+          <button class="btn btn-yellow btn-small" onclick="imprimirPedidoRapido('${pedido.uid}')">Impressão rápida</button>
           <button class="btn btn-blue btn-small" onclick="copiarPedido('${pedido.uid}')">Copiar</button>
           <button class="btn btn-red btn-small" onclick="excluirPedido(${indiceReal})">Excluir</button>
         </div>
@@ -539,15 +616,27 @@ function renderizarColuna(elementId, lista) {
 function renderizarQuadro() {
   const filtrados = obterPedidosFiltrados();
 
-  const pendentes = filtrados.filter(p => p.status === "pendente");
-  const preparo = filtrados.filter(p => p.status === "em preparo");
-  const entrega = filtrados.filter(p => p.status === "em entrega");
-  const finalizados = filtrados.filter(p => p.status === "finalizado");
+  const pendentes = filtrados.filter((p) => p.status === "pendente");
+  const preparo = filtrados.filter((p) => p.status === "em preparo");
+  const entrega = filtrados.filter((p) => p.status === "em entrega");
+  const finalizados = filtrados.filter((p) => p.status === "finalizado");
 
   renderizarColuna("colPendente", pendentes);
   renderizarColuna("colPreparo", preparo);
   renderizarColuna("colEntrega", entrega);
   renderizarColuna("colFinalizado", finalizados);
+}
+
+function atualizarContadoresTempo() {
+  const elementos = document.querySelectorAll(".js-tempo-decorrido");
+  if (!elementos.length) return;
+
+  elementos.forEach((el) => {
+    const uid = el.getAttribute("data-pedido-uid");
+    const pedido = buscarPedidoPorUid(uid);
+    if (!pedido) return;
+    el.textContent = tempoDecorridoTexto(pedido.dataObj);
+  });
 }
 
 async function alterarStatusNoBanco(pedido, novoStatus) {
@@ -608,12 +697,20 @@ async function excluirPedidoNoBanco(pedido) {
 async function excluirPedido(indice) {
   if (indice < 0 || indice >= pedidos.length) return;
 
-  const confirmar = confirm("Deseja realmente excluir este pedido?");
-  if (!confirmar) return;
+  const pedido = pedidos[indice];
+  if (!pedido) return;
+
+  const identificador = pedido.id || pedido.bancoId || `pedido ${indice + 1}`;
+  const confirmacaoTexto = prompt(
+    `Exclusão segura\n\nDigite EXCLUIR para remover o pedido ${identificador}:`
+  );
+
+  if (confirmacaoTexto !== "EXCLUIR") {
+    alert("Exclusão cancelada.");
+    return;
+  }
 
   try {
-    const pedido = pedidos[indice];
-
     if (supabaseClient && pedido.bancoId) {
       await excluirPedidoNoBanco(pedido);
       await carregarPedidos();
@@ -631,7 +728,7 @@ async function excluirPedido(indice) {
 }
 
 function limparTodosPedidos() {
-  alert("Para evitar apagar tudo sem querer no banco, use o botão Excluir em cada pedido.");
+  alert("Função desativada por segurança.");
 }
 
 function exportarPedidos() {
@@ -654,74 +751,193 @@ function abrirWhatsapp(telefone) {
 }
 
 function buscarPedidoPorUid(uidPedido) {
-  return pedidos.find(p => p.uid === uidPedido);
+  return pedidos.find((p) => p.uid === uidPedido);
 }
 
-function imprimirPedido(uidPedido) {
+function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
+  return `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>${escaparHtml(titulo)}</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            font-family: Arial, sans-serif;
+            padding: 18px;
+            color: #000;
+            font-size: 13px;
+          }
+          h1, h2, h3 { margin: 0 0 10px 0; }
+          h1 { font-size: 22px; }
+          h2 {
+            margin-top: 18px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 4px;
+            font-size: 15px;
+          }
+          p { margin: 4px 0; }
+          .linha { margin: 4px 0; }
+          .item {
+            border-bottom: 1px dashed #999;
+            padding: 6px 0;
+          }
+          .item:last-child {
+            border-bottom: 0;
+          }
+          .total {
+            margin-top: 12px;
+            font-size: 18px;
+            font-weight: bold;
+          }
+          .mini {
+            font-size: 12px;
+          }
+          .center {
+            text-align: center;
+          }
+          @media print {
+            body { margin: 0; padding: 10px; }
+          }
+        </style>
+      </head>
+      <body>
+        ${conteudo}
+        ${
+          autoPrint
+            ? `<script>window.onload = function(){ window.print(); };<\/script>`
+            : ""
+        }
+      </body>
+    </html>
+  `;
+}
+
+function imprimirPedidoCompleto(uidPedido) {
   const pedido = buscarPedidoPorUid(uidPedido);
   if (!pedido) return;
 
   const janela = window.open("", "_blank", "width=900,height=700");
   if (!janela) return;
 
-  janela.document.write(`
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Impressão - ${escaparHtml(pedido.id)}</title>
-        <style>
-          body { font-family: Arial, sans-serif; padding: 24px; color: #000; }
-          h1 { margin-bottom: 10px; }
-          h2 { margin-top: 24px; border-bottom: 1px solid #ccc; padding-bottom: 6px; }
-          p { margin: 6px 0; }
-          .item { border-bottom: 1px dashed #ccc; padding: 8px 0; }
-          .total { font-size: 20px; font-weight: bold; margin-top: 16px; }
-        </style>
-      </head>
-      <body>
-        <h1>Chapa Lanches</h1>
-        <p><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</p>
-        <p><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</p>
-        <p><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "-")}</p>
-        <p><strong>Hora:</strong> ${escaparHtml(pedido.dataTexto)}</p>
-        <p><strong>Entrega:</strong> ${escaparHtml(pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada")}</p>
-        <p><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</p>
-        <p><strong>Troco:</strong> ${escaparHtml(pedido.troco || "-")}</p>
+  const html = montarHtmlBaseImpressao(
+    `Impressão - ${pedido.id}`,
+    `
+      <h1>Chapa Lanches</h1>
+      <p><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</p>
+      <p><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</p>
+      <p><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "-")}</p>
+      <p><strong>Data/Hora:</strong> ${escaparHtml(pedido.dataTexto)}</p>
+      <p><strong>Entrega:</strong> ${escaparHtml(
+        pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
+      )}</p>
+      <p><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</p>
+      <p><strong>Troco:</strong> ${escaparHtml(pedido.troco || "-")}</p>
+      <p><strong>Status:</strong> ${escaparHtml(pedido.status)}</p>
 
-        <h2>Endereço</h2>
-        <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
-        <p><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</p>
-        <p><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</p>
-        <p><strong>Complemento:</strong> ${escaparHtml(pedido.complemento || "-")}</p>
+      <h2>Endereço</h2>
+      <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
+      <p><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</p>
+      <p><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</p>
+      <p><strong>Complemento:</strong> ${escaparHtml(pedido.complemento || "-")}</p>
 
-        <h2>Itens</h2>
-        ${pedido.itens.map(item => `
-          <div class="item">
-            <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
-            <p>Unitário: ${formatarMoeda(item.preco)}</p>
-            <p>Total item: ${formatarMoeda(item.preco * item.quantidade)}</p>
-            ${item.observacao ? `<p>Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
-          </div>
-        `).join("")}
+      <h2>Itens</h2>
+      ${pedido.itens
+        .map(
+          (item) => `
+        <div class="item">
+          <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
+          <p>Unitário: ${formatarMoeda(item.preco)}</p>
+          <p>Total item: ${formatarMoeda(item.preco * item.quantidade)}</p>
+          ${item.observacao ? `<p>Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
+        </div>
+      `
+        )
+        .join("")}
 
-        <h2>Resumo</h2>
-        <p><strong>Subtotal:</strong> ${formatarMoeda(pedido.subtotal)}</p>
-        <p><strong>Taxa:</strong> ${formatarMoeda(pedido.taxaEntrega)}</p>
-        <p class="total">Total: ${formatarMoeda(pedido.total)}</p>
+      <h2>Resumo</h2>
+      <p><strong>Subtotal:</strong> ${formatarMoeda(pedido.subtotal)}</p>
+      <p><strong>Taxa:</strong> ${formatarMoeda(pedido.taxaEntrega)}</p>
+      <p class="total">Total: ${formatarMoeda(pedido.total)}</p>
 
-        <h2>Observação</h2>
-        <p>${escaparHtml(pedido.observacao || "-")}</p>
+      <h2>Observação</h2>
+      <p>${escaparHtml(pedido.observacao || "-")}</p>
+    `
+  );
 
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        <\/script>
-      </body>
-    </html>
-  `);
-
+  janela.document.write(html);
   janela.document.close();
+}
+
+function imprimirPedidoRapido(uidPedido) {
+  const pedido = buscarPedidoPorUid(uidPedido);
+  if (!pedido) return;
+
+  const janela = window.open("", "_blank", "width=420,height=700");
+  if (!janela) return;
+
+  const html = montarHtmlBaseImpressao(
+    `Comanda - ${pedido.id}`,
+    `
+      <div class="center">
+        <h1>CHAPA LANCHES</h1>
+        <p class="mini">Comanda rápida</p>
+      </div>
+
+      <hr>
+
+      <div class="linha"><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</div>
+      <div class="linha"><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</div>
+      <div class="linha"><strong>Hora:</strong> ${escaparHtml(formatarHora(pedido.dataObj))}</div>
+      <div class="linha"><strong>Entrega:</strong> ${escaparHtml(
+        pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
+      )}</div>
+
+      ${
+        pedido.tipoEntrega === "delivery"
+          ? `
+        <div class="linha"><strong>Endereço:</strong> ${escaparHtml(
+          `${pedido.endereco || "-"}, ${pedido.numero || "-"}`
+        )}</div>
+        <div class="linha"><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</div>
+        ${
+          pedido.complemento
+            ? `<div class="linha"><strong>Comp.:</strong> ${escaparHtml(pedido.complemento)}</div>`
+            : ""
+        }
+      `
+          : ""
+      }
+
+      <h2>Itens</h2>
+      ${pedido.itens
+        .map(
+          (item) => `
+        <div class="item">
+          <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
+          ${item.observacao ? `<p class="mini">Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
+        </div>
+      `
+        )
+        .join("")}
+
+      <h2>Pagamento</h2>
+      <p><strong>Forma:</strong> ${escaparHtml(pedido.pagamento)}</p>
+      ${pedido.troco ? `<p><strong>Troco:</strong> ${escaparHtml(pedido.troco)}</p>` : ""}
+
+      ${pedido.observacao ? `<h2>Obs.</h2><p>${escaparHtml(pedido.observacao)}</p>` : ""}
+
+      <hr>
+      <p class="total center">TOTAL: ${formatarMoeda(pedido.total)}</p>
+    `
+  );
+
+  janela.document.write(html);
+  janela.document.close();
+}
+
+function imprimirPedido(uidPedido) {
+  imprimirPedidoCompleto(uidPedido);
 }
 
 function copiarPedido(uidPedido) {
@@ -733,11 +949,20 @@ Pedido ${pedido.id}
 Cliente: ${pedido.cliente}
 Telefone: ${pedido.telefone || "-"}
 Entrega: ${pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"}
-Endereço: ${pedido.endereco || "-"}, ${pedido.numero || "-"} - ${pedido.bairro || "-"} ${pedido.complemento ? "- " + pedido.complemento : ""}
+Endereço: ${pedido.endereco || "-"}, ${pedido.numero || "-"} - ${pedido.bairro || "-"}${
+    pedido.complemento ? " - " + pedido.complemento : ""
+  }
 Pagamento: ${pedido.pagamento}
 Troco: ${pedido.troco || "-"}
 Itens:
-${pedido.itens.map(item => `- ${item.quantidade}x ${item.nome} (${formatarMoeda(item.preco * item.quantidade)})${item.observacao ? " | Obs.: " + item.observacao : ""}`).join("\n")}
+${pedido.itens
+  .map(
+    (item) =>
+      `- ${item.quantidade}x ${item.nome} (${formatarMoeda(
+        item.preco * item.quantidade
+      )})${item.observacao ? " | Obs.: " + item.observacao : ""}`
+  )
+  .join("\n")}
 Subtotal: ${formatarMoeda(pedido.subtotal)}
 Taxa: ${formatarMoeda(pedido.taxaEntrega)}
 Total: ${formatarMoeda(pedido.total)}
@@ -749,7 +974,8 @@ Observação: ${pedido.observacao || "-"}
     return;
   }
 
-  navigator.clipboard.writeText(texto)
+  navigator.clipboard
+    .writeText(texto)
     .then(() => alert("Pedido copiado com sucesso."))
     .catch(() => alert("Não foi possível copiar o pedido."));
 }
@@ -856,6 +1082,46 @@ function sairDoPainel() {
   window.location.href = "login.html";
 }
 
+function esconderBotaoApagarTudo() {
+  const btn = byId("btnLimparTudo");
+  if (!btn) return;
+
+  btn.style.display = "none";
+  btn.disabled = true;
+  btn.removeAttribute("onclick");
+}
+
+function iniciarRealtimeSupabase() {
+  if (!supabaseClient) return;
+
+  try {
+    if (realtimeChannel) {
+      supabaseClient.removeChannel(realtimeChannel);
+      realtimeChannel = null;
+    }
+
+    realtimeChannel = supabaseClient
+      .channel("orders-realtime-admin")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders"
+        },
+        async (payload) => {
+          console.log("Mudança recebida do Supabase:", payload);
+          await carregarPedidos(payload?.eventType === "INSERT");
+        }
+      )
+      .subscribe((status) => {
+        console.log("Status realtime Supabase:", status);
+      });
+  } catch (erro) {
+    console.error("Erro ao iniciar realtime do Supabase:", erro);
+  }
+}
+
 const btnAtualizar = byId("btnAtualizar");
 const btnExportar = byId("btnExportar");
 const btnLimparTudo = byId("btnLimparTudo");
@@ -866,15 +1132,22 @@ const filtroStatus = byId("filtroStatus");
 const filtroTipo = byId("filtroTipo");
 const ordenacao = byId("ordenacao");
 
-if (btnAtualizar) btnAtualizar.addEventListener("click", carregarPedidos);
+if (btnAtualizar) btnAtualizar.addEventListener("click", () => carregarPedidos());
 if (btnExportar) btnExportar.addEventListener("click", exportarPedidos);
-if (btnLimparTudo) btnLimparTudo.addEventListener("click", limparTodosPedidos);
+
+if (btnLimparTudo) {
+  btnLimparTudo.removeEventListener("click", limparTodosPedidos);
+  btnLimparTudo.style.display = "none";
+  btnLimparTudo.disabled = true;
+}
 
 if (btnToggleLoja) {
   btnToggleLoja.addEventListener("click", alternarStatusLoja);
   btnToggleLoja.addEventListener("contextmenu", function (event) {
     event.preventDefault();
-    const confirmar = confirm("Remover o modo manual e voltar ao horário automático da loja?");
+    const confirmar = confirm(
+      "Remover o modo manual e voltar ao horário automático da loja?"
+    );
     if (!confirmar) return;
     removerOverrideLoja();
   });
@@ -892,17 +1165,30 @@ window.addEventListener("storage", () => {
   carregarStatusLoja();
 });
 
+window.addEventListener("beforeunload", () => {
+  try {
+    if (supabaseClient && realtimeChannel) {
+      supabaseClient.removeChannel(realtimeChannel);
+    }
+  } catch (e) {}
+});
+
 window.alterarStatus = alterarStatus;
 window.excluirPedido = excluirPedido;
 window.abrirWhatsapp = abrirWhatsapp;
 window.imprimirPedido = imprimirPedido;
+window.imprimirPedidoCompleto = imprimirPedidoCompleto;
+window.imprimirPedidoRapido = imprimirPedidoRapido;
 window.copiarPedido = copiarPedido;
 
+esconderBotaoApagarTudo();
 carregarStatusLoja();
 carregarPedidos();
+iniciarRealtimeSupabase();
 atualizarRelogio();
 
 setInterval(atualizarRelogio, 1000);
+setInterval(atualizarContadoresTempo, 30000);
 setInterval(() => {
   carregarPedidos();
   carregarStatusLoja();
