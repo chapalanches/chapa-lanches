@@ -136,20 +136,40 @@ function normalizarStatus(valor) {
   const texto = String(valor || "")
     .toLowerCase()
     .trim()
-    .replace(/_/g, " ");
+    .replace(/\s+/g, "_");
 
-  if (texto === "novo") return "pendente";
-  if (texto === "pendente") return "pendente";
-  if (texto === "em preparo") return "em preparo";
-  if (texto === "preparo") return "em preparo";
-  if (texto === "em entrega") return "em entrega";
-  if (texto === "entrega") return "em entrega";
+  if (texto === "novo") return "novo";
+  if (texto === "pendente") return "novo";
+
+  if (texto === "aceito") return "aceito";
+
+  if (texto === "preparo") return "preparo";
+  if (texto === "em_preparo") return "preparo";
+  if (texto === "em preparo") return "preparo";
+
+  if (texto === "saiu_entrega") return "saiu_entrega";
+  if (texto === "em_entrega") return "saiu_entrega";
+  if (texto === "em entrega") return "saiu_entrega";
+  if (texto === "entrega") return "saiu_entrega";
+
   if (texto === "finalizado") return "finalizado";
-  if (texto === "finalizado ") return "finalizado";
-  if (texto === "concluido") return "finalizado";
-  if (texto === "concluído") return "finalizado";
 
-  return "pendente";
+  if (texto === "cancelado") return "cancelado";
+
+  return "novo";
+}
+
+function statusLabel(status) {
+  const s = normalizarStatus(status);
+
+  if (s === "novo") return "Pendente";
+  if (s === "aceito") return "Aceito";
+  if (s === "preparo") return "Em preparo";
+  if (s === "saiu_entrega") return "Em entrega";
+  if (s === "finalizado") return "Finalizado";
+  if (s === "cancelado") return "Cancelado";
+
+  return "Pendente";
 }
 
 function extrairCampoDeNotas(notas, prefixo) {
@@ -236,8 +256,7 @@ function normalizarPedido(pedido, index) {
     pedido.order_type ||
     "Não informado";
 
-  const enderecoCompleto =
-    pedido.endereco || pedido.customer_address || "";
+  const enderecoCompleto = pedido.endereco || pedido.customer_address || "";
 
   const idExibicao =
     pedido.codigo ||
@@ -257,11 +276,7 @@ function normalizarPedido(pedido, index) {
       pedido.nome ||
       pedido.customer_name ||
       "Cliente não informado",
-    telefone:
-      pedido.telefone ||
-      pedido.whatsapp ||
-      pedido.customer_phone ||
-      "",
+    telefone: pedido.telefone || pedido.whatsapp || pedido.customer_phone || "",
     entrega: tipoEntregaBruto,
     tipoEntrega: normalizarTipoEntrega(tipoEntregaBruto),
     endereco: enderecoCompleto,
@@ -399,9 +414,12 @@ function atualizarResumo() {
     : 0;
   const delivery = pedidos.filter((p) => p.tipoEntrega === "delivery").length;
   const retirada = pedidos.filter((p) => p.tipoEntrega === "retirada").length;
-  const pendentes = pedidos.filter((p) => p.status === "pendente").length;
-  const preparo = pedidos.filter((p) => p.status === "em preparo").length;
-  const entrega = pedidos.filter((p) => p.status === "em entrega").length;
+
+  const pendentes = pedidos.filter((p) => p.status === "novo").length;
+  const preparo = pedidos.filter(
+    (p) => p.status === "aceito" || p.status === "preparo"
+  ).length;
+  const entrega = pedidos.filter((p) => p.status === "saiu_entrega").length;
   const finalizados = pedidos.filter((p) => p.status === "finalizado").length;
 
   if (byId("totalPedidos")) byId("totalPedidos").textContent = pedidos.length;
@@ -438,6 +456,8 @@ function obterPedidosFiltrados() {
       ${pedido.complemento}
       ${pedido.pagamento}
       ${pedido.observacao}
+      ${pedido.status}
+      ${statusLabel(pedido.status)}
     `.toLowerCase();
 
     const okBusca = !busca || texto.includes(busca);
@@ -490,9 +510,9 @@ function pedidoAtrasado(pedido) {
   const agora = new Date();
   const diffMin = (agora - pedido.dataObj) / 60000;
 
-  if (pedido.status === "pendente" && diffMin >= 10) return true;
-  if (pedido.status === "em preparo" && diffMin >= 25) return true;
-  if (pedido.status === "em entrega" && diffMin >= 40) return true;
+  if (pedido.status === "novo" && diffMin >= 10) return true;
+  if ((pedido.status === "aceito" || pedido.status === "preparo") && diffMin >= 25) return true;
+  if (pedido.status === "saiu_entrega" && diffMin >= 40) return true;
 
   return false;
 }
@@ -519,19 +539,33 @@ function criarItensHtml(pedido) {
 }
 
 function botaoProximoStatus(indice, statusAtual) {
-  if (statusAtual === "pendente") {
-    return `<button class="btn btn-yellow btn-small full-width" onclick="alterarStatus(${indice}, 'em preparo')">Aceitar / Iniciar preparo</button>`;
+  const status = normalizarStatus(statusAtual);
+
+  if (status === "novo") {
+    return `<button class="btn btn-yellow btn-small full-width" onclick="alterarStatus(${indice}, 'preparo')">Aceitar / Iniciar preparo</button>`;
   }
 
-  if (statusAtual === "em preparo") {
-    return `<button class="btn btn-blue btn-small full-width" onclick="alterarStatus(${indice}, 'em entrega')">Saiu para entrega</button>`;
+  if (status === "aceito") {
+    return `<button class="btn btn-yellow btn-small full-width" onclick="alterarStatus(${indice}, 'preparo')">Iniciar preparo</button>`;
   }
 
-  if (statusAtual === "em entrega") {
+  if (status === "preparo") {
+    return `<button class="btn btn-blue btn-small full-width" onclick="alterarStatus(${indice}, 'saiu_entrega')">Saiu para entrega</button>`;
+  }
+
+  if (status === "saiu_entrega") {
     return `<button class="btn btn-green btn-small full-width" onclick="alterarStatus(${indice}, 'finalizado')">Finalizar pedido</button>`;
   }
 
-  return `<button class="btn btn-dark btn-small full-width" onclick="alterarStatus(${indice}, 'pendente')">Reabrir pedido</button>`;
+  if (status === "finalizado") {
+    return `<button class="btn btn-dark btn-small full-width" onclick="alterarStatus(${indice}, 'novo')">Reabrir pedido</button>`;
+  }
+
+  if (status === "cancelado") {
+    return `<button class="btn btn-dark btn-small full-width" onclick="alterarStatus(${indice}, 'novo')">Reabrir pedido</button>`;
+  }
+
+  return `<button class="btn btn-yellow btn-small full-width" onclick="alterarStatus(${indice}, 'preparo')">Aceitar / Iniciar preparo</button>`;
 }
 
 function criarCardPedido(pedido) {
@@ -558,6 +592,7 @@ function criarCardPedido(pedido) {
           <span class="badge badge-time js-tempo-decorrido" data-pedido-uid="${escaparHtml(pedido.uid)}">${escaparHtml(
     tempoDecorridoTexto(pedido.dataObj)
   )}</span>
+          <span class="badge badge-status">${escaparHtml(statusLabel(pedido.status))}</span>
           ${novo ? `<span class="badge badge-new">Novo pedido</span>` : ""}
           ${atrasado ? `<span class="badge badge-delay">Atenção</span>` : ""}
         </div>
@@ -606,10 +641,12 @@ function criarCardPedido(pedido) {
         ${botaoProximoStatus(indiceReal, pedido.status)}
 
         <select class="status-select" onchange="alterarStatus(${indiceReal}, this.value)">
-          <option value="pendente" ${pedido.status === "pendente" ? "selected" : ""}>Pendente</option>
-          <option value="em preparo" ${pedido.status === "em preparo" ? "selected" : ""}>Em preparo</option>
-          <option value="em entrega" ${pedido.status === "em entrega" ? "selected" : ""}>Em entrega</option>
+          <option value="novo" ${pedido.status === "novo" ? "selected" : ""}>Pendente</option>
+          <option value="aceito" ${pedido.status === "aceito" ? "selected" : ""}>Aceito</option>
+          <option value="preparo" ${pedido.status === "preparo" ? "selected" : ""}>Em preparo</option>
+          <option value="saiu_entrega" ${pedido.status === "saiu_entrega" ? "selected" : ""}>Em entrega</option>
           <option value="finalizado" ${pedido.status === "finalizado" ? "selected" : ""}>Finalizado</option>
+          <option value="cancelado" ${pedido.status === "cancelado" ? "selected" : ""}>Cancelado</option>
         </select>
 
         <div class="action-grid">
@@ -643,9 +680,11 @@ function renderizarColuna(elementId, lista) {
 function renderizarQuadro() {
   const filtrados = obterPedidosFiltrados();
 
-  const pendentes = filtrados.filter((p) => p.status === "pendente");
-  const preparo = filtrados.filter((p) => p.status === "em preparo");
-  const entrega = filtrados.filter((p) => p.status === "em entrega");
+  const pendentes = filtrados.filter((p) => p.status === "novo");
+  const preparo = filtrados.filter(
+    (p) => p.status === "aceito" || p.status === "preparo"
+  );
+  const entrega = filtrados.filter((p) => p.status === "saiu_entrega");
   const finalizados = filtrados.filter((p) => p.status === "finalizado");
 
   renderizarColuna("colPendente", pendentes);
@@ -709,11 +748,24 @@ async function alterarStatusNoBanco(pedido, novoStatus) {
 }
 
 async function alterarStatus(indice, novoStatus) {
-  if (indice < 0 || indice >= pedidos.length) return;
+  console.log("alterarStatus() chamada:", {
+    indice,
+    novoStatus,
+    totalPedidos: pedidos.length
+  });
+
+  if (indice < 0 || indice >= pedidos.length) {
+    console.error("Índice inválido:", indice, pedidos);
+    alert("Índice do pedido inválido.");
+    return;
+  }
 
   try {
     const pedido = pedidos[indice];
     const statusNormalizado = normalizarStatus(novoStatus);
+
+    console.log("Pedido encontrado para atualizar:", pedido);
+    console.log("Status normalizado:", statusNormalizado);
 
     if (supabaseClient) {
       await alterarStatusNoBanco(pedido, statusNormalizado);
@@ -901,7 +953,7 @@ function imprimirPedidoCompleto(uidPedido) {
       )}</p>
       <p><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</p>
       <p><strong>Troco:</strong> ${escaparHtml(pedido.troco || "-")}</p>
-      <p><strong>Status:</strong> ${escaparHtml(pedido.status)}</p>
+      <p><strong>Status:</strong> ${escaparHtml(statusLabel(pedido.status))}</p>
 
       <h2>Endereço</h2>
       <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
@@ -961,6 +1013,7 @@ function imprimirPedidoRapido(uidPedido) {
       <div class="linha"><strong>Entrega:</strong> ${escaparHtml(
         pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
       )}</div>
+      <div class="linha"><strong>Status:</strong> ${escaparHtml(statusLabel(pedido.status))}</div>
 
       ${
         pedido.tipoEntrega === "delivery"
@@ -1018,6 +1071,7 @@ Pedido ${pedido.id}
 Cliente: ${pedido.cliente}
 Telefone: ${pedido.telefone || "-"}
 Entrega: ${pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"}
+Status: ${statusLabel(pedido.status)}
 Endereço: ${pedido.endereco || "-"}, ${pedido.numero || "-"} - ${pedido.bairro || "-"}${
     pedido.complemento ? " - " + pedido.complemento : ""
   }
@@ -1249,6 +1303,8 @@ window.imprimirPedido = imprimirPedido;
 window.imprimirPedidoCompleto = imprimirPedidoCompleto;
 window.imprimirPedidoRapido = imprimirPedidoRapido;
 window.copiarPedido = copiarPedido;
+
+console.log("ADMIN JS NOVO CARREGADO - STATUS ORDERS CORRIGIDO");
 
 esconderBotaoApagarTudo();
 carregarStatusLoja();
