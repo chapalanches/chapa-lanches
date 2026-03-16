@@ -1138,7 +1138,7 @@ function obterStatusAutomaticoLoja() {
 
   const horarioAtual = hora * 60 + minuto;
   const abertura = 19 * 60;
-  const fechamento = 22 * 60 + 45;
+  const fechamento = 23 * 60 + 45;
 
   return horarioAtual >= abertura && horarioAtual <= fechamento;
 }
