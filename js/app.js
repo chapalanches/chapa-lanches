@@ -1,6 +1,7 @@
 const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) || '5515996179172';
 const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa Lanches';
 const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
+const TEMPO_PREPARO_FIXO_MINUTOS = 45;
 
 const REGRAS_ENTREGA_PADRAO = [
   { km_min: 0, km_max: 3, fee: 4, active: true },
@@ -574,6 +575,12 @@ function formatarDuracao(segundos) {
   return `${horas}h ${minutos}min`;
 }
 
+function somarTempoPreparoComEntrega(segundosEntrega) {
+  const minutosEntrega = Math.round(Number(segundosEntrega || 0) / 60);
+  const minutosTotais = TEMPO_PREPARO_FIXO_MINUTOS + minutosEntrega;
+  return formatarDuracao(minutosTotais * 60);
+}
+
 function descobrirTaxaPorDistancia(distanciaKm) {
   if (!Number.isFinite(distanciaKm) || distanciaKm <= 0) {
     return 0;
@@ -666,7 +673,7 @@ async function calcularEntregaAutomaticamente() {
     const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
 
     distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
-    tempoEntregaTexto = rota.duracaoTexto || null;
+    tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
     taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
 
     if (avisoEntrega) {
@@ -808,6 +815,9 @@ async function finalizarPedido() {
         mensagem += `
 *Tempo estimado:* ${tempoEntregaTexto}`;
       }
+    } else {
+      mensagem += `
+*Tempo estimado:* ${formatarDuracao(TEMPO_PREPARO_FIXO_MINUTOS * 60)}`;
     }
 
     mensagem += `
