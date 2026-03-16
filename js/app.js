@@ -800,7 +800,7 @@ async function finalizarPedido() {
 
     const pedidoSalvo = await salvarPedidoNoBanco(payload);
 
-    let mensagem = `*Pedido 🍔 - ${nomeLoja}*
+    let mensagem = `🍔 *Pedido - ${nomeLoja}*
 
 *Pedido:* #${pedidoSalvo.id}
 *Cliente:* ${nome}
