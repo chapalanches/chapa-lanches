@@ -50,6 +50,19 @@ function formatarTipoEntregaTexto(tipo) {
   return tipo === 'delivery' ? 'Delivery' : 'Retirada no local';
 }
 
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function abrirWhatsapp(url) {
+  if (isIOS()) {
+    window.location.href = url;
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
 function aplicarMascaraCep() {
   const input = document.getElementById('cepEntrega');
   if (!input) return;
@@ -822,13 +835,9 @@ async function finalizarPedido() {
 *Observações:* ${observacoes}`;
     }
 
-    const emojiUrl = '🍔';
-    const textoWhatsapp = emojiUrl + encodeURIComponent(mensagem);
-
-    window.open(
-      `https://wa.me/${numeroWhatsapp}?text=${textoWhatsapp}`,
-      '_blank'
-    );
+    const mensagemFinal = `🍔 ${mensagem}`;
+    const textoWhatsapp = encodeURIComponent(mensagemFinal);
+    const urlWhatsapp = `https://wa.me/${numeroWhatsapp}?text=${textoWhatsapp}`;
 
     carrinho = [];
     taxaEntrega = 0;
@@ -852,7 +861,9 @@ async function finalizarPedido() {
     fecharCarrinho();
     renderizarCarrinho();
 
-    alert('Pedido salvo com sucesso no painel!');
+    setTimeout(() => {
+      abrirWhatsapp(urlWhatsapp);
+    }, 150);
   } catch (erro) {
     alert('Erro ao salvar o pedido. Verifique a configuração do Supabase.');
     console.error(erro);
