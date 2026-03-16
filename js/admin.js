@@ -93,6 +93,7 @@ function converterDataSegura(valor) {
     const partes = valor.match(
       /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/
     );
+
     if (partes) {
       const dia = Number(partes[1]);
       const mes = Number(partes[2]) - 1;
@@ -124,11 +125,9 @@ function formatarMoeda(valor) {
 
 function normalizarTipoEntrega(valor) {
   const texto = String(valor || "").toLowerCase().trim();
-
   if (texto.includes("retirada")) return "retirada";
   if (texto.includes("delivery")) return "delivery";
   if (texto.includes("entrega")) return "delivery";
-
   return texto || "não informado";
 }
 
@@ -140,20 +139,15 @@ function normalizarStatus(valor) {
 
   if (texto === "novo") return "novo";
   if (texto === "pendente") return "novo";
-
   if (texto === "aceito") return "aceito";
-
   if (texto === "preparo") return "preparo";
   if (texto === "em_preparo") return "preparo";
   if (texto === "em preparo") return "preparo";
-
   if (texto === "saiu_entrega") return "saiu_entrega";
   if (texto === "em_entrega") return "saiu_entrega";
   if (texto === "em entrega") return "saiu_entrega";
   if (texto === "entrega") return "saiu_entrega";
-
   if (texto === "finalizado") return "finalizado";
-
   if (texto === "cancelado") return "cancelado";
 
   return "novo";
@@ -161,14 +155,12 @@ function normalizarStatus(valor) {
 
 function statusLabel(status) {
   const s = normalizarStatus(status);
-
   if (s === "novo") return "Pendente";
   if (s === "aceito") return "Aceito";
   if (s === "preparo") return "Em preparo";
   if (s === "saiu_entrega") return "Em entrega";
   if (s === "finalizado") return "Finalizado";
   if (s === "cancelado") return "Cancelado";
-
   return "Pendente";
 }
 
@@ -185,6 +177,7 @@ function extrairCampoDeNotas(notas, prefixo) {
 function removerCampoDeNotas(notas, prefixos) {
   if (!notas) return "";
   const listaPrefixos = prefixos.map((p) => p.toLowerCase());
+
   const partes = String(notas)
     .split(" | ")
     .map((p) => p.trim())
@@ -235,7 +228,6 @@ function normalizarPedido(pedido, index) {
   const customerNotes = pedido.customer_notes || "";
   const pagamentoExtraido = extrairCampoDeNotas(customerNotes, "Pagamento");
   const complementoExtraido = extrairCampoDeNotas(customerNotes, "Complemento");
-
   const observacaoLimpa = removerCampoDeNotas(customerNotes, [
     "Pagamento",
     "Complemento",
@@ -326,6 +318,19 @@ function gerarHashPedidos(lista) {
   }
 }
 
+function ehMesmoDia(data1, data2) {
+  return (
+    data1.getFullYear() === data2.getFullYear() &&
+    data1.getMonth() === data2.getMonth() &&
+    data1.getDate() === data2.getDate()
+  );
+}
+
+function pedidoEhDeHoje(pedido) {
+  if (!pedido || !pedido.dataObj) return false;
+  return ehMesmoDia(pedido.dataObj, new Date());
+}
+
 async function buscarPedidosDoBanco() {
   if (!supabaseClient) return null;
 
@@ -357,9 +362,10 @@ async function carregarPedidos(forcarSomNovoPedido = false) {
     }
 
     const quantidadeAnterior = ultimaQuantidadePedidos;
-    const pedidosNormalizados = pedidosBrutos.map((pedido, index) =>
-      normalizarPedido(pedido, index)
-    );
+
+    const pedidosNormalizados = pedidosBrutos
+      .map((pedido, index) => normalizarPedido(pedido, index))
+      .filter((pedido) => pedidoEhDeHoje(pedido));
 
     const novoHash = gerarHashPedidos(pedidosNormalizados);
     const houveMudanca = novoHash !== ultimoHashPedidos;
@@ -387,7 +393,11 @@ async function carregarPedidos(forcarSomNovoPedido = false) {
 
     const dados = obterPedidosStorage();
     const pedidosBrutos = Array.isArray(dados.pedidos) ? dados.pedidos : [];
-    pedidos = pedidosBrutos.map((pedido, index) => normalizarPedido(pedido, index));
+
+    pedidos = pedidosBrutos
+      .map((pedido, index) => normalizarPedido(pedido, index))
+      .filter((pedido) => pedidoEhDeHoje(pedido));
+
     ultimaQuantidadePedidos = pedidos.length;
     ultimoHashPedidos = gerarHashPedidos(pedidos);
 
@@ -399,36 +409,45 @@ async function carregarPedidos(forcarSomNovoPedido = false) {
 }
 
 function atualizarResumo() {
-  const hoje = new Date();
-
-  const pedidosHojeLista = pedidos.filter(
-    (p) => p.dataObj.toDateString() === hoje.toDateString()
-  );
+  const pedidosHojeLista = pedidos.filter((p) => pedidoEhDeHoje(p));
 
   const faturamento = pedidosHojeLista.reduce(
     (acc, pedido) => acc + Number(pedido.total || 0),
     0
   );
+
   const ticket = pedidosHojeLista.length
     ? faturamento / pedidosHojeLista.length
     : 0;
-  const delivery = pedidos.filter((p) => p.tipoEntrega === "delivery").length;
-  const retirada = pedidos.filter((p) => p.tipoEntrega === "retirada").length;
 
-  const pendentes = pedidos.filter((p) => p.status === "novo").length;
-  const preparo = pedidos.filter(
+  const delivery = pedidosHojeLista.filter(
+    (p) => p.tipoEntrega === "delivery"
+  ).length;
+
+  const retirada = pedidosHojeLista.filter(
+    (p) => p.tipoEntrega === "retirada"
+  ).length;
+
+  const pendentes = pedidosHojeLista.filter((p) => p.status === "novo").length;
+
+  const preparo = pedidosHojeLista.filter(
     (p) => p.status === "aceito" || p.status === "preparo"
   ).length;
-  const entrega = pedidos.filter((p) => p.status === "saiu_entrega").length;
-  const finalizados = pedidos.filter((p) => p.status === "finalizado").length;
 
-  if (byId("totalPedidos")) byId("totalPedidos").textContent = pedidos.length;
+  const entrega = pedidosHojeLista.filter(
+    (p) => p.status === "saiu_entrega"
+  ).length;
+
+  const finalizados = pedidosHojeLista.filter(
+    (p) => p.status === "finalizado"
+  ).length;
+
+  if (byId("totalPedidos")) byId("totalPedidos").textContent = pedidosHojeLista.length;
   if (byId("pedidosHoje")) byId("pedidosHoje").textContent = pedidosHojeLista.length;
   if (byId("faturamentoDia")) byId("faturamentoDia").textContent = formatarMoeda(faturamento);
   if (byId("ticketMedio")) byId("ticketMedio").textContent = formatarMoeda(ticket);
   if (byId("totalDelivery")) byId("totalDelivery").textContent = delivery;
   if (byId("totalRetirada")) byId("totalRetirada").textContent = retirada;
-
   if (byId("countPendente")) byId("countPendente").textContent = pendentes;
   if (byId("countPreparo")) byId("countPreparo").textContent = preparo;
   if (byId("countEntrega")) byId("countEntrega").textContent = entrega;
@@ -458,7 +477,9 @@ function obterPedidosFiltrados() {
       ${pedido.observacao}
       ${pedido.status}
       ${statusLabel(pedido.status)}
-    `.toLowerCase();
+    `
+      .toLowerCase()
+      .trim();
 
     const okBusca = !busca || texto.includes(busca);
     const okStatus = !filtroStatus || pedido.status === filtroStatus;
@@ -525,15 +546,15 @@ function criarItensHtml(pedido) {
   return pedido.itens
     .map(
       (item) => `
-    <div class="item-row">
-      <div class="item-row-top">
-        <span>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</span>
-        <span>${formatarMoeda(item.preco * item.quantidade)}</span>
-      </div>
-      <small>Unitário: ${formatarMoeda(item.preco)}</small>
-      ${item.observacao ? `<small>Obs.: ${escaparHtml(item.observacao)}</small>` : ""}
-    </div>
-  `
+        <div class="item-row">
+          <div class="item-row-top">
+            <span>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</span>
+            <span>${formatarMoeda(item.preco * item.quantidade)}</span>
+          </div>
+          <small>Unitário: ${formatarMoeda(item.preco)}</small>
+          ${item.observacao ? `<small>Obs.: ${escaparHtml(item.observacao)}</small>` : ""}
+        </div>
+      `
     )
     .join("");
 }
@@ -544,23 +565,18 @@ function botaoProximoStatus(indice, statusAtual) {
   if (status === "novo") {
     return `<button class="btn btn-yellow btn-small full-width" onclick="alterarStatus(${indice}, 'preparo')">Aceitar / Iniciar preparo</button>`;
   }
-
   if (status === "aceito") {
     return `<button class="btn btn-yellow btn-small full-width" onclick="alterarStatus(${indice}, 'preparo')">Iniciar preparo</button>`;
   }
-
   if (status === "preparo") {
     return `<button class="btn btn-blue btn-small full-width" onclick="alterarStatus(${indice}, 'saiu_entrega')">Saiu para entrega</button>`;
   }
-
   if (status === "saiu_entrega") {
     return `<button class="btn btn-green btn-small full-width" onclick="alterarStatus(${indice}, 'finalizado')">Finalizar pedido</button>`;
   }
-
   if (status === "finalizado") {
     return `<button class="btn btn-dark btn-small full-width" onclick="alterarStatus(${indice}, 'novo')">Reabrir pedido</button>`;
   }
-
   if (status === "cancelado") {
     return `<button class="btn btn-dark btn-small full-width" onclick="alterarStatus(${indice}, 'novo')">Reabrir pedido</button>`;
   }
@@ -587,11 +603,10 @@ function criarCardPedido(pedido) {
             <div class="order-customer">${escaparHtml(pedido.cliente)}</div>
           </div>
         </div>
-
         <div class="order-meta">
           <span class="badge badge-time js-tempo-decorrido" data-pedido-uid="${escaparHtml(pedido.uid)}">${escaparHtml(
-    tempoDecorridoTexto(pedido.dataObj)
-  )}</span>
+            tempoDecorridoTexto(pedido.dataObj)
+          )}</span>
           <span class="badge badge-status">${escaparHtml(statusLabel(pedido.status))}</span>
           ${novo ? `<span class="badge badge-new">Novo pedido</span>` : ""}
           ${atrasado ? `<span class="badge badge-delay">Atenção</span>` : ""}
@@ -606,9 +621,7 @@ function criarCardPedido(pedido) {
             pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
           )}</div>
           <div class="line"><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</div>
-          <div class="line"><strong>Telefone:</strong> ${escaparHtml(
-            pedido.telefone || "Não informado"
-          )}</div>
+          <div class="line"><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "Não informado")}</div>
           ${pedido.troco ? `<div class="line"><strong>Troco:</strong> ${escaparHtml(pedido.troco)}</div>` : ""}
         </div>
 
@@ -714,7 +727,11 @@ async function alterarStatusNoBanco(pedido, novoStatus) {
     throw new Error("Pedido inválido para atualização.");
   }
 
-  if (pedido.bancoId === null || pedido.bancoId === undefined || Number.isNaN(Number(pedido.bancoId))) {
+  if (
+    pedido.bancoId === null ||
+    pedido.bancoId === undefined ||
+    Number.isNaN(Number(pedido.bancoId))
+  ) {
     throw new Error("Pedido sem ID válido no banco.");
   }
 
@@ -792,7 +809,11 @@ async function excluirPedidoNoBanco(pedido) {
     throw new Error("Pedido inválido para exclusão.");
   }
 
-  if (pedido.bancoId === null || pedido.bancoId === undefined || Number.isNaN(Number(pedido.bancoId))) {
+  if (
+    pedido.bancoId === null ||
+    pedido.bancoId === undefined ||
+    Number.isNaN(Number(pedido.bancoId))
+  ) {
     throw new Error("Pedido sem ID válido no banco.");
   }
 
@@ -859,7 +880,7 @@ function exportarPedidos() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "pedidos-chapa-lanches.json";
+  a.download = "pedidos-chapa-lanches-dia.json";
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -882,40 +903,17 @@ function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
         <title>${escaparHtml(titulo)}</title>
         <style>
           * { box-sizing: border-box; }
-          body {
-            font-family: Arial, sans-serif;
-            padding: 18px;
-            color: #000;
-            font-size: 13px;
-          }
+          body { font-family: Arial, sans-serif; padding: 18px; color: #000; font-size: 13px; }
           h1, h2, h3 { margin: 0 0 10px 0; }
           h1 { font-size: 22px; }
-          h2 {
-            margin-top: 18px;
-            border-bottom: 1px solid #000;
-            padding-bottom: 4px;
-            font-size: 15px;
-          }
+          h2 { margin-top: 18px; border-bottom: 1px solid #000; padding-bottom: 4px; font-size: 15px; }
           p { margin: 4px 0; }
           .linha { margin: 4px 0; }
-          .item {
-            border-bottom: 1px dashed #999;
-            padding: 6px 0;
-          }
-          .item:last-child {
-            border-bottom: 0;
-          }
-          .total {
-            margin-top: 12px;
-            font-size: 18px;
-            font-weight: bold;
-          }
-          .mini {
-            font-size: 12px;
-          }
-          .center {
-            text-align: center;
-          }
+          .item { border-bottom: 1px dashed #999; padding: 6px 0; }
+          .item:last-child { border-bottom: 0; }
+          .total { margin-top: 12px; font-size: 18px; font-weight: bold; }
+          .mini { font-size: 12px; }
+          .center { text-align: center; }
           @media print {
             body { margin: 0; padding: 10px; }
           }
@@ -966,13 +964,13 @@ function imprimirPedidoCompleto(uidPedido) {
       ${pedido.itens
         .map(
           (item) => `
-        <div class="item">
-          <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
-          <p>Unitário: ${formatarMoeda(item.preco)}</p>
-          <p>Total item: ${formatarMoeda(item.preco * item.quantidade)}</p>
-          ${item.observacao ? `<p>Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
-        </div>
-      `
+            <div class="item">
+              <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
+              <p>Unitário: ${formatarMoeda(item.preco)}</p>
+              <p>Total item: ${formatarMoeda(item.preco * item.quantidade)}</p>
+              ${item.observacao ? `<p>Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
+            </div>
+          `
         )
         .join("")}
 
@@ -1004,7 +1002,6 @@ function imprimirPedidoRapido(uidPedido) {
         <h1>CHAPA LANCHES</h1>
         <p class="mini">Comanda rápida</p>
       </div>
-
       <hr>
 
       <div class="linha"><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</div>
@@ -1018,16 +1015,16 @@ function imprimirPedidoRapido(uidPedido) {
       ${
         pedido.tipoEntrega === "delivery"
           ? `
-        <div class="linha"><strong>Endereço:</strong> ${escaparHtml(
-          `${pedido.endereco || "-"}, ${pedido.numero || "-"}`
-        )}</div>
-        <div class="linha"><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</div>
-        ${
-          pedido.complemento
-            ? `<div class="linha"><strong>Comp.:</strong> ${escaparHtml(pedido.complemento)}</div>`
-            : ""
-        }
-      `
+            <div class="linha"><strong>Endereço:</strong> ${escaparHtml(
+              `${pedido.endereco || "-"}, ${pedido.numero || "-"}`
+            )}</div>
+            <div class="linha"><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</div>
+            ${
+              pedido.complemento
+                ? `<div class="linha"><strong>Comp.:</strong> ${escaparHtml(pedido.complemento)}</div>`
+                : ""
+            }
+          `
           : ""
       }
 
@@ -1035,18 +1032,17 @@ function imprimirPedidoRapido(uidPedido) {
       ${pedido.itens
         .map(
           (item) => `
-        <div class="item">
-          <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
-          ${item.observacao ? `<p class="mini">Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
-        </div>
-      `
+            <div class="item">
+              <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
+              ${item.observacao ? `<p class="mini">Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
+            </div>
+          `
         )
         .join("")}
 
       <h2>Pagamento</h2>
       <p><strong>Forma:</strong> ${escaparHtml(pedido.pagamento)}</p>
       ${pedido.troco ? `<p><strong>Troco:</strong> ${escaparHtml(pedido.troco)}</p>` : ""}
-
       ${pedido.observacao ? `<h2>Obs.</h2><p>${escaparHtml(pedido.observacao)}</p>` : ""}
 
       <hr>
@@ -1135,8 +1131,8 @@ function obterStatusAutomaticoLoja() {
   const agora = new Date();
   const hora = agora.getHours();
   const minuto = agora.getMinutes();
-
   const horarioAtual = hora * 60 + minuto;
+
   const abertura = 19 * 60;
   const fechamento = 23 * 60 + 45;
 
@@ -1227,11 +1223,7 @@ function iniciarRealtimeSupabase() {
       .channel("orders-realtime-admin")
       .on(
         "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: TABELA_PEDIDOS
-        },
+        { event: "*", schema: "public", table: TABELA_PEDIDOS },
         async (payload) => {
           console.log("Mudança recebida do Supabase:", payload);
           await carregarPedidos(payload?.eventType === "INSERT");
@@ -1268,16 +1260,17 @@ if (btnToggleLoja) {
   btnToggleLoja.addEventListener("click", alternarStatusLoja);
   btnToggleLoja.addEventListener("contextmenu", function (event) {
     event.preventDefault();
+
     const confirmar = confirm(
       "Remover o modo manual e voltar ao horário automático da loja?"
     );
+
     if (!confirmar) return;
     removerOverrideLoja();
   });
 }
 
 if (btnSair) btnSair.addEventListener("click", sairDoPainel);
-
 if (buscaPedido) buscaPedido.addEventListener("input", renderizarQuadro);
 if (filtroStatus) filtroStatus.addEventListener("change", renderizarQuadro);
 if (filtroTipo) filtroTipo.addEventListener("change", renderizarQuadro);
@@ -1304,7 +1297,7 @@ window.imprimirPedidoCompleto = imprimirPedidoCompleto;
 window.imprimirPedidoRapido = imprimirPedidoRapido;
 window.copiarPedido = copiarPedido;
 
-console.log("ADMIN JS NOVO CARREGADO - STATUS ORDERS CORRIGIDO");
+console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA");
 
 esconderBotaoApagarTudo();
 carregarStatusLoja();
