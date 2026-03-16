@@ -11,6 +11,7 @@ let supabaseClient = null;
 let realtimeChannel = null;
 let carregandoPedidos = false;
 let ultimoHashPedidos = "";
+let dataAtualPainel = obterChaveDiaAtual();
 
 if (
   window.supabase &&
@@ -81,6 +82,29 @@ function gerarId(index) {
 function gerarUidPedido(pedido, index, dataObj) {
   const baseId = pedido.id || gerarId(index);
   return `${baseId}_${dataObj.getTime()}_${index}`;
+}
+
+function obterChaveDiaAtual() {
+  const agora = new Date();
+  const ano = agora.getFullYear();
+  const mes = String(agora.getMonth() + 1).padStart(2, "0");
+  const dia = String(agora.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function verificarViradaDeDia() {
+  const chaveHoje = obterChaveDiaAtual();
+
+  if (chaveHoje !== dataAtualPainel) {
+    console.log("Virada de dia detectada. Limpando painel e carregando novo dia.");
+    dataAtualPainel = chaveHoje;
+    pedidos = [];
+    ultimaQuantidadePedidos = 0;
+    ultimoHashPedidos = "";
+    atualizarResumo();
+    renderizarQuadro();
+    carregarPedidos(false);
+  }
 }
 
 function converterDataSegura(valor) {
@@ -352,6 +376,8 @@ async function carregarPedidos(forcarSomNovoPedido = false) {
   carregandoPedidos = true;
 
   try {
+    verificarViradaDeDia();
+
     let pedidosBrutos = [];
 
     if (supabaseClient) {
@@ -737,20 +763,11 @@ async function alterarStatusNoBanco(pedido, novoStatus) {
 
   const statusNormalizado = normalizarStatus(novoStatus);
 
-  console.log("Atualizando status no banco:", {
-    tabela: TABELA_PEDIDOS,
-    bancoId: pedido.bancoId,
-    statusEnviado: statusNormalizado,
-    pedido
-  });
-
   const { data, error } = await supabaseClient
     .from(TABELA_PEDIDOS)
     .update({ status: statusNormalizado })
     .eq("id", Number(pedido.bancoId))
     .select();
-
-  console.log("Retorno update status:", { data, error });
 
   if (error) {
     console.error("Erro ao atualizar status no Supabase:", error);
@@ -765,14 +782,7 @@ async function alterarStatusNoBanco(pedido, novoStatus) {
 }
 
 async function alterarStatus(indice, novoStatus) {
-  console.log("alterarStatus() chamada:", {
-    indice,
-    novoStatus,
-    totalPedidos: pedidos.length
-  });
-
   if (indice < 0 || indice >= pedidos.length) {
-    console.error("Índice inválido:", indice, pedidos);
     alert("Índice do pedido inválido.");
     return;
   }
@@ -780,9 +790,6 @@ async function alterarStatus(indice, novoStatus) {
   try {
     const pedido = pedidos[indice];
     const statusNormalizado = normalizarStatus(novoStatus);
-
-    console.log("Pedido encontrado para atualizar:", pedido);
-    console.log("Status normalizado:", statusNormalizado);
 
     if (supabaseClient) {
       await alterarStatusNoBanco(pedido, statusNormalizado);
@@ -817,18 +824,10 @@ async function excluirPedidoNoBanco(pedido) {
     throw new Error("Pedido sem ID válido no banco.");
   }
 
-  console.log("Excluindo pedido no banco:", {
-    tabela: TABELA_PEDIDOS,
-    bancoId: pedido.bancoId,
-    pedido
-  });
-
   const { error } = await supabaseClient
     .from(TABELA_PEDIDOS)
     .delete()
     .eq("id", Number(pedido.bancoId));
-
-  console.log("Retorno delete pedido:", { error });
 
   if (error) {
     console.error("Erro ao excluir pedido no Supabase:", error);
@@ -847,9 +846,7 @@ async function excluirPedido(indice) {
   const identificador = pedido.id || pedido.bancoId || `pedido ${indice + 1}`;
   const confirmar = confirm(`Deseja realmente excluir o pedido ${identificador}?`);
 
-  if (!confirmar) {
-    return;
-  }
+  if (!confirmar) return;
 
   try {
     if (supabaseClient) {
@@ -1277,6 +1274,7 @@ if (filtroTipo) filtroTipo.addEventListener("change", renderizarQuadro);
 if (ordenacao) ordenacao.addEventListener("change", renderizarQuadro);
 
 window.addEventListener("storage", () => {
+  verificarViradaDeDia();
   carregarPedidos();
   carregarStatusLoja();
 });
@@ -1297,7 +1295,7 @@ window.imprimirPedidoCompleto = imprimirPedidoCompleto;
 window.imprimirPedidoRapido = imprimirPedidoRapido;
 window.copiarPedido = copiarPedido;
 
-console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA");
+console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA");
 
 esconderBotaoApagarTudo();
 carregarStatusLoja();
@@ -1308,6 +1306,7 @@ atualizarRelogio();
 setInterval(atualizarRelogio, 1000);
 setInterval(atualizarContadoresTempo, 30000);
 setInterval(() => {
+  verificarViradaDeDia();
   carregarPedidos();
   carregarStatusLoja();
 }, 5000);
