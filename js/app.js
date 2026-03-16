@@ -240,7 +240,7 @@ function lojaAbertaAgora() {
 
   const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
   const abre = 19 * 60;
-  const fecha = 23 * 60 + 45;
+  const fecha = 22 * 60 + 45;
 
   return minutosAgora >= abre && minutosAgora < fecha;
 }
