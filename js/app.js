@@ -3,9 +3,6 @@ const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa La
 const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
 const TEMPO_PREPARO_FIXO_MINUTOS = 45;
 
-const LOJA_STATUS_KEY = 'chapa_loja_aberta';
-const LOJA_OVERRIDE_KEY = 'chapa_loja_override';
-
 const REGRAS_ENTREGA_PADRAO = [
   { km_min: 0, km_max: 3, fee: 4, active: true },
   { km_min: 3.01, km_max: 4, fee: 5, active: true },
@@ -237,47 +234,136 @@ function calcularTotal() {
   return calcularSubtotal() + taxaEntrega;
 }
 
-function lojaAbertaPorHorario() {
+function converterHorarioParaMinutos(horario) {
+  if (!horario) return null;
+
+  const partes = String(horario).split(':');
+  const hora = Number(partes[0] || 0);
+  const minuto = Number(partes[1] || 0);
+
+  return (hora * 60) + minuto;
+}
+
+function obterDiasPermitidosLoja() {
+  return [0, 3, 4, 5, 6];
+}
+
+function lojaAbertaPorHorario(config = null) {
   const agora = new Date();
   const dia = agora.getDay();
 
-  if (dia !== 0 && dia !== 3 && dia !== 4 && dia !== 5 && dia !== 6) {
+  if (!obterDiasPermitidosLoja().includes(dia)) {
     return false;
   }
 
   const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
-  const abre = 19 * 60;
-  const fecha = 22 * 60 + 30;
+
+  const abre = converterHorarioParaMinutos(config?.open_time) ?? (19 * 60);
+  const fecha = converterHorarioParaMinutos(config?.close_time) ?? (22 * 60 + 30);
 
   return minutosAgora >= abre && minutosAgora < fecha;
 }
 
-function obterStatusLojaManual() {
-  const override = localStorage.getItem(LOJA_OVERRIDE_KEY);
-
-  if (override === 'aberta') return true;
-  if (override === 'fechada') return false;
-
-  if (override === 'true') return true;
-  if (override === 'false') return false;
-
-  return null;
+function obterConfiguracaoLojaPadrao() {
+  return {
+    id: 1,
+    store_name: nomeLoja,
+    whatsapp_number: numeroWhatsapp,
+    store_address: ENDERECO_LOJA_PADRAO,
+    store_lat: null,
+    store_lng: null,
+    open_time: '19:00:00',
+    close_time: '22:30:00',
+    auto_open: true,
+    manual_force_open: false,
+    manual_force_closed: false
+  };
 }
 
-function lojaAbertaAgora() {
-  const statusManual = obterStatusLojaManual();
-
-  if (statusManual !== null) {
-    return statusManual;
+async function carregarConfiguracaoLoja() {
+  if (!supabaseClient) {
+    configuracaoLoja = obterConfiguracaoLojaPadrao();
+    return configuracaoLoja;
   }
 
-  return lojaAbertaPorHorario();
+  try {
+    const { data, error } = await supabaseClient
+      .from('store_settings')
+      .select('*')
+      .eq('id', 1)
+      .single();
+
+    if (error) {
+      console.error('Erro ao carregar configuração da loja:', error);
+      configuracaoLoja = obterConfiguracaoLojaPadrao();
+      return configuracaoLoja;
+    }
+
+    configuracaoLoja = data || obterConfiguracaoLojaPadrao();
+    return configuracaoLoja;
+  } catch (erro) {
+    console.error('Falha ao carregar configuração:', erro);
+    configuracaoLoja = obterConfiguracaoLojaPadrao();
+    return configuracaoLoja;
+  }
 }
 
-function atualizarStatusLoja() {
+async function atualizarConfiguracaoLojaStatus() {
+  if (!supabaseClient) {
+    if (!configuracaoLoja) {
+      configuracaoLoja = obterConfiguracaoLojaPadrao();
+    }
+    return configuracaoLoja;
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('store_settings')
+      .select('id, open_time, close_time, auto_open, manual_force_open, manual_force_closed')
+      .eq('id', 1)
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar status da loja:', error);
+      return configuracaoLoja || obterConfiguracaoLojaPadrao();
+    }
+
+    configuracaoLoja = {
+      ...(configuracaoLoja || obterConfiguracaoLojaPadrao()),
+      ...data
+    };
+
+    return configuracaoLoja;
+  } catch (erro) {
+    console.error('Falha ao atualizar status da loja:', erro);
+    return configuracaoLoja || obterConfiguracaoLojaPadrao();
+  }
+}
+
+async function lojaAbertaAgora() {
+  const config = await atualizarConfiguracaoLojaStatus();
+
+  if (!config) return false;
+
+  if (config.manual_force_open === true) {
+    return true;
+  }
+
+  if (config.manual_force_closed === true) {
+    return false;
+  }
+
+  if (config.auto_open === true) {
+    return lojaAbertaPorHorario(config);
+  }
+
+  return false;
+}
+
+async function atualizarStatusLoja() {
   const statusLoja = obterElementoStatusLoja();
   const btnFinalizar = document.getElementById('btnFinalizar');
-  const aberta = lojaAbertaAgora();
+  const aberta = await lojaAbertaAgora();
 
   if (statusLoja) {
     if (aberta) {
@@ -294,8 +380,6 @@ function atualizarStatusLoja() {
   if (btnFinalizar) {
     btnFinalizar.disabled = !aberta;
   }
-
-  localStorage.setItem(LOJA_STATUS_KEY, aberta ? 'true' : 'false');
 }
 
 function atualizarEntrega() {
@@ -461,49 +545,6 @@ async function carregarRegrasEntrega() {
   } catch (erro) {
     console.error('Falha ao carregar regras:', erro);
     regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
-  }
-}
-
-async function carregarConfiguracaoLoja() {
-  if (!supabaseClient) {
-    configuracaoLoja = {
-      store_address: ENDERECO_LOJA_PADRAO,
-      store_lat: null,
-      store_lng: null
-    };
-    return;
-  }
-
-  try {
-    const { data, error } = await supabaseClient
-      .from('store_settings')
-      .select('*')
-      .limit(1);
-
-    if (error) {
-      console.error('Erro ao carregar configuração da loja:', error);
-      configuracaoLoja = {
-        store_address: ENDERECO_LOJA_PADRAO,
-        store_lat: null,
-        store_lng: null
-      };
-      return;
-    }
-
-    configuracaoLoja = (data && data.length > 0)
-      ? data[0]
-      : {
-          store_address: ENDERECO_LOJA_PADRAO,
-          store_lat: null,
-          store_lng: null
-        };
-  } catch (erro) {
-    console.error('Falha ao carregar configuração:', erro);
-    configuracaoLoja = {
-      store_address: ENDERECO_LOJA_PADRAO,
-      store_lat: null,
-      store_lng: null
-    };
   }
 }
 
@@ -750,7 +791,7 @@ async function finalizarPedido() {
     return;
   }
 
-  if (!lojaAbertaAgora()) {
+  if (!(await lojaAbertaAgora())) {
     alert('A loja está fechada no momento.');
     return;
   }
@@ -910,7 +951,7 @@ async function finalizarPedido() {
   } finally {
     if (btnFinalizar) {
       btnFinalizar.innerText = 'Finalizar no WhatsApp';
-      btnFinalizar.disabled = !lojaAbertaAgora();
+      btnFinalizar.disabled = !(await lojaAbertaAgora());
     }
   }
 }
@@ -922,12 +963,6 @@ window.onclick = function (event) {
   }
 };
 
-window.addEventListener('storage', function (event) {
-  if (event.key === LOJA_OVERRIDE_KEY || event.key === LOJA_STATUS_KEY) {
-    atualizarStatusLoja();
-  }
-});
-
 async function iniciarSistema() {
   await carregarConfiguracaoLoja();
   await carregarRegrasEntrega();
@@ -935,11 +970,13 @@ async function iniciarSistema() {
   aplicarEventosEntrega();
   atualizarContadores();
   atualizarEntrega();
-  atualizarStatusLoja();
+  await atualizarStatusLoja();
 
-  setInterval(atualizarStatusLoja, 60000);
+  setInterval(async () => {
+    await atualizarStatusLoja();
+  }, 5000);
 
-  console.log('Sistema iniciado com OpenStreetMap + OSRM.');
+  console.log('Sistema iniciado com OpenStreetMap + OSRM + status da loja via Supabase.');
 }
 
 iniciarSistema();
