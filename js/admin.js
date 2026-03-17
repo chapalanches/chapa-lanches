@@ -1126,33 +1126,37 @@ function atualizarRelogio() {
 
 function obterStatusAutomaticoLoja() {
   const agora = new Date();
+  const diaSemana = agora.getDay();
   const hora = agora.getHours();
   const minuto = agora.getMinutes();
   const horarioAtual = hora * 60 + minuto;
 
+  const diasPermitidos = [0, 3, 4, 5, 6];
   const abertura = 19 * 60;
-  const fechamento = 22 * 60 + 45;
+  const fechamento = 22 * 60 + 30;
 
-  return horarioAtual >= abertura && horarioAtual <= fechamento;
+  return diasPermitidos.includes(diaSemana) &&
+    horarioAtual >= abertura &&
+    horarioAtual <= fechamento;
 }
 
 function carregarStatusLoja() {
   const override = localStorage.getItem(LOJA_OVERRIDE_KEY);
 
   if (override === "aberta") {
-    aplicarStatusLoja(true, true);
+    aplicarStatusLoja(true);
     return;
   }
 
   if (override === "fechada") {
-    aplicarStatusLoja(false, true);
+    aplicarStatusLoja(false);
     return;
   }
 
-  aplicarStatusLoja(obterStatusAutomaticoLoja(), false);
+  aplicarStatusLoja(obterStatusAutomaticoLoja());
 }
 
-function aplicarStatusLoja(aberta, manual = false) {
+function aplicarStatusLoja(aberta) {
   const btn = byId("btnToggleLoja");
   if (!btn) return;
 
@@ -1160,17 +1164,21 @@ function aplicarStatusLoja(aberta, manual = false) {
 
   if (aberta) {
     btn.classList.add("aberta");
-    btn.textContent = manual ? "Aberta (manual)" : "Aberta";
+    btn.textContent = "Aberta";
     localStorage.setItem(LOJA_STATUS_KEY, "true");
   } else {
     btn.classList.add("fechada");
-    btn.textContent = manual ? "Fechada (manual)" : "Fechada";
+    btn.textContent = "Fechada";
     localStorage.setItem(LOJA_STATUS_KEY, "false");
   }
 }
 
 function alternarStatusLoja() {
-  const statusAtual = localStorage.getItem(LOJA_STATUS_KEY) === "true";
+  const overrideAtual = localStorage.getItem(LOJA_OVERRIDE_KEY);
+  const statusAtual = overrideAtual
+    ? overrideAtual === "aberta"
+    : localStorage.getItem(LOJA_STATUS_KEY) === "true";
+
   const novoStatus = !statusAtual;
 
   const confirmar = confirm(
@@ -1182,6 +1190,8 @@ function alternarStatusLoja() {
   if (!confirmar) return;
 
   localStorage.setItem(LOJA_OVERRIDE_KEY, novoStatus ? "aberta" : "fechada");
+  localStorage.setItem(LOJA_STATUS_KEY, novoStatus ? "true" : "false");
+
   carregarStatusLoja();
 }
 
