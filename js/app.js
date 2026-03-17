@@ -3,6 +3,9 @@ const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa La
 const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
 const TEMPO_PREPARO_FIXO_MINUTOS = 45;
 
+const LOJA_STATUS_KEY = 'chapa_loja_aberta';
+const LOJA_OVERRIDE_KEY = 'chapa_loja_override';
+
 const REGRAS_ENTREGA_PADRAO = [
   { km_min: 0, km_max: 3, fee: 4, active: true },
   { km_min: 3.01, km_max: 4, fee: 5, active: true },
@@ -62,6 +65,10 @@ function abrirWhatsapp(url) {
   } else {
     window.open(url, '_blank');
   }
+}
+
+function obterElementoStatusLoja() {
+  return document.getElementById('statusLoja') || document.getElementById('status-loja');
 }
 
 function aplicarMascaraCep() {
@@ -230,7 +237,7 @@ function calcularTotal() {
   return calcularSubtotal() + taxaEntrega;
 }
 
-function lojaAbertaAgora() {
+function lojaAbertaPorHorario() {
   const agora = new Date();
   const dia = agora.getDay();
 
@@ -240,13 +247,35 @@ function lojaAbertaAgora() {
 
   const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
   const abre = 19 * 60;
-  const fecha = 22 * 60 + 45;
+  const fecha = 22 * 60 + 30;
 
   return minutosAgora >= abre && minutosAgora < fecha;
 }
 
+function obterStatusLojaManual() {
+  const override = localStorage.getItem(LOJA_OVERRIDE_KEY);
+
+  if (override === 'aberta') return true;
+  if (override === 'fechada') return false;
+
+  if (override === 'true') return true;
+  if (override === 'false') return false;
+
+  return null;
+}
+
+function lojaAbertaAgora() {
+  const statusManual = obterStatusLojaManual();
+
+  if (statusManual !== null) {
+    return statusManual;
+  }
+
+  return lojaAbertaPorHorario();
+}
+
 function atualizarStatusLoja() {
-  const statusLoja = document.getElementById('statusLoja');
+  const statusLoja = obterElementoStatusLoja();
   const btnFinalizar = document.getElementById('btnFinalizar');
   const aberta = lojaAbertaAgora();
 
@@ -265,6 +294,8 @@ function atualizarStatusLoja() {
   if (btnFinalizar) {
     btnFinalizar.disabled = !aberta;
   }
+
+  localStorage.setItem(LOJA_STATUS_KEY, aberta ? 'true' : 'false');
 }
 
 function atualizarEntrega() {
@@ -891,6 +922,12 @@ window.onclick = function (event) {
   }
 };
 
+window.addEventListener('storage', function (event) {
+  if (event.key === LOJA_OVERRIDE_KEY || event.key === LOJA_STATUS_KEY) {
+    atualizarStatusLoja();
+  }
+});
+
 async function iniciarSistema() {
   await carregarConfiguracaoLoja();
   await carregarRegrasEntrega();
@@ -899,6 +936,7 @@ async function iniciarSistema() {
   atualizarContadores();
   atualizarEntrega();
   atualizarStatusLoja();
+
   setInterval(atualizarStatusLoja, 60000);
 
   console.log('Sistema iniciado com OpenStreetMap + OSRM.');
