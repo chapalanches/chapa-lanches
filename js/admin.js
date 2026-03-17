@@ -2,16 +2,17 @@ let pedidos = [];
 let ultimaQuantidadePedidos = 0;
 
 const STORAGE_KEYS = ["pedidos", "chapa_pedidos", "pedidos_chapa"];
-const LOJA_STATUS_KEY = "chapa_loja_aberta";
-const LOJA_OVERRIDE_KEY = "chapa_loja_override";
 const LOGIN_STORAGE_KEY = "chapa_admin_logado";
 const TABELA_PEDIDOS = "orders";
+const TABELA_CONFIG_LOJA = "store_settings";
+const STORE_SETTINGS_ID = 1;
 
 let supabaseClient = null;
 let realtimeChannel = null;
 let carregandoPedidos = false;
 let ultimoHashPedidos = "";
 let dataAtualPainel = obterChaveDiaAtual();
+let configuracaoLoja = null;
 
 if (
   window.supabase &&
@@ -1124,36 +1125,122 @@ function atualizarRelogio() {
   el.textContent = agora.toLocaleTimeString("pt-BR");
 }
 
-function obterStatusAutomaticoLoja() {
-  const agora = new Date();
-  const diaSemana = agora.getDay();
-  const hora = agora.getHours();
-  const minuto = agora.getMinutes();
-  const horarioAtual = hora * 60 + minuto;
-
-  const diasPermitidos = [0, 3, 4, 5, 6];
-  const abertura = 19 * 60;
-  const fechamento = 22 * 60 + 30;
-
-  return diasPermitidos.includes(diaSemana) &&
-    horarioAtual >= abertura &&
-    horarioAtual <= fechamento;
+function obterConfiguracaoLojaPadrao() {
+  return {
+    id: STORE_SETTINGS_ID,
+    open_time: "19:00:00",
+    close_time: "22:30:00",
+    auto_open: true,
+    manual_force_open: false,
+    manual_force_closed: false
+  };
 }
 
-function carregarStatusLoja() {
-  const override = localStorage.getItem(LOJA_OVERRIDE_KEY);
+function converterHorarioParaMinutos(horario) {
+  if (!horario) return null;
 
-  if (override === "aberta") {
-    aplicarStatusLoja(true);
-    return;
+  const partes = String(horario).split(":");
+  const hora = Number(partes[0] || 0);
+  const minuto = Number(partes[1] || 0);
+
+  return hora * 60 + minuto;
+}
+
+function obterStatusAutomaticoLoja(config = null) {
+  const agora = new Date();
+  const diaSemana = agora.getDay();
+  const horarioAtual = agora.getHours() * 60 + agora.getMinutes();
+
+  const diasPermitidos = [0, 3, 4, 5, 6];
+  const abertura = converterHorarioParaMinutos(config?.open_time) ?? 19 * 60;
+  const fechamento = converterHorarioParaMinutos(config?.close_time) ?? 22 * 60 + 30;
+
+  return (
+    diasPermitidos.includes(diaSemana) &&
+    horarioAtual >= abertura &&
+    horarioAtual <= fechamento
+  );
+}
+
+async function carregarConfiguracaoLoja() {
+  if (!supabaseClient) {
+    configuracaoLoja = obterConfiguracaoLojaPadrao();
+    return configuracaoLoja;
   }
 
-  if (override === "fechada") {
-    aplicarStatusLoja(false);
-    return;
+  try {
+    const { data, error } = await supabaseClient
+      .from(TABELA_CONFIG_LOJA)
+      .select("*")
+      .eq("id", STORE_SETTINGS_ID)
+      .single();
+
+    if (error) {
+      console.error("Erro ao carregar configuração da loja:", error);
+      configuracaoLoja = obterConfiguracaoLojaPadrao();
+      return configuracaoLoja;
+    }
+
+    configuracaoLoja = {
+      ...obterConfiguracaoLojaPadrao(),
+      ...(data || {})
+    };
+
+    return configuracaoLoja;
+  } catch (erro) {
+    console.error("Falha ao carregar configuração da loja:", erro);
+    configuracaoLoja = obterConfiguracaoLojaPadrao();
+    return configuracaoLoja;
+  }
+}
+
+async function atualizarConfiguracaoLojaStatus() {
+  if (!supabaseClient) {
+    if (!configuracaoLoja) {
+      configuracaoLoja = obterConfiguracaoLojaPadrao();
+    }
+    return configuracaoLoja;
   }
 
-  aplicarStatusLoja(obterStatusAutomaticoLoja());
+  try {
+    const { data, error } = await supabaseClient
+      .from(TABELA_CONFIG_LOJA)
+      .select("id, open_time, close_time, auto_open, manual_force_open, manual_force_closed, updated_at")
+      .eq("id", STORE_SETTINGS_ID)
+      .single();
+
+    if (error) {
+      console.error("Erro ao atualizar status da loja:", error);
+      return configuracaoLoja || obterConfiguracaoLojaPadrao();
+    }
+
+    configuracaoLoja = {
+      ...(configuracaoLoja || obterConfiguracaoLojaPadrao()),
+      ...(data || {})
+    };
+
+    return configuracaoLoja;
+  } catch (erro) {
+    console.error("Falha ao atualizar status da loja:", erro);
+    return configuracaoLoja || obterConfiguracaoLojaPadrao();
+  }
+}
+
+async function lojaEstaAbertaAgora() {
+  const config = await atualizarConfiguracaoLojaStatus();
+
+  if (!config) return false;
+
+  if (config.manual_force_open === true) return true;
+  if (config.manual_force_closed === true) return false;
+  if (config.auto_open === true) return obterStatusAutomaticoLoja(config);
+
+  return false;
+}
+
+async function carregarStatusLoja() {
+  const aberta = await lojaEstaAbertaAgora();
+  aplicarStatusLoja(aberta);
 }
 
 function aplicarStatusLoja(aberta) {
@@ -1165,39 +1252,84 @@ function aplicarStatusLoja(aberta) {
   if (aberta) {
     btn.classList.add("aberta");
     btn.textContent = "Aberta";
-    localStorage.setItem(LOJA_STATUS_KEY, "true");
   } else {
     btn.classList.add("fechada");
     btn.textContent = "Fechada";
-    localStorage.setItem(LOJA_STATUS_KEY, "false");
   }
 }
 
-function alternarStatusLoja() {
-  const overrideAtual = localStorage.getItem(LOJA_OVERRIDE_KEY);
-  const statusAtual = overrideAtual
-    ? overrideAtual === "aberta"
-    : localStorage.getItem(LOJA_STATUS_KEY) === "true";
+async function alternarStatusLoja() {
+  if (!supabaseClient) {
+    alert("Supabase não configurado.");
+    return;
+  }
 
-  const novoStatus = !statusAtual;
+  try {
+    const config = await atualizarConfiguracaoLojaStatus();
+    const abertaAgora = await lojaEstaAbertaAgora();
+    const novoStatus = !abertaAgora;
 
-  const confirmar = confirm(
-    novoStatus
-      ? "Deseja abrir a loja manualmente?"
-      : "Deseja fechar a loja manualmente?"
-  );
+    const confirmar = confirm(
+      novoStatus
+        ? "Deseja abrir a loja manualmente?"
+        : "Deseja fechar a loja manualmente?"
+    );
 
-  if (!confirmar) return;
+    if (!confirmar) return;
 
-  localStorage.setItem(LOJA_OVERRIDE_KEY, novoStatus ? "aberta" : "fechada");
-  localStorage.setItem(LOJA_STATUS_KEY, novoStatus ? "true" : "false");
+    const payload = {
+      auto_open: false,
+      manual_force_open: novoStatus,
+      manual_force_closed: !novoStatus,
+      updated_at: new Date().toISOString()
+    };
 
-  carregarStatusLoja();
+    const { error } = await supabaseClient
+      .from(TABELA_CONFIG_LOJA)
+      .update(payload)
+      .eq("id", Number(config?.id || STORE_SETTINGS_ID));
+
+    if (error) {
+      console.error("Erro ao atualizar status da loja no Supabase:", error);
+      alert("Não foi possível atualizar o status da loja.");
+      return;
+    }
+
+    await carregarStatusLoja();
+  } catch (erro) {
+    console.error("Falha ao alternar status da loja:", erro);
+    alert("Não foi possível atualizar o status da loja.");
+  }
 }
 
-function removerOverrideLoja() {
-  localStorage.removeItem(LOJA_OVERRIDE_KEY);
-  carregarStatusLoja();
+async function removerOverrideLoja() {
+  if (!supabaseClient) {
+    alert("Supabase não configurado.");
+    return;
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from(TABELA_CONFIG_LOJA)
+      .update({
+        auto_open: true,
+        manual_force_open: false,
+        manual_force_closed: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", STORE_SETTINGS_ID);
+
+    if (error) {
+      console.error("Erro ao remover override da loja:", error);
+      alert("Não foi possível voltar ao modo automático.");
+      return;
+    }
+
+    await carregarStatusLoja();
+  } catch (erro) {
+    console.error("Falha ao remover override da loja:", erro);
+    alert("Não foi possível voltar ao modo automático.");
+  }
 }
 
 function sairDoPainel() {
@@ -1264,8 +1396,11 @@ if (btnLimparTudo) {
 }
 
 if (btnToggleLoja) {
-  btnToggleLoja.addEventListener("click", alternarStatusLoja);
-  btnToggleLoja.addEventListener("contextmenu", function (event) {
+  btnToggleLoja.addEventListener("click", async () => {
+    await alternarStatusLoja();
+  });
+
+  btnToggleLoja.addEventListener("contextmenu", async function (event) {
     event.preventDefault();
 
     const confirmar = confirm(
@@ -1273,7 +1408,7 @@ if (btnToggleLoja) {
     );
 
     if (!confirmar) return;
-    removerOverrideLoja();
+    await removerOverrideLoja();
   });
 }
 
@@ -1282,12 +1417,6 @@ if (buscaPedido) buscaPedido.addEventListener("input", renderizarQuadro);
 if (filtroStatus) filtroStatus.addEventListener("change", renderizarQuadro);
 if (filtroTipo) filtroTipo.addEventListener("change", renderizarQuadro);
 if (ordenacao) ordenacao.addEventListener("change", renderizarQuadro);
-
-window.addEventListener("storage", () => {
-  verificarViradaDeDia();
-  carregarPedidos();
-  carregarStatusLoja();
-});
 
 window.addEventListener("beforeunload", () => {
   try {
@@ -1307,16 +1436,19 @@ window.copiarPedido = copiarPedido;
 
 console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA");
 
-esconderBotaoApagarTudo();
-carregarStatusLoja();
-carregarPedidos();
-iniciarRealtimeSupabase();
-atualizarRelogio();
+(async function iniciarAdmin() {
+  esconderBotaoApagarTudo();
+  await carregarConfiguracaoLoja();
+  await carregarStatusLoja();
+  await carregarPedidos();
+  iniciarRealtimeSupabase();
+  atualizarRelogio();
 
-setInterval(atualizarRelogio, 1000);
-setInterval(atualizarContadoresTempo, 30000);
-setInterval(() => {
-  verificarViradaDeDia();
-  carregarPedidos();
-  carregarStatusLoja();
-}, 5000);
+  setInterval(atualizarRelogio, 1000);
+  setInterval(atualizarContadoresTempo, 30000);
+  setInterval(async () => {
+    verificarViradaDeDia();
+    await carregarPedidos();
+    await carregarStatusLoja();
+  }, 5000);
+})();
