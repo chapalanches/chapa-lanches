@@ -1153,7 +1153,7 @@ function obterStatusAutomaticoLoja(config = null) {
 
   const diasPermitidos = [0, 3, 4, 5, 6];
   const abertura = converterHorarioParaMinutos(config?.open_time) ?? 19 * 60;
-  const fechamento = converterHorarioParaMinutos(config?.close_time) ?? 22 * 60 + 30;
+  const fechamento = converterHorarioParaMinutos(config?.close_time) ?? (22 * 60 + 30);
 
   return (
     diasPermitidos.includes(diaSemana) &&
@@ -1226,6 +1226,13 @@ async function atualizarConfiguracaoLojaStatus() {
   }
 }
 
+function obterModoLoja(config) {
+  if (!config) return "automatico";
+  if (config.manual_force_open === true) return "aberta";
+  if (config.manual_force_closed === true) return "fechada";
+  return "automatico";
+}
+
 async function lojaEstaAbertaAgora() {
   const config = await atualizarConfiguracaoLojaStatus();
 
@@ -1239,11 +1246,13 @@ async function lojaEstaAbertaAgora() {
 }
 
 async function carregarStatusLoja() {
+  const config = await atualizarConfiguracaoLojaStatus();
   const aberta = await lojaEstaAbertaAgora();
-  aplicarStatusLoja(aberta);
+  const modo = obterModoLoja(config);
+  aplicarStatusLoja(aberta, modo);
 }
 
-function aplicarStatusLoja(aberta) {
+function aplicarStatusLoja(aberta, modo = "automatico") {
   const btn = byId("btnToggleLoja");
   if (!btn) return;
 
@@ -1256,80 +1265,96 @@ function aplicarStatusLoja(aberta) {
     btn.classList.add("fechada");
     btn.textContent = "Fechada";
   }
+
+  if (modo === "automatico") {
+    btn.title = "Modo atual: Automático";
+  } else if (modo === "aberta") {
+    btn.title = "Modo atual: Aberta manualmente";
+  } else if (modo === "fechada") {
+    btn.title = "Modo atual: Fechada manualmente";
+  }
+}
+
+async function definirModoLoja(modo) {
+  if (!supabaseClient) {
+    alert("Supabase não configurado.");
+    return;
+  }
+
+  let payload = null;
+
+  if (modo === "automatico") {
+    payload = {
+      auto_open: true,
+      manual_force_open: false,
+      manual_force_closed: false,
+      updated_at: new Date().toISOString()
+    };
+  } else if (modo === "aberta") {
+    payload = {
+      auto_open: false,
+      manual_force_open: true,
+      manual_force_closed: false,
+      updated_at: new Date().toISOString()
+    };
+  } else if (modo === "fechada") {
+    payload = {
+      auto_open: false,
+      manual_force_open: false,
+      manual_force_closed: true,
+      updated_at: new Date().toISOString()
+    };
+  } else {
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from(TABELA_CONFIG_LOJA)
+    .update(payload)
+    .eq("id", STORE_SETTINGS_ID);
+
+  if (error) {
+    console.error("Erro ao definir modo da loja:", error);
+    alert("Não foi possível atualizar o modo da loja.");
+    return;
+  }
+
+  await carregarStatusLoja();
 }
 
 async function alternarStatusLoja() {
-  if (!supabaseClient) {
-    alert("Supabase não configurado.");
+  const config = await atualizarConfiguracaoLojaStatus();
+  const modoAtual = obterModoLoja(config);
+
+  const escolha = prompt(
+    `Selecione o modo da loja:\n\n1 - Automático\n2 - Aberta\n3 - Fechada\n\nModo atual: ${modoAtual}`,
+    modoAtual === "automatico" ? "1" : modoAtual === "aberta" ? "2" : "3"
+  );
+
+  if (escolha === null) return;
+
+  const opcao = String(escolha).trim();
+
+  if (opcao === "1") {
+    await definirModoLoja("automatico");
     return;
   }
 
-  try {
-    const config = await atualizarConfiguracaoLojaStatus();
-    const abertaAgora = await lojaEstaAbertaAgora();
-    const novoStatus = !abertaAgora;
-
-    const confirmar = confirm(
-      novoStatus
-        ? "Deseja abrir a loja manualmente?"
-        : "Deseja fechar a loja manualmente?"
-    );
-
-    if (!confirmar) return;
-
-    const payload = {
-      auto_open: false,
-      manual_force_open: novoStatus,
-      manual_force_closed: !novoStatus,
-      updated_at: new Date().toISOString()
-    };
-
-    const { error } = await supabaseClient
-      .from(TABELA_CONFIG_LOJA)
-      .update(payload)
-      .eq("id", Number(config?.id || STORE_SETTINGS_ID));
-
-    if (error) {
-      console.error("Erro ao atualizar status da loja no Supabase:", error);
-      alert("Não foi possível atualizar o status da loja.");
-      return;
-    }
-
-    await carregarStatusLoja();
-  } catch (erro) {
-    console.error("Falha ao alternar status da loja:", erro);
-    alert("Não foi possível atualizar o status da loja.");
+  if (opcao === "2") {
+    await definirModoLoja("aberta");
+    return;
   }
+
+  if (opcao === "3") {
+    await definirModoLoja("fechada");
+    return;
+  }
+
+  alert("Opção inválida. Use 1, 2 ou 3.");
 }
 
 async function removerOverrideLoja() {
-  if (!supabaseClient) {
-    alert("Supabase não configurado.");
-    return;
-  }
-
-  try {
-    const { error } = await supabaseClient
-      .from(TABELA_CONFIG_LOJA)
-      .update({
-        auto_open: true,
-        manual_force_open: false,
-        manual_force_closed: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", STORE_SETTINGS_ID);
-
-    if (error) {
-      console.error("Erro ao remover override da loja:", error);
-      alert("Não foi possível voltar ao modo automático.");
-      return;
-    }
-
-    await carregarStatusLoja();
-  } catch (erro) {
-    console.error("Falha ao remover override da loja:", erro);
-    alert("Não foi possível voltar ao modo automático.");
-  }
+  await definirModoLoja("automatico");
 }
 
 function sairDoPainel() {
@@ -1398,17 +1423,6 @@ if (btnLimparTudo) {
 if (btnToggleLoja) {
   btnToggleLoja.addEventListener("click", async () => {
     await alternarStatusLoja();
-  });
-
-  btnToggleLoja.addEventListener("contextmenu", async function (event) {
-    event.preventDefault();
-
-    const confirmar = confirm(
-      "Remover o modo manual e voltar ao horário automático da loja?"
-    );
-
-    if (!confirmar) return;
-    await removerOverrideLoja();
   });
 }
 
