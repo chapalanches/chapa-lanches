@@ -1323,34 +1323,36 @@ async function definirModoLoja(modo) {
 }
 
 async function alternarStatusLoja() {
-  const config = await atualizarConfiguracaoLojaStatus();
-  const modoAtual = obterModoLoja(config);
-
-  const escolha = prompt(
-    `Selecione o modo da loja:\n\n1 - Automático\n2 - Aberta\n3 - Fechada\n\nModo atual: ${modoAtual}`,
-    modoAtual === "automatico" ? "1" : modoAtual === "aberta" ? "2" : "3"
-  );
-
-  if (escolha === null) return;
-
-  const opcao = String(escolha).trim();
-
-  if (opcao === "1") {
-    await definirModoLoja("automatico");
+  if (!supabaseClient) {
+    alert("Supabase não configurado.");
     return;
   }
 
-  if (opcao === "2") {
-    await definirModoLoja("aberta");
-    return;
-  }
+  try {
+    const abertaAgora = await lojaEstaAbertaAgora();
+    const novoStatus = !abertaAgora;
 
-  if (opcao === "3") {
-    await definirModoLoja("fechada");
-    return;
-  }
+    const { error } = await supabaseClient
+      .from(TABELA_CONFIG_LOJA)
+      .update({
+        auto_open: false,
+        manual_force_open: novoStatus,
+        manual_force_closed: !novoStatus,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", STORE_SETTINGS_ID);
 
-  alert("Opção inválida. Use 1, 2 ou 3.");
+    if (error) {
+      console.error("Erro ao atualizar status da loja:", error);
+      alert("Não foi possível atualizar o status da loja.");
+      return;
+    }
+
+    await carregarStatusLoja();
+  } catch (erro) {
+    console.error("Falha ao alternar status da loja:", erro);
+    alert("Não foi possível atualizar o status da loja.");
+  }
 }
 
 async function removerOverrideLoja() {
@@ -1405,6 +1407,7 @@ const btnAtualizar = byId("btnAtualizar");
 const btnExportar = byId("btnExportar");
 const btnLimparTudo = byId("btnLimparTudo");
 const btnToggleLoja = byId("btnToggleLoja");
+const btnModoAutomatico = byId("btnModoAutomatico");
 const btnSair = byId("btnSair");
 const buscaPedido = byId("buscaPedido");
 const filtroStatus = byId("filtroStatus");
@@ -1423,6 +1426,12 @@ if (btnLimparTudo) {
 if (btnToggleLoja) {
   btnToggleLoja.addEventListener("click", async () => {
     await alternarStatusLoja();
+  });
+}
+
+if (btnModoAutomatico) {
+  btnModoAutomatico.addEventListener("click", async () => {
+    await removerOverrideLoja();
   });
 }
 
