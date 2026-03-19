@@ -1254,6 +1254,8 @@ async function carregarStatusLoja() {
 
 function aplicarStatusLoja(aberta, modo = "automatico") {
   const btn = byId("btnToggleLoja");
+  const btnAuto = byId("btnModoAutomatico");
+
   if (!btn) return;
 
   btn.classList.remove("aberta", "fechada");
@@ -1266,12 +1268,23 @@ function aplicarStatusLoja(aberta, modo = "automatico") {
     btn.textContent = "Fechada";
   }
 
+  if (btnAuto) {
+    btnAuto.classList.remove("ativo");
+
+    if (modo === "automatico") {
+      btnAuto.classList.add("ativo");
+      btnAuto.textContent = "Automático ✓";
+    } else {
+      btnAuto.textContent = "Automático";
+    }
+  }
+
   if (modo === "automatico") {
-    btn.title = "Modo atual: Automático";
+    btn.title = "Modo automático (horário)";
   } else if (modo === "aberta") {
-    btn.title = "Modo atual: Aberta manualmente";
+    btn.title = "Aberta manualmente";
   } else if (modo === "fechada") {
-    btn.title = "Modo atual: Fechada manualmente";
+    btn.title = "Fechada manualmente";
   }
 }
 
