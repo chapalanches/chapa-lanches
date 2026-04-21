@@ -631,9 +631,9 @@ function criarCardPedido(pedido) {
           </div>
         </div>
         <div class="order-meta">
-          <span class="badge badge-time js-tempo-decorrido" data-pedido-uid="${escaparHtml(pedido.uid)}">${escaparHtml(
-            tempoDecorridoTexto(pedido.dataObj)
-          )}</span>
+          <span class="badge badge-time js-tempo-decorrido" data-pedido-uid="${escaparHtml(
+            pedido.uid
+          )}">${escaparHtml(tempoDecorridoTexto(pedido.dataObj))}</span>
           <span class="badge badge-status">${escaparHtml(statusLabel(pedido.status))}</span>
           ${novo ? `<span class="badge badge-new">Novo pedido</span>` : ""}
           ${atrasado ? `<span class="badge badge-delay">Atenção</span>` : ""}
@@ -900,20 +900,129 @@ function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
         <meta charset="UTF-8">
         <title>${escaparHtml(titulo)}</title>
         <style>
-          * { box-sizing: border-box; }
-          body { font-family: Arial, sans-serif; padding: 18px; color: #000; font-size: 13px; }
-          h1, h2, h3 { margin: 0 0 10px 0; }
-          h1 { font-size: 22px; }
-          h2 { margin-top: 18px; border-bottom: 1px solid #000; padding-bottom: 4px; font-size: 15px; }
-          p { margin: 4px 0; }
-          .linha { margin: 4px 0; }
-          .item { border-bottom: 1px dashed #999; padding: 6px 0; }
-          .item:last-child { border-bottom: 0; }
-          .total { margin-top: 12px; font-size: 18px; font-weight: bold; }
-          .mini { font-size: 12px; }
-          .center { text-align: center; }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          @page {
+            size: 58mm auto;
+            margin: 2mm;
+          }
+
+          html, body {
+            width: 48mm;
+            min-width: 48mm;
+            max-width: 48mm;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background: #fff;
+          }
+
+          body {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
+            font-size: 11px;
+            line-height: 1.35;
+            padding: 0;
+          }
+
+          h1, h2, h3 {
+            margin: 0 0 6px 0;
+            padding: 0;
+            line-height: 1.2;
+            word-break: break-word;
+          }
+
+          h1 {
+            font-size: 14px;
+            text-align: center;
+            font-weight: 700;
+          }
+
+          h2 {
+            margin-top: 10px;
+            padding-bottom: 2px;
+            border-bottom: 1px solid #000;
+            font-size: 12px;
+            font-weight: 700;
+          }
+
+          h3 {
+            font-size: 11px;
+            font-weight: 700;
+          }
+
+          p {
+            margin: 2px 0;
+            padding: 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+          }
+
+          .linha {
+            margin: 2px 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+          }
+
+          .item {
+            border-bottom: 1px dashed #999;
+            padding: 4px 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+          }
+
+          .item:last-child {
+            border-bottom: 0;
+          }
+
+          .total {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: bold;
+          }
+
+          .mini {
+            font-size: 10px;
+          }
+
+          .center {
+            text-align: center;
+          }
+
+          .divider {
+            border: 0;
+            border-top: 1px dashed #000;
+            margin: 6px 0;
+          }
+
+          .strong {
+            font-weight: bold;
+          }
+
+          .compact p,
+          .compact .linha {
+            margin: 1px 0;
+          }
+
           @media print {
-            body { margin: 0; padding: 10px; }
+            html, body {
+              width: 48mm !important;
+              min-width: 48mm !important;
+              max-width: 48mm !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+
+            body {
+              font-size: 11px;
+            }
           }
         </style>
       </head>
@@ -921,7 +1030,11 @@ function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
         ${conteudo}
         ${
           autoPrint
-            ? `<script>window.onload = function(){ window.print(); };<\/script>`
+            ? `<script>
+                window.onload = function () {
+                  window.print();
+                };
+              <\/script>`
             : ""
         }
       </body>
@@ -933,30 +1046,40 @@ function imprimirPedidoCompleto(uidPedido) {
   const pedido = buscarPedidoPorUid(uidPedido);
   if (!pedido) return;
 
-  const janela = window.open("", "_blank", "width=900,height=700");
+  const janela = window.open("", "_blank", "width=420,height=700");
   if (!janela) return;
 
   const html = montarHtmlBaseImpressao(
     `Impressão - ${pedido.id}`,
     `
-      <h1>Chapa Lanches</h1>
-      <p><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</p>
-      <p><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</p>
-      <p><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "-")}</p>
-      <p><strong>Data/Hora:</strong> ${escaparHtml(pedido.dataTexto)}</p>
-      <p><strong>Entrega:</strong> ${escaparHtml(
-        pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
-      )}</p>
-      <p><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</p>
-      <p><strong>Troco:</strong> ${escaparHtml(pedido.troco || "-")}</p>
-      <p><strong>Status:</strong> ${escaparHtml(statusLabel(pedido.status))}</p>
+      <div class="center">
+        <h1>CHAPA LANCHES</h1>
+        <p class="mini">Pedido completo</p>
+      </div>
+
+      <hr class="divider">
+
+      <div class="compact">
+        <p><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</p>
+        <p><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</p>
+        <p><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "-")}</p>
+        <p><strong>Data/Hora:</strong> ${escaparHtml(pedido.dataTexto)}</p>
+        <p><strong>Entrega:</strong> ${escaparHtml(
+          pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
+        )}</p>
+        <p><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</p>
+        <p><strong>Troco:</strong> ${escaparHtml(pedido.troco || "-")}</p>
+        <p><strong>Status:</strong> ${escaparHtml(statusLabel(pedido.status))}</p>
+      </div>
 
       <h2>Endereço</h2>
-      <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
-      <p><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</p>
-      <p><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</p>
-      <p><strong>Cidade:</strong> ${escaparHtml(pedido.cidade || "-")}</p>
-      <p><strong>Complemento:</strong> ${escaparHtml(pedido.complemento || "-")}</p>
+      <div class="compact">
+        <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
+        <p><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</p>
+        <p><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</p>
+        <p><strong>Cidade:</strong> ${escaparHtml(pedido.cidade || "-")}</p>
+        <p><strong>Complemento:</strong> ${escaparHtml(pedido.complemento || "-")}</p>
+      </div>
 
       <h2>Itens</h2>
       ${pedido.itens
@@ -973,9 +1096,11 @@ function imprimirPedidoCompleto(uidPedido) {
         .join("")}
 
       <h2>Resumo</h2>
-      <p><strong>Subtotal:</strong> ${formatarMoeda(pedido.subtotal)}</p>
-      <p><strong>Taxa:</strong> ${formatarMoeda(pedido.taxaEntrega)}</p>
-      <p class="total">Total: ${formatarMoeda(pedido.total)}</p>
+      <div class="compact">
+        <p><strong>Subtotal:</strong> ${formatarMoeda(pedido.subtotal)}</p>
+        <p><strong>Taxa:</strong> ${formatarMoeda(pedido.taxaEntrega)}</p>
+        <p class="total">TOTAL: ${formatarMoeda(pedido.total)}</p>
+      </div>
 
       <h2>Observação</h2>
       <p>${escaparHtml(pedido.observacao || "-")}</p>
@@ -1000,7 +1125,8 @@ function imprimirPedidoRapido(uidPedido) {
         <h1>CHAPA LANCHES</h1>
         <p class="mini">Comanda rápida</p>
       </div>
-      <hr>
+
+      <hr class="divider">
 
       <div class="linha"><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</div>
       <div class="linha"><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</div>
@@ -1043,7 +1169,7 @@ function imprimirPedidoRapido(uidPedido) {
       ${pedido.troco ? `<p><strong>Troco:</strong> ${escaparHtml(pedido.troco)}</p>` : ""}
       ${pedido.observacao ? `<h2>Obs.</h2><p>${escaparHtml(pedido.observacao)}</p>` : ""}
 
-      <hr>
+      <hr class="divider">
       <p class="total center">TOTAL: ${formatarMoeda(pedido.total)}</p>
     `
   );
