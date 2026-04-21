@@ -189,10 +189,18 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: 0.2s ease;
+  min-height: 44px;
+  text-align: center;
 }
 
 .btn:hover {
   transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-yellow {
@@ -243,9 +251,9 @@ body {
 .btn-small {
   padding: 10px 12px;
   font-size: 0.88rem;
+  min-height: 42px;
 }
 
-/* Botão automático ativo */
 #btnModoAutomatico.ativo {
   background: linear-gradient(135deg, #16a34a, #22c55e);
   color: #fff;
@@ -453,6 +461,12 @@ body {
   color: #efefef;
 }
 
+.badge-status {
+  background: rgba(59, 130, 246, 0.14);
+  color: #8ec0ff;
+  border: 1px solid rgba(59, 130, 246, 0.24);
+}
+
 .badge-new {
   background: rgba(242, 179, 0, 0.14);
   color: var(--yellow);
@@ -531,7 +545,11 @@ body {
 .action-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
+}
+
+.action-grid .btn {
+  width: 100%;
 }
 
 .status-select {
@@ -542,6 +560,7 @@ body {
   border-radius: 12px;
   padding: 11px 12px;
   outline: none;
+  min-height: 44px;
 }
 
 .full-width {
@@ -608,5 +627,11 @@ body {
   .store-status-wrap {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .btn,
+  .btn-small,
+  .status-select {
+    min-height: 46px;
   }
 }
