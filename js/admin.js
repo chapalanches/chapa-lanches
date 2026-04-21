@@ -1170,29 +1170,27 @@ function removerAcentos(texto) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-// Converte corretamente para base64
 function encodeRawBT(texto) {
   return btoa(unescape(encodeURIComponent(texto)));
 }
 
-// Abre o RawBT com impressão automática
 function abrirRawBT(texto) {
   try {
-    // Remove acentos para evitar caracteres em branco
-    const textoLimpo = removerAcentos(texto);
+    // 🔥 COMANDO ESC/POS PARA UTF-8 / WEST EUROPE
+    const ESC = "\x1B";
+    const charset = ESC + "t" + "\x10"; // CP1252 (Europa Ocidental)
 
-    // Converte para base64 (formato correto do RawBT)
-    const base64 = encodeRawBT(textoLimpo);
+    const textoFinal = charset + texto;
 
-    // URL correta do RawBT
+    const base64 = encodeRawBT(textoFinal);
+
     const url = "rawbt:base64," + base64;
 
-    // Envia para impressão
     window.location.href = url;
 
   } catch (erro) {
-    console.error("Erro ao enviar para RawBT:", erro);
-    alert("Erro ao enviar impressão para o RawBT.");
+    console.error("Erro RawBT:", erro);
+    alert("Erro ao imprimir.");
   }
 }
 
