@@ -697,6 +697,7 @@ function criarCardPedido(pedido) {
           }
           <button class="btn btn-dark btn-small" onclick="imprimirPedidoCompleto('${pedido.uid}')">Impressão completa</button>
           <button class="btn btn-yellow btn-small" onclick="imprimirPedidoRapido('${pedido.uid}')">Impressão rápida</button>
+          <button class="btn btn-green btn-small" onclick="imprimirPedidoRawBT('${pedido.uid}')">Imprimir RawBT</button>
           <button class="btn btn-blue btn-small" onclick="copiarPedido('${pedido.uid}')">Copiar</button>
           <button class="btn btn-red btn-small" onclick="excluirPedido(${indiceReal})">Excluir</button>
         </div>
@@ -893,7 +894,172 @@ function buscarPedidoPorUid(uidPedido) {
   return pedidos.find((p) => p.uid === uidPedido);
 }
 
-function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
+function limparTextoImpressao(texto) {
+  return String(texto || "")
+    .replace(/\r/g, "")
+    .replace(/\t/g, " ")
+    .replace(/[^\S\n]+/g, " ")
+    .trim();
+}
+
+function quebrarLinha48mm(texto, max = 32) {
+  const textoLimpo = limparTextoImpressao(texto);
+  if (!textoLimpo) return [""];
+
+  const palavras = textoLimpo.split(" ");
+  const linhas = [];
+  let atual = "";
+
+  for (const palavra of palavras) {
+    const tentativa = (atual + " " + palavra).trim();
+
+    if (tentativa.length <= max) {
+      atual = tentativa;
+    } else {
+      if (atual) linhas.push(atual);
+
+      if (palavra.length > max) {
+        let restante = palavra;
+        while (restante.length > max) {
+          linhas.push(restante.slice(0, max));
+          restante = restante.slice(max);
+        }
+        atual = restante;
+      } else {
+        atual = palavra;
+      }
+    }
+  }
+
+  if (atual) linhas.push(atual);
+
+  return linhas.length ? linhas : [""];
+}
+
+function centralizar48mm(texto, largura = 32) {
+  const valor = String(texto || "").trim();
+  if (!valor) return "";
+  if (valor.length >= largura) return valor;
+  const espacos = Math.floor((largura - valor.length) / 2);
+  return " ".repeat(espacos) + valor;
+}
+
+function linha48mm(char = "-") {
+  return char.repeat(32);
+}
+
+function montarTextoRapido48mm(pedido) {
+  const linhas = [];
+
+  linhas.push(centralizar48mm("CHAPA LANCHES"));
+  linhas.push(centralizar48mm("COMANDA RAPIDA"));
+  linhas.push(linha48mm());
+  linhas.push(`PEDIDO: ${pedido.id}`);
+  linhas.push(`CLIENTE: ${pedido.cliente}`);
+  linhas.push(`HORA: ${formatarHora(pedido.dataObj)}`);
+  linhas.push(`ENTREGA: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`);
+  linhas.push(`STATUS: ${statusLabel(pedido.status).toUpperCase()}`);
+
+  if (pedido.tipoEntrega === "delivery") {
+    linhas.push(linha48mm());
+
+    quebrarLinha48mm(`END: ${pedido.endereco || "-"}`).forEach((linha) => linhas.push(linha));
+    if (pedido.numero) linhas.push(`NUM: ${pedido.numero}`);
+    if (pedido.bairro) quebrarLinha48mm(`BAIRRO: ${pedido.bairro}`).forEach((linha) => linhas.push(linha));
+    if (pedido.complemento) quebrarLinha48mm(`COMP: ${pedido.complemento}`).forEach((linha) => linhas.push(linha));
+  }
+
+  linhas.push(linha48mm());
+  linhas.push("ITENS:");
+
+  if (pedido.itens.length) {
+    pedido.itens.forEach((item) => {
+      quebrarLinha48mm(`${item.quantidade}x ${item.nome}`).forEach((linha) => linhas.push(linha));
+      if (item.observacao) {
+        quebrarLinha48mm(`  Obs: ${item.observacao}`).forEach((linha) => linhas.push(linha));
+      }
+    });
+  } else {
+    linhas.push("Nenhum item.");
+  }
+
+  linhas.push(linha48mm());
+  linhas.push(`PAGTO: ${pedido.pagamento}`);
+  if (pedido.troco) linhas.push(`TROCO: ${pedido.troco}`);
+  if (pedido.observacao) {
+    linhas.push(linha48mm());
+    quebrarLinha48mm(`OBS: ${pedido.observacao}`).forEach((linha) => linhas.push(linha));
+  }
+
+  linhas.push(linha48mm());
+  linhas.push(`TOTAL: ${formatarMoeda(pedido.total)}`);
+  linhas.push("");
+  linhas.push("");
+  linhas.push("");
+
+  return linhas.join("\n");
+}
+
+function montarTextoCompleto48mm(pedido) {
+  const linhas = [];
+
+  linhas.push(centralizar48mm("CHAPA LANCHES"));
+  linhas.push(centralizar48mm("PEDIDO COMPLETO"));
+  linhas.push(linha48mm());
+  linhas.push(`PEDIDO: ${pedido.id}`);
+  linhas.push(`CLIENTE: ${pedido.cliente}`);
+  linhas.push(`TEL: ${pedido.telefone || "-"}`);
+  linhas.push(`DATA: ${pedido.dataTexto}`);
+  linhas.push(`TIPO: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`);
+  linhas.push(`STATUS: ${statusLabel(pedido.status).toUpperCase()}`);
+  linhas.push(`PAGTO: ${pedido.pagamento}`);
+  if (pedido.troco) linhas.push(`TROCO: ${pedido.troco}`);
+
+  linhas.push(linha48mm());
+  linhas.push("ENDERECO:");
+  quebrarLinha48mm(`RUA: ${pedido.endereco || "-"}`).forEach((linha) => linhas.push(linha));
+  linhas.push(`NUM: ${pedido.numero || "-"}`);
+  quebrarLinha48mm(`BAIRRO: ${pedido.bairro || "-"}`).forEach((linha) => linhas.push(linha));
+  quebrarLinha48mm(`CIDADE: ${pedido.cidade || "-"}`).forEach((linha) => linhas.push(linha));
+  quebrarLinha48mm(`COMP: ${pedido.complemento || "-"}`).forEach((linha) => linhas.push(linha));
+
+  linhas.push(linha48mm());
+  linhas.push("ITENS:");
+
+  if (pedido.itens.length) {
+    pedido.itens.forEach((item) => {
+      quebrarLinha48mm(`${item.quantidade}x ${item.nome}`).forEach((linha) => linhas.push(linha));
+      linhas.push(`  Unit: ${formatarMoeda(item.preco)}`);
+      linhas.push(`  Total: ${formatarMoeda(item.preco * item.quantidade)}`);
+      if (item.observacao) {
+        quebrarLinha48mm(`  Obs: ${item.observacao}`).forEach((linha) => linhas.push(linha));
+      }
+      linhas.push(linha48mm());
+    });
+  } else {
+    linhas.push("Nenhum item.");
+    linhas.push(linha48mm());
+  }
+
+  linhas.push(`SUBTOTAL: ${formatarMoeda(pedido.subtotal)}`);
+  linhas.push(`TAXA: ${formatarMoeda(pedido.taxaEntrega)}`);
+  linhas.push(`TOTAL: ${formatarMoeda(pedido.total)}`);
+
+  if (pedido.observacao) {
+    linhas.push(linha48mm());
+    quebrarLinha48mm(`OBS: ${pedido.observacao}`).forEach((linha) => linhas.push(linha));
+  }
+
+  linhas.push("");
+  linhas.push("");
+  linhas.push("");
+
+  return linhas.join("\n");
+}
+
+function montarHtmlBaseImpressao(titulo, textoPlano, autoPrint = true) {
+  const textoSeguro = escaparHtml(textoPlano);
+
   return `
     <html>
       <head>
@@ -907,8 +1073,8 @@ function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
           }
 
           @page {
-            size: 58mm auto;
-            margin: 2mm;
+            size: 48mm auto;
+            margin: 0;
           }
 
           html, body {
@@ -917,98 +1083,22 @@ function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
             max-width: 48mm;
             margin: 0;
             padding: 0;
-            overflow-x: hidden;
             background: #fff;
+            overflow-x: hidden;
           }
 
           body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: monospace;
             color: #000;
             font-size: 11px;
-            line-height: 1.35;
-            padding: 0;
-          }
-
-          h1, h2, h3 {
-            margin: 0 0 6px 0;
-            padding: 0;
-            line-height: 1.2;
+            line-height: 1.25;
+            padding: 3mm;
+            white-space: pre-wrap;
             word-break: break-word;
           }
 
-          h1 {
-            font-size: 14px;
-            text-align: center;
-            font-weight: 700;
-          }
-
-          h2 {
-            margin-top: 10px;
-            padding-bottom: 2px;
-            border-bottom: 1px solid #000;
-            font-size: 12px;
-            font-weight: 700;
-          }
-
-          h3 {
-            font-size: 11px;
-            font-weight: 700;
-          }
-
-          p {
-            margin: 2px 0;
-            padding: 0;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-          }
-
-          .linha {
-            margin: 2px 0;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-          }
-
-          .item {
-            border-bottom: 1px dashed #999;
-            padding: 4px 0;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-          }
-
-          .item:last-child {
-            border-bottom: 0;
-          }
-
-          .total {
-            margin-top: 8px;
-            font-size: 13px;
-            font-weight: bold;
-          }
-
-          .mini {
-            font-size: 10px;
-          }
-
-          .center {
-            text-align: center;
-          }
-
-          .divider {
-            border: 0;
-            border-top: 1px dashed #000;
-            margin: 6px 0;
-          }
-
-          .strong {
-            font-weight: bold;
-          }
-
-          .compact p,
-          .compact .linha {
-            margin: 1px 0;
+          .ticket {
+            width: 42mm;
           }
 
           @media print {
@@ -1019,20 +1109,18 @@ function montarHtmlBaseImpressao(titulo, conteudo, autoPrint = true) {
               margin: 0 !important;
               padding: 0 !important;
             }
-
-            body {
-              font-size: 11px;
-            }
           }
         </style>
       </head>
       <body>
-        ${conteudo}
+        <div class="ticket">${textoSeguro}</div>
         ${
           autoPrint
             ? `<script>
                 window.onload = function () {
-                  window.print();
+                  setTimeout(function () {
+                    window.print();
+                  }, 250);
                 };
               <\/script>`
             : ""
@@ -1047,65 +1135,13 @@ function imprimirPedidoCompleto(uidPedido) {
   if (!pedido) return;
 
   const janela = window.open("", "_blank", "width=420,height=700");
-  if (!janela) return;
+  if (!janela) {
+    alert("O navegador bloqueou a janela de impressão. Libere o pop-up e tente novamente.");
+    return;
+  }
 
-  const html = montarHtmlBaseImpressao(
-    `Impressão - ${pedido.id}`,
-    `
-      <div class="center">
-        <h1>CHAPA LANCHES</h1>
-        <p class="mini">Pedido completo</p>
-      </div>
-
-      <hr class="divider">
-
-      <div class="compact">
-        <p><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</p>
-        <p><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</p>
-        <p><strong>Telefone:</strong> ${escaparHtml(pedido.telefone || "-")}</p>
-        <p><strong>Data/Hora:</strong> ${escaparHtml(pedido.dataTexto)}</p>
-        <p><strong>Entrega:</strong> ${escaparHtml(
-          pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
-        )}</p>
-        <p><strong>Pagamento:</strong> ${escaparHtml(pedido.pagamento)}</p>
-        <p><strong>Troco:</strong> ${escaparHtml(pedido.troco || "-")}</p>
-        <p><strong>Status:</strong> ${escaparHtml(statusLabel(pedido.status))}</p>
-      </div>
-
-      <h2>Endereço</h2>
-      <div class="compact">
-        <p><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "-")}</p>
-        <p><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</p>
-        <p><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</p>
-        <p><strong>Cidade:</strong> ${escaparHtml(pedido.cidade || "-")}</p>
-        <p><strong>Complemento:</strong> ${escaparHtml(pedido.complemento || "-")}</p>
-      </div>
-
-      <h2>Itens</h2>
-      ${pedido.itens
-        .map(
-          (item) => `
-            <div class="item">
-              <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
-              <p>Unitário: ${formatarMoeda(item.preco)}</p>
-              <p>Total item: ${formatarMoeda(item.preco * item.quantidade)}</p>
-              ${item.observacao ? `<p>Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
-            </div>
-          `
-        )
-        .join("")}
-
-      <h2>Resumo</h2>
-      <div class="compact">
-        <p><strong>Subtotal:</strong> ${formatarMoeda(pedido.subtotal)}</p>
-        <p><strong>Taxa:</strong> ${formatarMoeda(pedido.taxaEntrega)}</p>
-        <p class="total">TOTAL: ${formatarMoeda(pedido.total)}</p>
-      </div>
-
-      <h2>Observação</h2>
-      <p>${escaparHtml(pedido.observacao || "-")}</p>
-    `
-  );
+  const texto = montarTextoCompleto48mm(pedido);
+  const html = montarHtmlBaseImpressao(`Impressão - ${pedido.id}`, texto);
 
   janela.document.write(html);
   janela.document.close();
@@ -1116,66 +1152,36 @@ function imprimirPedidoRapido(uidPedido) {
   if (!pedido) return;
 
   const janela = window.open("", "_blank", "width=420,height=700");
-  if (!janela) return;
+  if (!janela) {
+    alert("O navegador bloqueou a janela de impressão. Libere o pop-up e tente novamente.");
+    return;
+  }
 
-  const html = montarHtmlBaseImpressao(
-    `Comanda - ${pedido.id}`,
-    `
-      <div class="center">
-        <h1>CHAPA LANCHES</h1>
-        <p class="mini">Comanda rápida</p>
-      </div>
-
-      <hr class="divider">
-
-      <div class="linha"><strong>Pedido:</strong> ${escaparHtml(pedido.id)}</div>
-      <div class="linha"><strong>Cliente:</strong> ${escaparHtml(pedido.cliente)}</div>
-      <div class="linha"><strong>Hora:</strong> ${escaparHtml(formatarHora(pedido.dataObj))}</div>
-      <div class="linha"><strong>Entrega:</strong> ${escaparHtml(
-        pedido.tipoEntrega === "delivery" ? "Delivery" : "Retirada"
-      )}</div>
-      <div class="linha"><strong>Status:</strong> ${escaparHtml(statusLabel(pedido.status))}</div>
-
-      ${
-        pedido.tipoEntrega === "delivery"
-          ? `
-            <div class="linha"><strong>Endereço:</strong> ${escaparHtml(
-              `${pedido.endereco || "-"}, ${pedido.numero || "-"}`
-            )}</div>
-            <div class="linha"><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</div>
-            ${
-              pedido.complemento
-                ? `<div class="linha"><strong>Comp.:</strong> ${escaparHtml(pedido.complemento)}</div>`
-                : ""
-            }
-          `
-          : ""
-      }
-
-      <h2>Itens</h2>
-      ${pedido.itens
-        .map(
-          (item) => `
-            <div class="item">
-              <p><strong>${escaparHtml(item.quantidade)}x ${escaparHtml(item.nome)}</strong></p>
-              ${item.observacao ? `<p class="mini">Obs.: ${escaparHtml(item.observacao)}</p>` : ""}
-            </div>
-          `
-        )
-        .join("")}
-
-      <h2>Pagamento</h2>
-      <p><strong>Forma:</strong> ${escaparHtml(pedido.pagamento)}</p>
-      ${pedido.troco ? `<p><strong>Troco:</strong> ${escaparHtml(pedido.troco)}</p>` : ""}
-      ${pedido.observacao ? `<h2>Obs.</h2><p>${escaparHtml(pedido.observacao)}</p>` : ""}
-
-      <hr class="divider">
-      <p class="total center">TOTAL: ${formatarMoeda(pedido.total)}</p>
-    `
-  );
+  const texto = montarTextoRapido48mm(pedido);
+  const html = montarHtmlBaseImpressao(`Comanda - ${pedido.id}`, texto);
 
   janela.document.write(html);
   janela.document.close();
+}
+
+function abrirRawBT(texto) {
+  const textoCodificado = encodeURIComponent(texto);
+  const url = `intent:${textoCodificado}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+
+  try {
+    window.location.href = url;
+  } catch (e) {
+    console.error("Erro ao abrir RawBT:", e);
+    alert("Não foi possível abrir o RawBT.");
+  }
+}
+
+function imprimirPedidoRawBT(uidPedido) {
+  const pedido = buscarPedidoPorUid(uidPedido);
+  if (!pedido) return;
+
+  const texto = montarTextoRapido48mm(pedido);
+  abrirRawBT(texto);
 }
 
 function imprimirPedido(uidPedido) {
@@ -1594,6 +1600,7 @@ window.abrirWhatsapp = abrirWhatsapp;
 window.imprimirPedido = imprimirPedido;
 window.imprimirPedidoCompleto = imprimirPedidoCompleto;
 window.imprimirPedidoRapido = imprimirPedidoRapido;
+window.imprimirPedidoRawBT = imprimirPedidoRawBT;
 window.copiarPedido = copiarPedido;
 
 console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA");
