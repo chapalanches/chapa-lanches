@@ -1164,16 +1164,47 @@ function imprimirPedidoRapido(uidPedido) {
   janela.document.close();
 }
 
-function abrirRawBT(texto) {
-  const textoCodificado = encodeURIComponent(texto);
-  const url = `intent:${textoCodificado}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+function removerAcentos(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
 
+// Converte corretamente para base64
+function encodeRawBT(texto) {
+  return btoa(unescape(encodeURIComponent(texto)));
+}
+
+// Abre o RawBT com impressão automática
+function abrirRawBT(texto) {
   try {
+    // Remove acentos para evitar caracteres em branco
+    const textoLimpo = removerAcentos(texto);
+
+    // Converte para base64 (formato correto do RawBT)
+    const base64 = encodeRawBT(textoLimpo);
+
+    // URL correta do RawBT
+    const url = "rawbt:base64," + base64;
+
+    // Envia para impressão
     window.location.href = url;
-  } catch (e) {
-    console.error("Erro ao abrir RawBT:", e);
-    alert("Não foi possível abrir o RawBT.");
+
+  } catch (erro) {
+    console.error("Erro ao enviar para RawBT:", erro);
+    alert("Erro ao enviar impressão para o RawBT.");
   }
+}
+
+// Função principal chamada pelo botão
+function imprimirPedidoRawBT(uidPedido) {
+  const pedido = buscarPedidoPorUid(uidPedido);
+  if (!pedido) return;
+
+  // Usa seu layout já existente
+  const texto = montarTextoRapido48mm(pedido);
+
+  abrirRawBT(texto);
 }
 
 function imprimirPedidoRawBT(uidPedido) {
