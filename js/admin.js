@@ -1261,18 +1261,35 @@ Observação: ${pedido.observacao || "-"}
 function tocarNotificacaoNovoPedido() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
 
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(0.03, audioCtx.currentTime);
+    function beep(freq, start, duration){
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+      osc.type = "square";
+      osc.frequency.value = freq;
 
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.2);
+      // VOLUME 100%
+      gain.gain.setValueAtTime(1.0, start);
+      gain.gain.exponentialRampToValueAtTime(
+        0.01,
+        start + duration
+      );
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(start);
+      osc.stop(start + duration);
+    }
+
+    const now = audioCtx.currentTime;
+
+    // Triplo alerta forte
+    beep(1500, now, 0.25);
+    beep(1700, now + 0.30, 0.25);
+    beep(1900, now + 0.60, 0.35);
+
   } catch (e) {
     console.log("Não foi possível tocar notificação.");
   }
