@@ -659,8 +659,12 @@ function criarCardPedido(pedido) {
 
         <div class="mini-block">
           <h4>Endereço</h4>
-          <div class="line"><strong>Rua:</strong> ${escaparHtml(pedido.endereco || "Não informado")}</div>
-          <div class="line"><strong>Número:</strong> ${escaparHtml(pedido.numero || "-")}</div>
+          <div class="line"><strong>Rua:</strong> ${escaparHtml((pedido.endereco || "").split(",")[0] || "Não informado")}</div>
+          <div class="line"><strong>Número:</strong> ${escaparHtml(
+            pedido.numero ||
+            ((pedido.endereco || "").split(",")[1] || "").trim() ||
+            "-"
+          )}</div>
           <div class="line"><strong>Bairro:</strong> ${escaparHtml(pedido.bairro || "-")}</div>
           <div class="line"><strong>Cidade:</strong> ${escaparHtml(pedido.cidade || "-")}</div>
           <div class="line"><strong>Comp.:</strong> ${escaparHtml(pedido.complemento || "-")}</div>
@@ -1016,7 +1020,7 @@ function montarTextoCompleto48mm(pedido) {
   linhas.push(`TEL: ${pedido.telefone || "-"}`);
   linhas.push(`DATA: ${pedido.dataTexto}`);
   linhas.push(`TIPO: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`);
-  linhas.push(`STATUS: ${statusLabel(pedido.status).toUpperCase()}`);
+  lines.push(`STATUS: ${statusLabel(pedido.status).toUpperCase()}`);
   linhas.push(`PAGTO: ${pedido.pagamento}`);
   if (pedido.troco) linhas.push(`TROCO: ${pedido.troco}`);
 
