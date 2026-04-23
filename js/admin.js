@@ -148,6 +148,11 @@ function formatarMoeda(valor) {
   });
 }
 
+function formatarMoedaRawBT(valor) {
+  const numero = Number(valor || 0);
+  return "R$ " + numero.toFixed(2).replace(".", ",");
+}
+
 function normalizarTipoEntrega(valor) {
   const texto = String(valor || "").toLowerCase().trim();
   if (texto.includes("retirada")) return "retirada";
@@ -992,7 +997,7 @@ function montarTextoRapido48mm(pedido) {
   }
 
   linhas.push(linha48mm());
-  linhas.push(`TOTAL: ${formatarMoeda(pedido.total)}`);
+  linhas.push(`TOTAL: ${formatarMoedaRawBT(pedido.total)}`);
   linhas.push("");
   linhas.push("");
   linhas.push("");
@@ -1029,8 +1034,8 @@ function montarTextoCompleto48mm(pedido) {
   if (pedido.itens.length) {
     pedido.itens.forEach((item) => {
       quebrarLinha48mm(`${item.quantidade}x ${item.nome}`).forEach((linha) => linhas.push(linha));
-      linhas.push(`  Unit: ${formatarMoeda(item.preco)}`);
-      linhas.push(`  Total: ${formatarMoeda(item.preco * item.quantidade)}`);
+      linhas.push(`  Unit: ${formatarMoedaRawBT(item.preco)}`);
+      linhas.push(`  Total: ${formatarMoedaRawBT(item.preco * item.quantidade)}`);
       if (item.observacao) {
         quebrarLinha48mm(`  Obs: ${item.observacao}`).forEach((linha) => linhas.push(linha));
       }
@@ -1041,9 +1046,9 @@ function montarTextoCompleto48mm(pedido) {
     linhas.push(linha48mm());
   }
 
-  linhas.push(`SUBTOTAL: ${formatarMoeda(pedido.subtotal)}`);
-  linhas.push(`TAXA: ${formatarMoeda(pedido.taxaEntrega)}`);
-  linhas.push(`TOTAL: ${formatarMoeda(pedido.total)}`);
+  linhas.push(`SUBTOTAL: ${formatarMoedaRawBT(pedido.subtotal)}`);
+  linhas.push(`TAXA: ${formatarMoedaRawBT(pedido.taxaEntrega)}`);
+  linhas.push(`TOTAL: ${formatarMoedaRawBT(pedido.total)}`);
 
   if (pedido.observacao) {
     linhas.push(linha48mm());
