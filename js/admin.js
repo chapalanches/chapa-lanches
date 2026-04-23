@@ -1013,22 +1013,29 @@ function linha48mm(char = "-") {
 function montarTextoRapido48mm(pedido) {
   const linhas = [];
 
-  function alinharItem(nome, valor) {
-    const larguraTotal = 32;
-    const esquerda = String(nome || "").trim();
-    const direita = String(valor || "").trim();
+  function valorItem(item) {
+    return formatarMoedaRawBT(Number(item.preco || 0) * Number(item.quantidade || 1));
+  }
 
-    if (!direita) return esquerda;
+  function limparNomeAdicional(nome) {
+    return String(nome || "")
+      .replace(/^adicional\s*:\s*/i, "")
+      .replace(/^adicional\s+/i, "")
+      .trim();
+  }
 
-    if ((esquerda + " " + direita).length >= larguraTotal) {
-      return `${esquerda} ${direita}`;
-    }
+  function ehAdicional(item) {
+    const nome = String(item.nome || "").toLowerCase().trim();
+    return nome.startsWith("adicional") || nome.includes("adicional:");
+  }
 
-    const pontos = ".".repeat(
-      larguraTotal - esquerda.length - direita.length - 1
-    );
+  function montarLinhaPrincipal(item) {
+    return `${item.quantidade}x ${item.nome}  ${valorItem(item)}`;
+  }
 
-    return `${esquerda} ${pontos} ${direita}`;
+  function montarLinhaAdicional(item) {
+    const nome = limparNomeAdicional(item.nome);
+    return `   + ${nome}  ${valorItem(item)}`;
   }
 
   linhas.push(centralizar48mm("CHAPA LANCHES"));
@@ -1038,9 +1045,7 @@ function montarTextoRapido48mm(pedido) {
 
   linhas.push(`PEDIDO: ${pedido.id}`);
   linhas.push(`HORA: ${formatarHora(pedido.dataObj)}`);
-  linhas.push(
-    `ENTREGA: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`
-  );
+  linhas.push(`ENTREGA: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`);
 
   linhas.push("");
   linhas.push("--------------------------------");
@@ -1053,8 +1058,8 @@ function montarTextoRapido48mm(pedido) {
       ((pedido.endereco || "").split(",")[1] || "").trim() ||
       "-"
   ).trim();
-  linhas.push(`NUMERO: ${numeroBase}`);
 
+  linhas.push(`NUMERO: ${numeroBase}`);
   linhas.push(`BAIRRO: ${pedido.bairro || "-"}`);
 
   if (pedido.complemento) {
@@ -1068,10 +1073,18 @@ function montarTextoRapido48mm(pedido) {
 
   if (pedido.itens.length) {
     pedido.itens.forEach((item) => {
-      const nomeItem = `${item.quantidade}x ${item.nome}`;
-      const valorItem = formatarMoedaRawBT(item.preco * item.quantidade);
+      if (ehAdicional(item)) {
+        linhas.push(montarLinhaAdicional(item));
 
-      linhas.push(alinharItem(nomeItem, valorItem));
+        if (item.observacao) {
+          linhas.push(`      > ${String(item.observacao).toUpperCase()}`);
+        }
+
+        linhas.push("");
+        return;
+      }
+
+      linhas.push(montarLinhaPrincipal(item));
 
       if (item.observacao) {
         linhas.push(`   > ${String(item.observacao).toUpperCase()}`);
