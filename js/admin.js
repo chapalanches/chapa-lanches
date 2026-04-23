@@ -698,11 +698,6 @@ function criarCardPedido(pedido) {
         </select>
 
         <div class="action-grid">
-          ${
-            telefoneLimpo
-              ? `<button class="btn btn-green btn-small" onclick="abrirWhatsapp('${telefoneLimpo}')">WhatsApp</button>`
-              : `<button class="btn btn-dark btn-small" disabled>Sem WhatsApp</button>`
-          }
           <button class="btn btn-dark btn-small" onclick="imprimirPedidoCompleto('${pedido.uid}')">Impressão completa</button>
           <button class="btn btn-yellow btn-small" onclick="imprimirPedidoRapido('${pedido.uid}')">Impressão rápida</button>
           <button class="btn btn-green btn-small" onclick="imprimirPedidoRawBT('${pedido.uid}')">Imprimir RawBT</button>
