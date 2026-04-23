@@ -634,4 +634,49 @@ body {
   .status-select {
     min-height: 46px;
   }
+
+.column-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.column-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.column-head-left h3 {
+  margin: 0;
+}
+
+.toggle-column-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.toggle-column-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.board-column.collapsed .column-head {
+  border-radius: 14px;
+}
+
+.board-column.collapsed .toggle-column-btn {
+  transform: rotate(0deg);
 }
