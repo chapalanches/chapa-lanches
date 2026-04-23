@@ -1167,6 +1167,10 @@ function imprimirPedidoRapido(uidPedido) {
 function normalizarTextoParaRawBT(texto) {
   return String(texto || "")
     .replace(/\u00A0/g, " ")
+    .replace(/\u202F/g, " ")
+    .replace(/\u2007/g, " ")
+    .replace(/\u2060/g, "")
+    .replace(/Â/g, "")
     .replace(/R\$\s*/g, "R$ ")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
