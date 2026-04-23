@@ -178,7 +178,6 @@ function normalizarStatus(valor) {
   if (texto === "em entrega") return "saiu_entrega";
   if (texto === "entrega") return "saiu_entrega";
   if (texto === "finalizado") return "finalizado";
-  if (texto === "cancelado") return "cancelado";
 
   return "novo";
 }
@@ -190,7 +189,6 @@ function statusLabel(status) {
   if (s === "preparo") return "Em preparo";
   if (s === "saiu_entrega") return "Em entrega";
   if (s === "finalizado") return "Finalizado";
-  if (s === "cancelado") return "Cancelado";
   return "Pendente";
 }
 
@@ -609,10 +607,6 @@ function botaoProximoStatus(indice, statusAtual) {
   if (status === "finalizado") {
     return `<button class="btn btn-dark btn-small full-width" onclick="alterarStatus(${indice}, 'novo')">Reabrir pedido</button>`;
   }
-  if (status === "cancelado") {
-    return `<button class="btn btn-dark btn-small full-width" onclick="alterarStatus(${indice}, 'novo')">Reabrir pedido</button>`;
-  }
-
   return `<button class="btn btn-yellow btn-small full-width" onclick="alterarStatus(${indice}, 'preparo')">Aceitar / Iniciar preparo</button>`;
 }
 
@@ -695,7 +689,6 @@ function criarCardPedido(pedido) {
           <option value="preparo" ${pedido.status === "preparo" ? "selected" : ""}>Em preparo</option>
           <option value="saiu_entrega" ${pedido.status === "saiu_entrega" ? "selected" : ""}>Em entrega</option>
           <option value="finalizado" ${pedido.status === "finalizado" ? "selected" : ""}>Finalizado</option>
-          <option value="cancelado" ${pedido.status === "cancelado" ? "selected" : ""}>Cancelado</option>
         </select>
 
         <div class="action-grid">
@@ -1020,7 +1013,7 @@ function montarTextoCompleto48mm(pedido) {
   linhas.push(`TEL: ${pedido.telefone || "-"}`);
   linhas.push(`DATA: ${pedido.dataTexto}`);
   linhas.push(`TIPO: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`);
-  lines.push(`STATUS: ${statusLabel(pedido.status).toUpperCase()}`);
+  linhas.push(`STATUS: ${statusLabel(pedido.status).toUpperCase()}`);
   linhas.push(`PAGTO: ${pedido.pagamento}`);
   if (pedido.troco) linhas.push(`TROCO: ${pedido.troco}`);
 
