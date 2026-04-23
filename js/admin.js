@@ -698,7 +698,6 @@ function criarCardPedido(pedido) {
         </select>
 
         <div class="action-grid">
-          <button class="btn btn-dark btn-small" onclick="imprimirPedidoCompleto('${pedido.uid}')">Impressão completa</button>
           <button class="btn btn-yellow btn-small" onclick="imprimirPedidoRapido('${pedido.uid}')">Impressão rápida</button>
           <button class="btn btn-green btn-small" onclick="imprimirPedidoRawBT('${pedido.uid}')">Imprimir RawBT</button>
           <button class="btn btn-blue btn-small" onclick="copiarPedido('${pedido.uid}')">Copiar</button>
