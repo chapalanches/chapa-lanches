@@ -14,6 +14,39 @@ const REGRAS_ENTREGA_PADRAO = [
   { km_min: 9.01, km_max: 10, fee: 11, active: true }
 ];
 
+const PRODUTOS_COM_OPCOES = {
+  duplo: {
+    id: 'duplo',
+    nome: 'Hot Dog Duplo',
+    preco: 16,
+    titulo: 'Hot Dog Duplo',
+    descricao: 'Escolha o queijo do seu lanche:',
+    grupoLabel: 'Queijo',
+    obrigatorio: true,
+    opcoes: ['Catupiry', 'Cheddar', 'Mussarela']
+  },
+  xfrango: {
+    id: 'xfrango',
+    nome: 'X-Frango',
+    preco: 21,
+    titulo: 'X-Frango',
+    descricao: 'Escolha o queijo do seu lanche:',
+    grupoLabel: 'Queijo',
+    obrigatorio: true,
+    opcoes: ['Catupiry', 'Cheddar', 'Mussarela']
+  },
+  xfrangoespecial: {
+    id: 'xfrangoespecial',
+    nome: 'X-Frango Especial',
+    preco: 22,
+    titulo: 'X-Frango Especial',
+    descricao: 'Escolha um complemento do seu lanche:',
+    grupoLabel: 'Complemento',
+    obrigatorio: true,
+    opcoes: ['Bacon', 'Calabresa']
+  }
+};
+
 let supabaseClient = null;
 
 if (
@@ -35,6 +68,7 @@ let tempoEntregaTexto = null;
 let regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
 let configuracaoLoja = null;
 let timeoutCalculoEntrega = null;
+let produtoOpcoesAtual = null;
 
 function formatarPreco(valor) {
   return Number(valor || 0).toLocaleString('pt-BR', {
@@ -49,6 +83,15 @@ function somenteNumeros(texto) {
 
 function formatarTipoEntregaTexto(tipo) {
   return tipo === 'delivery' ? 'Delivery' : 'Retirada no local';
+}
+
+function escaparHtml(texto) {
+  return String(texto || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function isIOS() {
@@ -190,20 +233,91 @@ function atualizarContadores() {
   }
 }
 
-function adicionarAoCarrinho(nome, preco) {
-  const itemExistente = carrinho.find(item => item.nome === nome);
+function gerarChaveItem(nome, preco, observacao = '') {
+  return `${nome}||${preco}||${observacao}`;
+}
+
+function adicionarAoCarrinho(nome, preco, observacao = '') {
+  const chave = gerarChaveItem(nome, preco, observacao);
+  const itemExistente = carrinho.find(item => item.chave === chave);
 
   if (itemExistente) {
     itemExistente.quantidade += 1;
   } else {
     carrinho.push({
+      chave,
       nome,
       preco,
-      quantidade: 1
+      quantidade: 1,
+      observacao
     });
   }
 
   atualizarContadores();
+}
+
+function abrirOpcoesProduto(produtoId) {
+  const produto = PRODUTOS_COM_OPCOES[produtoId];
+  const modal = document.getElementById('modalOpcoesProduto');
+  const titulo = document.getElementById('tituloOpcoesProduto');
+  const descricao = document.getElementById('descricaoOpcoesProduto');
+  const lista = document.getElementById('listaOpcoesProduto');
+
+  if (!produto || !modal || !titulo || !descricao || !lista) return;
+
+  produtoOpcoesAtual = produto;
+  titulo.innerText = produto.titulo;
+  descricao.innerText = produto.descricao;
+
+  lista.innerHTML = produto.opcoes.map((opcao, index) => `
+    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
+      <input type="radio" name="opcaoProdutoAtual" value="${escaparHtml(opcao)}" ${index === 0 ? '' : ''}>
+      <span>${escaparHtml(opcao)}</span>
+    </label>
+  `).join('');
+
+  modal.style.display = 'flex';
+  modal.classList.add('ativo');
+}
+
+function fecharOpcoesProduto() {
+  const modal = document.getElementById('modalOpcoesProduto');
+  const lista = document.getElementById('listaOpcoesProduto');
+
+  produtoOpcoesAtual = null;
+
+  if (lista) {
+    lista.innerHTML = '';
+  }
+
+  if (modal) {
+    modal.classList.remove('ativo');
+    modal.style.display = 'none';
+  }
+}
+
+function confirmarOpcoesProduto() {
+  if (!produtoOpcoesAtual) return;
+
+  const selecionado = document.querySelector('input[name="opcaoProdutoAtual"]:checked');
+
+  if (produtoOpcoesAtual.obrigatorio && !selecionado) {
+    alert('Selecione uma opção para continuar.');
+    return;
+  }
+
+  const valorSelecionado = selecionado ? selecionado.value : '';
+  const observacao = valorSelecionado
+    ? `${produtoOpcoesAtual.grupoLabel}: ${valorSelecionado}`
+    : '';
+
+  adicionarAoCarrinho(
+    produtoOpcoesAtual.nome,
+    produtoOpcoesAtual.preco,
+    observacao
+  );
+
+  fecharOpcoesProduto();
 }
 
 function aumentarQuantidade(index) {
@@ -444,7 +558,8 @@ function renderizarCarrinho() {
           ${carrinho.map((item, index) => `
             <div class="item-carrinho">
               <div>
-                <strong>${item.nome}</strong>
+                <strong>${escaparHtml(item.nome)}</strong>
+                ${item.observacao ? `<small style="display:block; margin-top:4px;">${escaparHtml(item.observacao)}</small>` : ''}
                 <small>${formatarPreco(item.preco)} cada</small>
               </div>
               <div class="acoes-carrinho">
@@ -508,6 +623,8 @@ function limparCarrinho() {
   taxaEntrega = 0;
   distanciaEntregaKm = null;
   tempoEntregaTexto = null;
+  produtoOpcoesAtual = null;
+
   document.getElementById('nomeCliente').value = '';
   document.getElementById('tipoEntrega').value = 'retirada';
   document.getElementById('cepEntrega').value = '';
@@ -518,6 +635,7 @@ function limparCarrinho() {
   document.getElementById('complementoEntrega').value = '';
   document.getElementById('formaPagamento').value = '';
   document.getElementById('observacoes').value = '';
+
   atualizarEntrega();
   renderizarCarrinho();
 }
@@ -855,7 +973,8 @@ async function finalizarPedido() {
     items: carrinho.map(item => ({
       nome: item.nome,
       preco: item.preco,
-      quantidade: item.quantidade
+      quantidade: item.quantidade,
+      observacao: item.observacao || ''
     })),
     subtotal: subtotal,
     delivery_fee: taxaEntrega,
@@ -899,6 +1018,11 @@ async function finalizarPedido() {
     carrinho.forEach(item => {
       mensagem += `
 - ${item.quantidade}x ${item.nome} - ${formatarPreco(item.preco * item.quantidade)}`;
+
+      if (item.observacao) {
+        mensagem += `
+  ↳ ${item.observacao}`;
+      }
     });
 
     mensagem += `
@@ -924,6 +1048,8 @@ async function finalizarPedido() {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
+    produtoOpcoesAtual = null;
+
     document.getElementById('nomeCliente').value = '';
     document.getElementById('tipoEntrega').value = 'retirada';
     document.getElementById('cepEntrega').value = '';
@@ -940,6 +1066,7 @@ async function finalizarPedido() {
     }
 
     fecharCarrinho();
+    fecharOpcoesProduto();
     renderizarCarrinho();
 
     setTimeout(() => {
@@ -957,9 +1084,15 @@ async function finalizarPedido() {
 }
 
 window.onclick = function (event) {
-  const modal = document.getElementById('modalCarrinho');
-  if (event.target === modal) {
+  const modalCarrinho = document.getElementById('modalCarrinho');
+  const modalOpcoes = document.getElementById('modalOpcoesProduto');
+
+  if (event.target === modalCarrinho) {
     fecharCarrinho();
+  }
+
+  if (event.target === modalOpcoes) {
+    fecharOpcoesProduto();
   }
 };
 
