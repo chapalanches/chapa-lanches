@@ -6,6 +6,7 @@ const LOGIN_STORAGE_KEY = "chapa_admin_logado";
 const TABELA_PEDIDOS = "orders";
 const TABELA_CONFIG_LOJA = "store_settings";
 const STORE_SETTINGS_ID = 1;
+const COLUNAS_STORAGE_KEY = "chapa_admin_colunas_recolhidas";
 
 let supabaseClient = null;
 let realtimeChannel = null;
@@ -617,7 +618,6 @@ function botaoProximoStatus(indice, statusAtual) {
 
 function criarCardPedido(pedido) {
   const indiceReal = pedidos.findIndex((p) => p.uid === pedido.uid);
-  const telefoneLimpo = String(pedido.telefone || "").replace(/\D/g, "");
   const novo = pedidoEhNovo(pedido);
   const atrasado = pedidoAtrasado(pedido);
 
@@ -719,6 +719,65 @@ function renderizarColuna(elementId, lista) {
   el.innerHTML = lista.map(criarCardPedido).join("");
 }
 
+function obterEstadoColunas() {
+  try {
+    const salvo = localStorage.getItem(COLUNAS_STORAGE_KEY);
+    const estado = salvo ? JSON.parse(salvo) : {};
+    return typeof estado === "object" && estado !== null ? estado : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function salvarEstadoColunas(estado) {
+  localStorage.setItem(COLUNAS_STORAGE_KEY, JSON.stringify(estado));
+}
+
+function capitalize(texto) {
+  return String(texto || "").charAt(0).toUpperCase() + String(texto || "").slice(1);
+}
+
+function obterElementoColuna(nomeColuna) {
+  if (nomeColuna === "pendente") return byId("colPendente");
+  if (nomeColuna === "preparo") return byId("colPreparo");
+  if (nomeColuna === "entrega") return byId("colEntrega");
+  if (nomeColuna === "finalizado") return byId("colFinalizado");
+  return null;
+}
+
+function aplicarEstadoColuna(nomeColuna, recolhida) {
+  const coluna = document.querySelector(`.board-column[data-coluna="${nomeColuna}"]`);
+  const corpo = obterElementoColuna(nomeColuna);
+  const botao = byId(`btnToggle${capitalize(nomeColuna)}`);
+
+  if (!coluna || !corpo || !botao) return;
+
+  if (recolhida) {
+    coluna.classList.add("collapsed");
+    corpo.style.display = "none";
+    botao.textContent = "+";
+  } else {
+    coluna.classList.remove("collapsed");
+    corpo.style.display = "";
+    botao.textContent = "−";
+  }
+}
+
+function toggleColuna(nomeColuna) {
+  const estado = obterEstadoColunas();
+  estado[nomeColuna] = !estado[nomeColuna];
+  salvarEstadoColunas(estado);
+  aplicarEstadoColuna(nomeColuna, estado[nomeColuna]);
+}
+
+function aplicarEstadoColunasSalvas() {
+  const estado = obterEstadoColunas();
+  aplicarEstadoColuna("pendente", !!estado.pendente);
+  aplicarEstadoColuna("preparo", !!estado.preparo);
+  aplicarEstadoColuna("entrega", !!estado.entrega);
+  aplicarEstadoColuna("finalizado", !!estado.finalizado);
+}
+
 function renderizarQuadro() {
   const filtrados = obterPedidosFiltrados();
 
@@ -733,6 +792,8 @@ function renderizarQuadro() {
   renderizarColuna("colPreparo", preparo);
   renderizarColuna("colEntrega", entrega);
   renderizarColuna("colFinalizado", finalizados);
+
+  aplicarEstadoColunasSalvas();
 }
 
 function atualizarContadoresTempo() {
@@ -1648,6 +1709,7 @@ window.imprimirPedidoCompleto = imprimirPedidoCompleto;
 window.imprimirPedidoRapido = imprimirPedidoRapido;
 window.imprimirPedidoRawBT = imprimirPedidoRawBT;
 window.copiarPedido = copiarPedido;
+window.toggleColuna = toggleColuna;
 
 console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA");
 
@@ -1658,6 +1720,7 @@ console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPAND
   await carregarPedidos();
   iniciarRealtimeSupabase();
   atualizarRelogio();
+  aplicarEstadoColunasSalvas();
 
   setInterval(atualizarRelogio, 1000);
   setInterval(atualizarContadoresTempo, 30000);
