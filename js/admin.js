@@ -1164,10 +1164,23 @@ function imprimirPedidoRapido(uidPedido) {
   janela.document.close();
 }
 
-function removerAcentos(texto) {
+function normalizarTextoParaRawBT(texto) {
   return String(texto || "")
+    .replace(/\u00A0/g, " ")
+    .replace(/R\$\s*/g, "R$ ")
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ç/g, "c")
+    .replace(/Ç/g, "C")
+    .replace(/º/g, "o")
+    .replace(/ª/g, "a")
+    .replace(/°/g, "o")
+    .replace(/–/g, "-")
+    .replace(/—/g, "-")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\.\.\./g, "...")
+    .replace(/[^\x0A\x0D\x20-\x7E]/g, "");
 }
 
 function encodeRawBT(texto) {
@@ -1176,33 +1189,21 @@ function encodeRawBT(texto) {
 
 function abrirRawBT(texto) {
   try {
-    // 🔥 COMANDO ESC/POS PARA UTF-8 / WEST EUROPE
     const ESC = "\x1B";
-    const charset = ESC + "t" + "\x10"; // CP1252 (Europa Ocidental)
+    const GS = "\x1D";
 
-    const textoFinal = charset + texto;
+    const textoSeguro = normalizarTextoParaRawBT(texto);
+    const comandos = ESC + "@" + ESC + "a" + "\x00" + GS + "!" + "\x00";
+    const textoFinal = comandos + textoSeguro + "\n\n\n";
 
     const base64 = encodeRawBT(textoFinal);
-
     const url = "rawbt:base64," + base64;
 
     window.location.href = url;
-
   } catch (erro) {
     console.error("Erro RawBT:", erro);
     alert("Erro ao imprimir.");
   }
-}
-
-// Função principal chamada pelo botão
-function imprimirPedidoRawBT(uidPedido) {
-  const pedido = buscarPedidoPorUid(uidPedido);
-  if (!pedido) return;
-
-  // Usa seu layout já existente
-  const texto = montarTextoRapido48mm(pedido);
-
-  abrirRawBT(texto);
 }
 
 function imprimirPedidoRawBT(uidPedido) {
@@ -1269,7 +1270,6 @@ function tocarNotificacaoNovoPedido() {
       osc.type = "square";
       osc.frequency.value = freq;
 
-      // VOLUME 100%
       gain.gain.setValueAtTime(1.0, start);
       gain.gain.exponentialRampToValueAtTime(
         0.01,
@@ -1285,7 +1285,6 @@ function tocarNotificacaoNovoPedido() {
 
     const now = audioCtx.currentTime;
 
-    // Triplo alerta forte
     beep(1500, now, 0.25);
     beep(1700, now + 0.30, 0.25);
     beep(1900, now + 0.60, 0.35);
