@@ -446,6 +446,11 @@ function atualizarResumo() {
     0
   );
 
+  const totalTaxasEntrega = pedidosHojeLista.reduce(
+    (acc, pedido) => acc + Number(pedido.taxaEntrega || 0),
+    0
+  );
+
   const ticket = pedidosHojeLista.length
     ? faturamento / pedidosHojeLista.length
     : 0;
@@ -475,6 +480,7 @@ function atualizarResumo() {
   if (byId("totalPedidos")) byId("totalPedidos").textContent = pedidosHojeLista.length;
   if (byId("pedidosHoje")) byId("pedidosHoje").textContent = pedidosHojeLista.length;
   if (byId("faturamentoDia")) byId("faturamentoDia").textContent = formatarMoeda(faturamento);
+  if (byId("totalTaxasEntrega")) byId("totalTaxasEntrega").textContent = formatarMoeda(totalTaxasEntrega);
   if (byId("ticketMedio")) byId("ticketMedio").textContent = formatarMoeda(ticket);
   if (byId("totalDelivery")) byId("totalDelivery").textContent = delivery;
   if (byId("totalRetirada")) byId("totalRetirada").textContent = retirada;
