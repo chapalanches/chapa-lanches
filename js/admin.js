@@ -150,7 +150,7 @@ function formatarMoeda(valor) {
 
 function formatarMoedaRawBT(valor) {
   const numero = Number(valor || 0);
-  return "R$ " + numero.toFixed(2).replace(".", ",");
+  return "RS " + numero.toFixed(2).replace(".", ",");
 }
 
 function normalizarTipoEntrega(valor) {
@@ -967,7 +967,6 @@ function montarTextoRapido48mm(pedido) {
 
   if (pedido.tipoEntrega === "delivery") {
     linhas.push(linha48mm());
-
     quebrarLinha48mm(`END: ${pedido.endereco || "-"}`).forEach((linha) => linhas.push(linha));
     if (pedido.numero) linhas.push(`NUM: ${pedido.numero}`);
     if (pedido.bairro) quebrarLinha48mm(`BAIRRO: ${pedido.bairro}`).forEach((linha) => linhas.push(linha));
@@ -981,7 +980,7 @@ function montarTextoRapido48mm(pedido) {
     pedido.itens.forEach((item) => {
       quebrarLinha48mm(`${item.quantidade}x ${item.nome}`).forEach((linha) => linhas.push(linha));
       if (item.observacao) {
-        quebrarLinha48mm(`  Obs: ${item.observacao}`).forEach((linha) => linhas.push(linha));
+        quebrarLinha48mm(`OBS: ${item.observacao}`).forEach((linha) => linhas.push(linha));
       }
     });
   } else {
@@ -991,9 +990,10 @@ function montarTextoRapido48mm(pedido) {
   linhas.push(linha48mm());
   linhas.push(`PAGTO: ${pedido.pagamento}`);
   if (pedido.troco) linhas.push(`TROCO: ${pedido.troco}`);
+
   if (pedido.observacao) {
     linhas.push(linha48mm());
-    quebrarLinha48mm(`OBS: ${pedido.observacao}`).forEach((linha) => linhas.push(linha));
+    quebrarLinha48mm(`OBS GERAL: ${pedido.observacao}`).forEach((linha) => linhas.push(linha));
   }
 
   linhas.push(linha48mm());
@@ -1034,10 +1034,10 @@ function montarTextoCompleto48mm(pedido) {
   if (pedido.itens.length) {
     pedido.itens.forEach((item) => {
       quebrarLinha48mm(`${item.quantidade}x ${item.nome}`).forEach((linha) => linhas.push(linha));
-      linhas.push(`  Unit: ${formatarMoedaRawBT(item.preco)}`);
-      linhas.push(`  Total: ${formatarMoedaRawBT(item.preco * item.quantidade)}`);
+      linhas.push(`UNIT: ${formatarMoedaRawBT(item.preco)}`);
+      linhas.push(`TOTAL ITEM: ${formatarMoedaRawBT(item.preco * item.quantidade)}`);
       if (item.observacao) {
-        quebrarLinha48mm(`  Obs: ${item.observacao}`).forEach((linha) => linhas.push(linha));
+        quebrarLinha48mm(`OBS: ${item.observacao}`).forEach((linha) => linhas.push(linha));
       }
       linhas.push(linha48mm());
     });
@@ -1052,7 +1052,7 @@ function montarTextoCompleto48mm(pedido) {
 
   if (pedido.observacao) {
     linhas.push(linha48mm());
-    quebrarLinha48mm(`OBS: ${pedido.observacao}`).forEach((linha) => linhas.push(linha));
+    quebrarLinha48mm(`OBS GERAL: ${pedido.observacao}`).forEach((linha) => linhas.push(linha));
   }
 
   linhas.push("");
@@ -1176,33 +1176,33 @@ function normalizarTextoParaRawBT(texto) {
     .replace(/\u2007/g, " ")
     .replace(/\u2060/g, "")
     .replace(/Â/g, "")
-    .replace(/R\$\s*/g, "R$ ")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ç/g, "c")
-    .replace(/Ç/g, "C")
-    .replace(/º/g, "o")
+    .replace(/Ã/g, "")
     .replace(/ª/g, "a")
+    .replace(/º/g, "o")
     .replace(/°/g, "o")
     .replace(/–/g, "-")
     .replace(/—/g, "-")
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'")
     .replace(/\.\.\./g, "...")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ç/g, "c")
+    .replace(/Ç/g, "C")
+    .replace(/R\$/g, "RS")
     .replace(/[^\x0A\x0D\x20-\x7E]/g, "");
 }
 
 function encodeRawBT(texto) {
-  return btoa(unescape(encodeURIComponent(texto)));
+  return btoa(texto);
 }
 
 function abrirRawBT(texto) {
   try {
     const ESC = "\x1B";
-    const GS = "\x1D";
-
     const textoSeguro = normalizarTextoParaRawBT(texto);
-    const comandos = ESC + "@" + ESC + "a" + "\x00" + GS + "!" + "\x00";
+
+    const comandos = ESC + "@";
     const textoFinal = comandos + textoSeguro + "\n\n\n";
 
     const base64 = encodeRawBT(textoFinal);
@@ -1272,7 +1272,7 @@ function tocarNotificacaoNovoPedido() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    function beep(freq, start, duration){
+    function beep(freq, start, duration) {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
 
@@ -1280,10 +1280,7 @@ function tocarNotificacaoNovoPedido() {
       osc.frequency.value = freq;
 
       gain.gain.setValueAtTime(1.0, start);
-      gain.gain.exponentialRampToValueAtTime(
-        0.01,
-        start + duration
-      );
+      gain.gain.exponentialRampToValueAtTime(0.01, start + duration);
 
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -1297,7 +1294,6 @@ function tocarNotificacaoNovoPedido() {
     beep(1500, now, 0.25);
     beep(1700, now + 0.30, 0.25);
     beep(1900, now + 0.60, 0.35);
-
   } catch (e) {
     console.log("Não foi possível tocar notificação.");
   }
