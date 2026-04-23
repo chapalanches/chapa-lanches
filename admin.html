@@ -137,34 +137,54 @@
 
     <section class="board">
 
-      <div class="board-column">
-        <div class="column-head pendente">
-          <h3>Novos pedidos</h3>
-          <span id="countPendente">0</span>
+      <div class="board-column" data-coluna="pendente">
+        <div class="column-head pendente column-toggle" onclick="toggleColuna('pendente')">
+          <div class="column-head-left">
+            <h3>Novos pedidos</h3>
+            <span id="countPendente">0</span>
+          </div>
+          <button class="toggle-column-btn" id="btnTogglePendente" type="button" aria-label="Minimizar ou maximizar novos pedidos">
+            −
+          </button>
         </div>
         <div id="colPendente" class="column-body"></div>
       </div>
 
-      <div class="board-column">
-        <div class="column-head preparo">
-          <h3>Em preparo</h3>
-          <span id="countPreparo">0</span>
+      <div class="board-column" data-coluna="preparo">
+        <div class="column-head preparo column-toggle" onclick="toggleColuna('preparo')">
+          <div class="column-head-left">
+            <h3>Em preparo</h3>
+            <span id="countPreparo">0</span>
+          </div>
+          <button class="toggle-column-btn" id="btnTogglePreparo" type="button" aria-label="Minimizar ou maximizar em preparo">
+            −
+          </button>
         </div>
         <div id="colPreparo" class="column-body"></div>
       </div>
 
-      <div class="board-column">
-        <div class="column-head entrega">
-          <h3>Em entrega</h3>
-          <span id="countEntrega">0</span>
+      <div class="board-column" data-coluna="entrega">
+        <div class="column-head entrega column-toggle" onclick="toggleColuna('entrega')">
+          <div class="column-head-left">
+            <h3>Em entrega</h3>
+            <span id="countEntrega">0</span>
+          </div>
+          <button class="toggle-column-btn" id="btnToggleEntrega" type="button" aria-label="Minimizar ou maximizar em entrega">
+            −
+          </button>
         </div>
         <div id="colEntrega" class="column-body"></div>
       </div>
 
-      <div class="board-column">
-        <div class="column-head finalizado">
-          <h3>Finalizados</h3>
-          <span id="countFinalizado">0</span>
+      <div class="board-column" data-coluna="finalizado">
+        <div class="column-head finalizado column-toggle" onclick="toggleColuna('finalizado')">
+          <div class="column-head-left">
+            <h3>Finalizados</h3>
+            <span id="countFinalizado">0</span>
+          </div>
+          <button class="toggle-column-btn" id="btnToggleFinalizado" type="button" aria-label="Minimizar ou maximizar finalizados">
+            −
+          </button>
         </div>
         <div id="colFinalizado" class="column-body"></div>
       </div>
