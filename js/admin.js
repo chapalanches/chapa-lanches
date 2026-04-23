@@ -151,7 +151,7 @@ function formatarMoeda(valor) {
 
 function formatarMoedaRawBT(valor) {
   const numero = Number(valor || 0);
-  return "RS " + numero.toFixed(2).replace(".", ",");
+  return "R$" + numero.toFixed(2).replace(".", ",");
 }
 
 function normalizarTipoEntrega(valor) {
@@ -1013,47 +1013,93 @@ function linha48mm(char = "-") {
 function montarTextoRapido48mm(pedido) {
   const linhas = [];
 
-  linhas.push(centralizar48mm("CHAPA LANCHES"));
-  linhas.push(centralizar48mm("COMANDA RAPIDA"));
-  linhas.push(linha48mm());
-  linhas.push(`PEDIDO: ${pedido.id}`);
-  linhas.push(`CLIENTE: ${pedido.cliente}`);
-  linhas.push(`HORA: ${formatarHora(pedido.dataObj)}`);
-  linhas.push(`ENTREGA: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`);
-  linhas.push(`STATUS: ${statusLabel(pedido.status).toUpperCase()}`);
+  function alinharItem(nome, valor) {
+    const larguraTotal = 32;
+    const esquerda = String(nome || "").trim();
+    const direita = String(valor || "").trim();
 
-  if (pedido.tipoEntrega === "delivery") {
-    linhas.push(linha48mm());
-    quebrarLinha48mm(`END: ${pedido.endereco || "-"}`).forEach((linha) => linhas.push(linha));
-    if (pedido.numero) linhas.push(`NUM: ${pedido.numero}`);
-    if (pedido.bairro) quebrarLinha48mm(`BAIRRO: ${pedido.bairro}`).forEach((linha) => linhas.push(linha));
-    if (pedido.complemento) quebrarLinha48mm(`COMP: ${pedido.complemento}`).forEach((linha) => linhas.push(linha));
+    if (!direita) return esquerda;
+
+    if ((esquerda + " " + direita).length >= larguraTotal) {
+      return `${esquerda} ${direita}`;
+    }
+
+    const pontos = ".".repeat(
+      larguraTotal - esquerda.length - direita.length - 1
+    );
+
+    return `${esquerda} ${pontos} ${direita}`;
   }
 
-  linhas.push(linha48mm());
-  linhas.push("ITENS:");
+  linhas.push(centralizar48mm("CHAPA LANCHES"));
+  linhas.push(centralizar48mm("COMANDA RAPIDA"));
+  linhas.push("================================");
+  linhas.push("");
+
+  linhas.push(`PEDIDO: ${pedido.id}`);
+  linhas.push(`HORA: ${formatarHora(pedido.dataObj)}`);
+  linhas.push(
+    `ENTREGA: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`
+  );
+
+  linhas.push("");
+  linhas.push("--------------------------------");
+
+  const ruaBase = String((pedido.endereco || "").split(",")[0] || "-").trim();
+  linhas.push(`RUA: ${ruaBase}`);
+
+  const numeroBase = String(
+    pedido.numero ||
+      ((pedido.endereco || "").split(",")[1] || "").trim() ||
+      "-"
+  ).trim();
+  linhas.push(`NUMERO: ${numeroBase}`);
+
+  linhas.push(`BAIRRO: ${pedido.bairro || "-"}`);
+
+  if (pedido.complemento) {
+    linhas.push(`COMPLEMENTO: ${pedido.complemento}`);
+  }
+
+  linhas.push("");
+  linhas.push("--------------------------------");
+  linhas.push("ITENS DO PEDIDO");
+  linhas.push("");
 
   if (pedido.itens.length) {
     pedido.itens.forEach((item) => {
-      quebrarLinha48mm(`${item.quantidade}x ${item.nome}`).forEach((linha) => linhas.push(linha));
+      const nomeItem = `${item.quantidade}x ${item.nome}`;
+      const valorItem = formatarMoedaRawBT(item.preco * item.quantidade);
+
+      linhas.push(alinharItem(nomeItem, valorItem));
+
       if (item.observacao) {
-        quebrarLinha48mm(`OBS: ${item.observacao}`).forEach((linha) => linhas.push(linha));
+        linhas.push(`   > ${String(item.observacao).toUpperCase()}`);
       }
+
+      linhas.push("");
     });
   } else {
     linhas.push("Nenhum item.");
+    linhas.push("");
   }
 
-  linhas.push(linha48mm());
-  linhas.push(`PAGTO: ${pedido.pagamento}`);
-  if (pedido.troco) linhas.push(`TROCO: ${pedido.troco}`);
+  linhas.push("--------------------------------");
+  linhas.push(`PAGAMENTO: ${pedido.pagamento}`);
 
   if (pedido.observacao) {
-    linhas.push(linha48mm());
-    quebrarLinha48mm(`OBS GERAL: ${pedido.observacao}`).forEach((linha) => linhas.push(linha));
+    linhas.push("");
+    linhas.push("OBSERVAÇÃO DO PEDIDO:");
+    linhas.push(`   > ${pedido.observacao}`);
   }
 
-  linhas.push(linha48mm());
+  linhas.push("");
+  linhas.push("--------------------------------");
+
+  if (pedido.tipoEntrega === "delivery") {
+    linhas.push(`TAXA ENTREGA: ${formatarMoedaRawBT(pedido.taxaEntrega)}`);
+  }
+
   linhas.push(`TOTAL: ${formatarMoedaRawBT(pedido.total)}`);
   linhas.push("");
   linhas.push("");
@@ -1228,25 +1274,72 @@ function imprimirPedidoRapido(uidPedido) {
 
 function normalizarTextoParaRawBT(texto) {
   return String(texto || "")
+    // espaços especiais
     .replace(/\u00A0/g, " ")
     .replace(/\u202F/g, " ")
     .replace(/\u2007/g, " ")
     .replace(/\u2060/g, "")
+    .replace(/\u200B/g, "")
+    .replace(/\u200C/g, "")
+    .replace(/\u200D/g, "")
+    .replace(/\uFEFF/g, "")
+
+    // aspas e traços
+    .replace(/[“”„‟]/g, '"')
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[–—−]/g, "-")
+
+    // reticências e bullets
+    .replace(/\.\.\./g, "...")
+    .replace(/…/g, "...")
+    .replace(/[•·]/g, "-")
+
+    // símbolos que costumam dar problema
+    .replace(/№/g, "No")
+    .replace(/º/g, "o")
+    .replace(/ª/g, "a")
+    .replace(/°/g, "o")
+    .replace(/€/g, "EUR")
+    .replace(/£/g, "GBP")
+    .replace(/¥/g, "YEN")
+    .replace(/¢/g, "cent")
+    .replace(/®/g, "")
+    .replace(/©/g, "")
+    .replace(/™/g, "")
+
+    // setas e afins
+    .replace(/→/g, "->")
+    .replace(/←/g, "<-")
+    .replace(/↔/g, "<->")
+    .replace(/⇒/g, "=>")
+    .replace(/✓/g, "OK")
+    .replace(/✔/g, "OK")
+    .replace(/✖/g, "X")
+    .replace(/×/g, "x")
+
+    // remove lixos comuns de encoding
     .replace(/Â/g, "")
     .replace(/Ã/g, "")
-    .replace(/ª/g, "a")
-    .replace(/º/g, "o")
-    .replace(/°/g, "o")
-    .replace(/–/g, "-")
-    .replace(/—/g, "-")
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    .replace(/\.\.\./g, "...")
+
+    // moeda
+    .replace(/R\$/g, "R$")
+
+    // normaliza acentos
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+
+    // cedilha depois da normalização
     .replace(/ç/g, "c")
     .replace(/Ç/g, "C")
-    .replace(/R\$/g, "RS")
+
+    // tabs e quebras estranhas
+    .replace(/\t/g, " ")
+    .replace(/\r/g, "")
+
+    // junta múltiplos espaços, mas preserva quebra de linha
+    .replace(/[ ]{2,}/g, " ")
+
+    // remove qualquer coisa fora do ASCII imprimível + quebra de linha
     .replace(/[^\x0A\x0D\x20-\x7E]/g, "");
 }
 
