@@ -53,7 +53,7 @@
           <div class="preco">R$ 16,00</div>
           <div class="acoes-item">
             <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20Hot%20Dog%20Duplo%20-%20R$%2016,00" target="_blank">Pedir direto</a>
-            <button class="btn btn-add" onclick="adicionarAoCarrinho('Hot Dog Duplo', 16)">+ Carrinho</button>
+            <button class="btn btn-add" onclick="abrirOpcoesProduto('duplo')">+ Carrinho</button>
           </div>
         </div>
       </div>
@@ -201,7 +201,7 @@
           <div class="preco">R$ 21,00</div>
           <div class="acoes-item">
             <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20-%20R$%2021,00" target="_blank">Pedir direto</a>
-            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango', 21)">+ Carrinho</button>
+            <button class="btn btn-add" onclick="abrirOpcoesProduto('xfrango')">+ Carrinho</button>
           </div>
         </div>
       </div>
@@ -227,7 +227,7 @@
           <div class="preco">R$ 22,00</div>
           <div class="acoes-item">
             <a class="btn btn-pedir" href="https://wa.me/5515996179172?text=Olá!%20Quero%20pedir%20o%20X-Frango%20Especial%20-%20R$%2022,00" target="_blank">Pedir direto</a>
-            <button class="btn btn-add" onclick="adicionarAoCarrinho('X-Frango Especial', 22)">+ Carrinho</button>
+            <button class="btn btn-add" onclick="abrirOpcoesProduto('xfrangoespecial')">+ Carrinho</button>
           </div>
         </div>
       </div>
@@ -543,6 +543,29 @@
   </div>
 </div>
 
+<!-- MODAL DE OPÇÕES DOS LANCHES -->
+<div class="modal" id="modalOpcoesProduto" style="display: none;">
+  <div class="modal-conteudo">
+    <div class="modal-topo">
+      <h3 id="tituloOpcoesProduto">Escolha uma opção</h3>
+      <button class="fechar" onclick="fecharOpcoesProduto()">×</button>
+    </div>
+
+    <div class="modal-corpo">
+      <div id="descricaoOpcoesProduto" style="margin-bottom: 14px; color: #cfcfcf;">
+        Selecione uma opção para continuar.
+      </div>
+
+      <div id="listaOpcoesProduto" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;"></div>
+
+      <div class="acoes-final">
+        <button class="btn btn-limpar" onclick="fecharOpcoesProduto()">Cancelar</button>
+        <button class="btn btn-finalizar" onclick="confirmarOpcoesProduto()">Adicionar ao carrinho</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer style="margin-top: 18px; padding: 16px 12px 8px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; font-size: 14px; color: #cfcfcf; line-height: 1.6;">
   <p><strong>Delivery:</strong> (15) 99617-9172</p>
   <p style="margin: 2px 0 0;">Chapa Lanches © 2026</p>
@@ -562,7 +585,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
-
 <script src="js/app.js"></script>
 
 </body>
