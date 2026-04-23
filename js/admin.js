@@ -478,7 +478,6 @@ function atualizarResumo() {
   ).length;
 
   if (byId("totalPedidos")) byId("totalPedidos").textContent = pedidosHojeLista.length;
-  if (byId("pedidosHoje")) byId("pedidosHoje").textContent = pedidosHojeLista.length;
   if (byId("faturamentoDia")) byId("faturamentoDia").textContent = formatarMoeda(faturamento);
   if (byId("totalTaxasEntrega")) byId("totalTaxasEntrega").textContent = formatarMoeda(totalTaxasEntrega);
   if (byId("ticketMedio")) byId("ticketMedio").textContent = formatarMoeda(ticket);
