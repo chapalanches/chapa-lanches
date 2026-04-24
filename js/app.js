@@ -902,29 +902,41 @@ async function carregarRegrasEntrega() {
 }
 
 async function geocodificarEnderecoOpenStreetMap(endereco) {
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
 
-  const resposta = await fetch(url, {
-    headers: {
-      'Accept': 'application/json'
-    }
-  });
+ return new Promise((resolve,reject)=>{
 
-  if (!resposta.ok) {
-    throw new Error('Erro ao consultar geocodificação no OpenStreetMap.');
-  }
+   if(!window.google || !google.maps){
+      reject(new Error('Google Maps não carregado'));
+      return;
+   }
 
-  const dados = await resposta.json();
+   const geocoder = new google.maps.Geocoder();
 
-  if (!Array.isArray(dados) || dados.length === 0) {
-    return null;
-  }
+   geocoder.geocode(
+      {
+        address:endereco,
+        region:'BR'
+      },
 
-  return {
-    lat: Number(dados[0].lat),
-    lng: Number(dados[0].lon),
-    display_name: dados[0].display_name || endereco
-  };
+      (results,status)=>{
+
+        if(status!=="OK" || !results.length){
+          resolve(null);
+          return;
+        }
+
+        resolve({
+          lat:results[0].geometry.location.lat(),
+          lng:results[0].geometry.location.lng(),
+          display_name:results[0].formatted_address
+        });
+
+      }
+
+   );
+
+ });
+
 }
 
 function gerarTentativasEndereco(endereco) {
@@ -1016,29 +1028,54 @@ async function geocodificarEnderecoProfissional(endereco) {
   return null;
 }
 
-async function calcularRotaRealOSRM(origem, destino) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${origem.lng},${origem.lat};${destino.lng},${destino.lat}?overview=false&steps=false`;
+async function calcularRotaRealOSRM(origem,destino){
 
-  const resposta = await fetch(url);
+ return new Promise((resolve,reject)=>{
 
-  if (!resposta.ok) {
-    throw new Error('Erro ao calcular rota no OSRM.');
-  }
+   if(!window.google || !google.maps){
+      reject(new Error('Google Maps não carregado'));
+      return;
+   }
 
-  const dados = await resposta.json();
+   const service = new google.maps.DirectionsService();
 
-  if (!dados || dados.code !== 'Ok' || !dados.routes || !dados.routes.length) {
-    throw new Error('Não foi possível calcular a rota.');
-  }
+   service.route(
+      {
+        origin:{
+          lat:Number(origem.lat),
+          lng:Number(origem.lng)
+        },
 
-  const rota = dados.routes[0];
+        destination:{
+          lat:Number(destino.lat),
+          lng:Number(destino.lng)
+        },
 
-  return {
-    distanciaMetros: rota.distance,
-    distanciaTexto: `${(rota.distance / 1000).toFixed(2)} km`,
-    duracaoSegundos: rota.duration,
-    duracaoTexto: formatarDuracao(rota.duration)
-  };
+        travelMode:'DRIVING'
+      },
+
+      (result,status)=>{
+
+         if(status!=="OK"){
+            reject(new Error('Erro rota google'));
+            return;
+         }
+
+         const leg=result.routes[0].legs[0];
+
+         resolve({
+            distanciaMetros:leg.distance.value,
+            distanciaTexto:leg.distance.text,
+            duracaoSegundos:leg.duration.value,
+            duracaoTexto:leg.duration.text
+         });
+
+      }
+
+   );
+
+ });
+
 }
 
 function formatarDuracao(segundos) {
