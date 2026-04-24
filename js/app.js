@@ -589,6 +589,45 @@ function fecharOpcoesProduto() {
 }
 
 function confirmarOpcoesProduto() {
+  if (adicionalPendente) {
+    const escolhido = document.querySelector('input[name="lancheAdicional"]:checked');
+
+    if (!escolhido) {
+      alert('Selecione um lanche.');
+      return;
+    }
+
+    const indice = Number(escolhido.value);
+    const lanches = carrinho.filter(item => {
+      const nome = String(item.nome || '').toLowerCase();
+
+      return !nome.includes('coca') &&
+        !nome.includes('sprite') &&
+        !nome.includes('fanta') &&
+        !nome.includes('guaraná') &&
+        !nome.includes('guarana');
+    });
+
+    const lanche = lanches[indice];
+
+    if (!lanche) {
+      alert('Lanche não encontrado.');
+      return;
+    }
+
+    lanche.preco = Number(lanche.preco || 0) + Number(adicionalPendente.preco || 0);
+
+    lanche.observacao = lanche.observacao
+      ? lanche.observacao + ' | Adicional: ' + adicionalPendente.nome
+      : 'Adicional: ' + adicionalPendente.nome;
+
+    adicionalPendente = null;
+
+    fecharOpcoesProduto();
+    renderizarCarrinho();
+    return;
+  }
+
   if (!produtoOpcoesAtual) return;
 
   const selecionado = document.querySelector('input[name="opcaoProdutoAtual"]:checked');
@@ -611,7 +650,6 @@ function confirmarOpcoesProduto() {
 
   fecharOpcoesProduto();
 }
-
 function aumentarQuantidade(index) {
   carrinho[index].quantidade += 1;
   renderizarCarrinho();
@@ -1524,66 +1562,49 @@ async function iniciarSistema() {
 }
 
 iniciarSistema();
-function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {let adicionalPendente = null;
 
-function abrirAdicionalParaLanche(nomeAdicional, precoAdicional){
+let adicionalPendente = null;
 
-const lanches = carrinho.filter(item=>{
+function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
+  const lanches = carrinho.filter(item => {
+    const nome = String(item.nome || '').toLowerCase();
 
-const nome=(item.nome||'').toLowerCase();
+    return !nome.includes('coca') &&
+      !nome.includes('sprite') &&
+      !nome.includes('fanta') &&
+      !nome.includes('guaraná') &&
+      !nome.includes('guarana');
+  });
 
-return !nome.includes('coca')
-&& !nome.includes('sprite')
-&& !nome.includes('fanta')
-&& !nome.includes('guarana')
-&& !nome.includes('guaraná');
+  if (lanches.length === 0) {
+    alert('Escolha um lanche primeiro para adicionar este item.');
+    return;
+  }
 
-});
+  adicionalPendente = {
+    nome: nomeAdicional,
+    preco: Number(precoAdicional || 0)
+  };
 
-if(lanches.length===0){
-alert('Escolha um lanche primeiro para adicionar este item.');
-return;
-}
+  produtoOpcoesAtual = null;
 
-adicionalPendente={
-nome:nomeAdicional,
-preco:precoAdicional
-};
+  const modal = document.getElementById('modalOpcoesProduto');
+  const titulo = document.getElementById('tituloOpcoesProduto');
+  const descricao = document.getElementById('descricaoOpcoesProduto');
+  const lista = document.getElementById('listaOpcoesProduto');
 
-document.getElementById('tituloOpcoesProduto').innerText=
-'Adicionar '+nomeAdicional;
+  if (!modal || !titulo || !descricao || !lista) return;
 
-document.getElementById('descricaoOpcoesProduto').innerText=
-'Escolha em qual lanche adicionar:';
+  titulo.innerText = 'Adicionar ' + nomeAdicional;
+  descricao.innerText = 'Escolha em qual lanche adicionar:';
 
-document.getElementById('listaOpcoesProduto').innerHTML=
-lanches.map((item,i)=>`
-<label style="
-display:flex;
-align-items:center;
-padding:12px;
-border:1px solid rgba(255,255,255,.12);
-border-radius:12px;
-margin-bottom:10px;
-cursor:pointer;
-">
-<input
-type="radio"
-name="lancheAdicional"
-value="${i}"
->
+  lista.innerHTML = lanches.map((item, index) => `
+    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
+      <input type="radio" name="lancheAdicional" value="${index}">
+      <span>${escaparHtml(item.nome)}</span>
+    </label>
+  `).join('');
 
-<span style="margin-left:10px;">
-${item.nome}
-</span>
-
-</label>
-`).join('');
-
-document.getElementById('modalOpcoesProduto').style.display='flex';
-
-document
-.getElementById('modalOpcoesProduto')
-.classList.add('ativo');
-
+  modal.style.display = 'flex';
+  modal.classList.add('ativo');
 }
