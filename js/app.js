@@ -15,7 +15,6 @@ const REGRAS_ENTREGA_PADRAO = [
 
 const PRODUTOS_COM_OPCOES = {
   duplo: {
-    id: 'duplo',
     nome: 'Hot Dog Duplo',
     preco: 16,
     titulo: 'Hot Dog Duplo',
@@ -25,7 +24,6 @@ const PRODUTOS_COM_OPCOES = {
     opcoes: ['Catupiry', 'Cheddar', 'Mussarela']
   },
   xfrango: {
-    id: 'xfrango',
     nome: 'X-Frango',
     preco: 21,
     titulo: 'X-Frango',
@@ -35,7 +33,6 @@ const PRODUTOS_COM_OPCOES = {
     opcoes: ['Catupiry', 'Cheddar', 'Mussarela']
   },
   xfrangoespecial: {
-    id: 'xfrangoespecial',
     nome: 'X-Frango Especial',
     preco: 22,
     titulo: 'X-Frango Especial',
@@ -69,8 +66,6 @@ let configuracaoLoja = null;
 let timeoutCalculoEntrega = null;
 let produtoOpcoesAtual = null;
 let adicionalPendente = null;
-let preenchendoEnderecoAutomaticamente = false;
-let preenchendoCepAutomaticamente = false;
 let coordenadaClienteCache = null;
 
 function formatarPreco(valor) {
@@ -81,17 +76,13 @@ function formatarPreco(valor) {
 }
 
 function somenteNumeros(texto) {
-  return (texto || '').replace(/\D/g, '');
+  return String(texto || '').replace(/\D/g, '');
 }
 
 function removerAcentos(texto) {
   return String(texto || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
-}
-
-function formatarTipoEntregaTexto(tipo) {
-  return tipo === 'delivery' ? 'Delivery' : 'Retirada no local';
 }
 
 function escaparHtml(texto) {
@@ -101,6 +92,10 @@ function escaparHtml(texto) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function formatarTipoEntregaTexto(tipo) {
+  return tipo === 'delivery' ? 'Delivery' : 'Retirada no local';
 }
 
 function isIOS() {
@@ -116,44 +111,32 @@ function abrirWhatsapp(url) {
   }
 }
 
+function byId(id) {
+  return document.getElementById(id);
+}
+
 function obterElementoStatusLoja() {
-  return document.getElementById('statusLoja') || document.getElementById('status-loja');
+  return byId('statusLoja') || byId('status-loja');
 }
 
 function obterCamposEndereco() {
   return {
-    cep: document.getElementById('cepEntrega'),
-    rua: document.getElementById('ruaEntrega'),
-    numero: document.getElementById('numeroEntrega'),
-    bairro: document.getElementById('bairroEntrega'),
-    cidade: document.getElementById('cidadeEntrega'),
-    complemento: document.getElementById('complementoEntrega')
+    cep: byId('cepEntrega'),
+    rua: byId('ruaEntrega'),
+    numero: byId('numeroEntrega'),
+    bairro: byId('bairroEntrega'),
+    cidade: byId('cidadeEntrega'),
+    complemento: byId('complementoEntrega')
   };
-}
-
-function obterEnderecoAtualComoChave() {
-  const rua = document.getElementById('ruaEntrega')?.value.trim() || '';
-  const numero = document.getElementById('numeroEntrega')?.value.trim() || '';
-  const bairro = document.getElementById('bairroEntrega')?.value.trim() || '';
-  const cidade = document.getElementById('cidadeEntrega')?.value.trim() || 'Sorocaba';
-  const cep = document.getElementById('cepEntrega')?.value.trim() || '';
-
-  return [rua, numero, bairro, cidade, cep].join('|').toLowerCase();
-}
-
-function limparCacheCoordenadaCliente() {
-  coordenadaClienteCache = null;
 }
 
 function definirBloqueioCampos() {
   const { cep, rua, numero, bairro, cidade } = obterCamposEndereco();
 
   if (cep) cep.readOnly = false;
-
   if (rua) rua.readOnly = true;
   if (bairro) bairro.readOnly = true;
   if (cidade) cidade.readOnly = true;
-
   if (numero) numero.readOnly = false;
 }
 
@@ -161,173 +144,18 @@ function limparBloqueiosEndereco() {
   definirBloqueioCampos();
 }
 
-function enderecoBasePreenchido() {
-  const { rua, bairro, cidade } = obterCamposEndereco();
-  return !!(
-    rua?.value.trim() ||
-    bairro?.value.trim() ||
-    (cidade?.value.trim() && cidade.value.trim().toLowerCase() !== 'sorocaba')
-  );
+function limparCacheCoordenadaCliente() {
+  coordenadaClienteCache = null;
 }
 
-function sincronizarBloqueiosEndereco(origem = '') {
-  if (preenchendoEnderecoAutomaticamente || preenchendoCepAutomaticamente) return;
+function obterEnderecoAtualComoChave() {
+  const rua = byId('ruaEntrega')?.value.trim() || '';
+  const numero = byId('numeroEntrega')?.value.trim() || '';
+  const bairro = byId('bairroEntrega')?.value.trim() || '';
+  const cidade = byId('cidadeEntrega')?.value.trim() || 'Sorocaba';
+  const cep = byId('cepEntrega')?.value.trim() || '';
 
-  const { cep } = obterCamposEndereco();
-  const cepDigitado = somenteNumeros(cep?.value || '');
-
-  if (origem === 'cep') {
-    if (cepDigitado.length > 0) {
-      definirBloqueioCampos({
-        bloquearCep: false,
-        bloquearEndereco: true
-      });
-    } else {
-      limparBloqueiosEndereco();
-    }
-    return;
-  }
-
-  if (origem === 'endereco') {
-    if (enderecoBasePreenchido()) {
-      definirBloqueioCampos({
-        bloquearCep: true,
-        bloquearEndereco: false
-      });
-    } else {
-      limparBloqueiosEndereco();
-    }
-    return;
-  }
-
-  if (cepDigitado.length > 0) {
-    definirBloqueioCampos({
-      bloquearCep: false,
-      bloquearEndereco: true
-    });
-    return;
-  }
-
-  if (enderecoBasePreenchido()) {
-    definirBloqueioCampos({
-      bloquearCep: true,
-      bloquearEndereco: false
-    });
-    return;
-  }
-
-  limparBloqueiosEndereco();
-}
-
-function aplicarMascaraCep() {
-  const input = document.getElementById('cepEntrega');
-  if (!input) return;
-
-  input.addEventListener('input', function () {
-    let valor = somenteNumeros(input.value).slice(0, 8);
-
-    if (valor.length > 5) {
-      valor = valor.slice(0, 5) + '-' + valor.slice(5);
-    }
-
-    input.value = valor;
-    limparCacheCoordenadaCliente();
-    sincronizarBloqueiosEndereco('cep');
-    agendarCalculoEntrega();
-  });
-
-  input.addEventListener('blur', buscarCepEntrega);
-}
-
-function aplicarEventosEntrega() {
-  const idsCalculo = [
-    'ruaEntrega',
-    'numeroEntrega',
-    'bairroEntrega',
-    'cidadeEntrega',
-    'complementoEntrega'
-  ];
-
-  idsCalculo.forEach(id => {
-    const campo = document.getElementById(id);
-    if (!campo) return;
-
-    campo.addEventListener('input', () => {
-      limparCacheCoordenadaCliente();
-
-      if (id === 'ruaEntrega' || id === 'bairroEntrega' || id === 'cidadeEntrega') {
-        sincronizarBloqueiosEndereco('endereco');
-      }
-
-      agendarCalculoEntrega();
-    });
-
-    campo.addEventListener('change', () => {
-      limparCacheCoordenadaCliente();
-
-      if (id === 'ruaEntrega' || id === 'bairroEntrega' || id === 'cidadeEntrega') {
-        sincronizarBloqueiosEndereco('endereco');
-      }
-
-      agendarCalculoEntrega();
-    });
-
-    campo.addEventListener('blur', async () => {
-      if (id === 'ruaEntrega' || id === 'bairroEntrega' || id === 'cidadeEntrega') {
-        sincronizarBloqueiosEndereco('endereco');
-        await buscarCepPorEndereco();
-      }
-
-      agendarCalculoEntrega();
-    });
-  });
-}
-
-function agendarCalculoEntrega() {
-  clearTimeout(timeoutCalculoEntrega);
-  timeoutCalculoEntrega = setTimeout(() => {
-    calcularEntregaAutomaticamente();
-  }, 700);
-}
-
-function montarEnderecoCompletoCliente() {
-  const rua = document.getElementById('ruaEntrega').value.trim();
-  const numero = document.getElementById('numeroEntrega').value.trim();
-  const bairro = document.getElementById('bairroEntrega').value.trim();
-  const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
-  const cep = document.getElementById('cepEntrega').value.trim();
-
-  const partes = [];
-
-  if (rua) partes.push(rua);
-  if (numero) partes.push(numero);
-  if (bairro) partes.push(bairro);
-  if (cidade) partes.push(cidade);
-  partes.push('SP');
-  if (cep) partes.push(cep);
-  partes.push('Brasil');
-
-  return partes.join(', ');
-}
-
-function enderecoClienteTextoHumano() {
-  const rua = document.getElementById('ruaEntrega').value.trim();
-  const numero = document.getElementById('numeroEntrega').value.trim();
-  const bairro = document.getElementById('bairroEntrega').value.trim();
-  const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
-  const cep = document.getElementById('cepEntrega').value.trim();
-  const complemento = document.getElementById('complementoEntrega').value.trim();
-
-  const partes = [];
-
-  if (rua) partes.push(rua);
-  if (numero) partes.push(numero);
-  if (bairro) partes.push(bairro);
-  if (cidade) partes.push(cidade);
-  if (cep) partes.push(`CEP ${cep}`);
-  if (complemento) partes.push(complemento);
-
-  return partes.join(', ');
+  return [rua, numero, bairro, cidade, cep].join('|').toLowerCase();
 }
 
 function salvarCoordenadaClienteNoCache(coordenada) {
@@ -349,81 +177,189 @@ function obterCoordenadaClienteDoCache() {
   return null;
 }
 
-async function buscarCepEntrega() {
+function aplicarMascaraCep() {
+  const input = byId('cepEntrega');
+  if (!input) return;
 
-  const campoCep = document.getElementById('cepEntrega');
-  const avisoEntrega = document.getElementById('avisoEntrega');
-  const ruaCampo = document.getElementById('ruaEntrega');
-  const bairroCampo = document.getElementById('bairroEntrega');
-  const cidadeCampo = document.getElementById('cidadeEntrega');
-  const numeroCampo = document.getElementById('numeroEntrega');
+  input.addEventListener('input', function () {
+    let valor = somenteNumeros(input.value).slice(0, 8);
+
+    if (valor.length > 5) {
+      valor = valor.slice(0, 5) + '-' + valor.slice(5);
+    }
+
+    input.value = valor;
+    limparCacheCoordenadaCliente();
+
+    if (somenteNumeros(input.value).length === 8) {
+      buscarCepEntrega();
+    } else {
+      agendarCalculoEntrega();
+    }
+  });
+
+  input.addEventListener('blur', buscarCepEntrega);
+}
+
+function aplicarEventosEntrega() {
+  ['numeroEntrega', 'complementoEntrega'].forEach(id => {
+    const campo = byId(id);
+    if (!campo) return;
+
+    campo.addEventListener('input', () => {
+      limparCacheCoordenadaCliente();
+      agendarCalculoEntrega();
+    });
+
+    campo.addEventListener('change', () => {
+      limparCacheCoordenadaCliente();
+      agendarCalculoEntrega();
+    });
+
+    campo.addEventListener('blur', () => {
+      agendarCalculoEntrega();
+    });
+  });
+}
+
+function agendarCalculoEntrega() {
+  clearTimeout(timeoutCalculoEntrega);
+  timeoutCalculoEntrega = setTimeout(() => {
+    calcularEntregaAutomaticamente();
+  }, 700);
+}
+
+function montarEnderecoCompletoCliente() {
+  const rua = byId('ruaEntrega')?.value.trim() || '';
+  const numero = byId('numeroEntrega')?.value.trim() || '';
+  const bairro = byId('bairroEntrega')?.value.trim() || '';
+  const cidade = byId('cidadeEntrega')?.value.trim() || 'Sorocaba';
+  const cep = byId('cepEntrega')?.value.trim() || '';
+
+  const partes = [];
+
+  if (rua) partes.push(rua);
+  if (numero) partes.push(numero);
+  if (bairro) partes.push(bairro);
+  if (cidade) partes.push(cidade);
+  partes.push('SP');
+  if (cep) partes.push(cep);
+  partes.push('Brasil');
+
+  return partes.join(', ');
+}
+
+function enderecoClienteTextoHumano() {
+  const rua = byId('ruaEntrega')?.value.trim() || '';
+  const numero = byId('numeroEntrega')?.value.trim() || '';
+  const bairro = byId('bairroEntrega')?.value.trim() || '';
+  const cidade = byId('cidadeEntrega')?.value.trim() || 'Sorocaba';
+  const cep = byId('cepEntrega')?.value.trim() || '';
+  const complemento = byId('complementoEntrega')?.value.trim() || '';
+
+  const partes = [];
+
+  if (rua) partes.push(rua);
+  if (numero) partes.push(numero);
+  if (bairro) partes.push(bairro);
+  if (cidade) partes.push(cidade);
+  if (cep) partes.push(`CEP ${cep}`);
+  if (complemento) partes.push(complemento);
+
+  return partes.join(', ');
+}
+
+async function buscarCepEntrega() {
+  const campoCep = byId('cepEntrega');
+  const avisoEntrega = byId('avisoEntrega');
+  const ruaCampo = byId('ruaEntrega');
+  const bairroCampo = byId('bairroEntrega');
+  const cidadeCampo = byId('cidadeEntrega');
+  const numeroCampo = byId('numeroEntrega');
 
   if (!campoCep || !avisoEntrega) return;
 
   const cep = somenteNumeros(campoCep.value);
 
   if (!cep) {
+    if (ruaCampo) ruaCampo.value = '';
+    if (bairroCampo) bairroCampo.value = '';
+    if (cidadeCampo) cidadeCampo.value = 'Sorocaba';
+    if (numeroCampo) numeroCampo.value = '';
+
+    taxaEntrega = 0;
+    distanciaEntregaKm = null;
+    tempoEntregaTexto = null;
+
+    limparBloqueiosEndereco();
+    limparCacheCoordenadaCliente();
+
+    avisoEntrega.innerText = 'Digite o CEP para buscar o endereço.';
+    renderizarCarrinho();
     return;
   }
 
   if (cep.length !== 8) {
-    avisoEntrega.innerText = 'Digite um CEP válido.';
+    taxaEntrega = 0;
+    distanciaEntregaKm = null;
+    tempoEntregaTexto = null;
+
+    avisoEntrega.innerText = 'Digite um CEP válido com 8 números.';
+    limparCacheCoordenadaCliente();
+    renderizarCarrinho();
     return;
   }
 
   try {
-
     avisoEntrega.innerText = 'Consultando CEP...';
 
-    const resposta = await fetch(
-      `https://viacep.com.br/ws/${cep}/json/`
-    );
-
+    const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
     const dados = await resposta.json();
 
     if (dados.erro) {
-      avisoEntrega.innerText = 'CEP não encontrado.';
+      if (ruaCampo) ruaCampo.value = '';
+      if (bairroCampo) bairroCampo.value = '';
+      if (cidadeCampo) cidadeCampo.value = 'Sorocaba';
+      if (numeroCampo) numeroCampo.value = '';
+
+      taxaEntrega = 0;
+      distanciaEntregaKm = null;
+      tempoEntregaTexto = null;
+
+      limparBloqueiosEndereco();
+      limparCacheCoordenadaCliente();
+
+      avisoEntrega.innerText = 'CEP não encontrado. Confira o número digitado.';
+      renderizarCarrinho();
       return;
     }
 
-    ruaCampo.value = dados.logradouro || '';
-    bairroCampo.value = dados.bairro || '';
-    cidadeCampo.value = dados.localidade || 'Sorocaba';
+    if (ruaCampo) ruaCampo.value = dados.logradouro || '';
+    if (bairroCampo) bairroCampo.value = dados.bairro || '';
+    if (cidadeCampo) cidadeCampo.value = dados.localidade || 'Sorocaba';
 
     limparCacheCoordenadaCliente();
-
-    // trava rua/bairro/cidade e deixa só número editar
     definirBloqueioCampos();
 
-    // joga cursor pro número
     if (numeroCampo) {
+      numeroCampo.readOnly = false;
       numeroCampo.focus();
     }
 
-    avisoEntrega.innerText =
-      'CEP localizado. Informe somente o número.';
-
+    avisoEntrega.innerText = 'CEP localizado. Informe somente o número.';
     agendarCalculoEntrega();
-
-  } catch(e) {
-
-    console.error(e);
-
-    avisoEntrega.innerText =
-      'Erro ao consultar CEP.';
-
-  }
-
-}
-
-    avisoEntrega.innerText = 'CEP localizado. Informe o número para calcular a taxa.';
-    await calcularEntregaAutomaticamente();
   } catch (erro) {
-    preenchendoEnderecoAutomaticamente = false;
     console.error(erro);
+
+    taxaEntrega = 0;
+    distanciaEntregaKm = null;
+    tempoEntregaTexto = null;
+
     limparBloqueiosEndereco();
     limparCacheCoordenadaCliente();
+
     avisoEntrega.innerText = 'Não foi possível consultar o CEP agora.';
+    renderizarCarrinho();
   }
 }
 
@@ -431,94 +367,10 @@ async function buscarCepPorEndereco() {
   return;
 }
 
-  try {
-    if (avisoEntrega) {
-      avisoEntrega.innerText = 'Buscando CEP pelo endereço...';
-    }
-
-    preenchendoCepAutomaticamente = true;
-
-    const endereco = [rua, numero, bairro, cidade, 'SP', 'Brasil']
-      .filter(Boolean)
-      .join(', ');
-
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
-
-    const resposta = await fetch(url, {
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    if (!resposta.ok) {
-      throw new Error('Erro ao consultar o endereço.');
-    }
-
-    const dados = await resposta.json();
-
-    if (Array.isArray(dados) && dados.length > 0) {
-      const primeiro = dados[0];
-      const postcode = primeiro?.address?.postcode || '';
-
-      if (primeiro?.lat && primeiro?.lon) {
-        salvarCoordenadaClienteNoCache({
-          lat: Number(primeiro.lat),
-          lng: Number(primeiro.lon),
-          display_name: primeiro.display_name || endereco
-        });
-      }
-
-      if (postcode) {
-        const cepNumerico = somenteNumeros(postcode).slice(0, 8);
-        let cepFormatado = cepNumerico;
-
-        if (cepNumerico.length > 5) {
-          cepFormatado = cepNumerico.slice(0, 5) + '-' + cepNumerico.slice(5);
-        }
-
-        if (campoCep) {
-          campoCep.value = cepFormatado;
-        }
-
-        definirBloqueioCampos({
-          bloquearCep: true,
-          bloquearEndereco: false
-        });
-
-        if (avisoEntrega) {
-          avisoEntrega.innerText = 'CEP localizado automaticamente pelo endereço.';
-        }
-
-        await calcularEntregaAutomaticamente();
-      } else {
-        if (campoCep) campoCep.value = '';
-
-        if (avisoEntrega) {
-          avisoEntrega.innerText = 'Endereço localizado, mas o CEP não foi encontrado automaticamente.';
-        }
-      }
-    } else {
-      if (campoCep) campoCep.value = '';
-      limparCacheCoordenadaCliente();
-
-      if (avisoEntrega) {
-        avisoEntrega.innerText = 'Não foi possível localizar o CEP pelo endereço digitado.';
-      }
-    }
-  } catch (erro) {
-    console.error('Erro ao buscar CEP pelo endereço:', erro);
-
-    if (avisoEntrega) {
-      avisoEntrega.innerText = 'Não foi possível buscar o CEP pelo endereço agora.';
-    }
-  } finally {
-    preenchendoCepAutomaticamente = false;
-  }
-}
-
 function atualizarContadores() {
   const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-  const cartCount = document.getElementById('cartCount');
+  const cartCount = byId('cartCount');
+
   if (cartCount) {
     cartCount.innerText = totalItens;
   }
@@ -545,23 +397,25 @@ function adicionarAoCarrinho(nome, preco, observacao = '') {
   }
 
   atualizarContadores();
+  renderizarCarrinho();
 }
 
 function abrirOpcoesProduto(produtoId) {
   const produto = PRODUTOS_COM_OPCOES[produtoId];
-  const modal = document.getElementById('modalOpcoesProduto');
-  const titulo = document.getElementById('tituloOpcoesProduto');
-  const descricao = document.getElementById('descricaoOpcoesProduto');
-  const lista = document.getElementById('listaOpcoesProduto');
+  const modal = byId('modalOpcoesProduto');
+  const titulo = byId('tituloOpcoesProduto');
+  const descricao = byId('descricaoOpcoesProduto');
+  const lista = byId('listaOpcoesProduto');
 
   if (!produto || !modal || !titulo || !descricao || !lista) return;
 
   adicionalPendente = null;
   produtoOpcoesAtual = produto;
+
   titulo.innerText = produto.titulo;
   descricao.innerText = produto.descricao;
 
-  lista.innerHTML = produto.opcoes.map((opcao) => `
+  lista.innerHTML = produto.opcoes.map(opcao => `
     <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
       <input type="radio" name="opcaoProdutoAtual" value="${escaparHtml(opcao)}">
       <span>${escaparHtml(opcao)}</span>
@@ -573,8 +427,8 @@ function abrirOpcoesProduto(produtoId) {
 }
 
 function fecharOpcoesProduto() {
-  const modal = document.getElementById('modalOpcoesProduto');
-  const lista = document.getElementById('listaOpcoesProduto');
+  const modal = byId('modalOpcoesProduto');
+  const lista = byId('listaOpcoesProduto');
 
   produtoOpcoesAtual = null;
   adicionalPendente = null;
@@ -642,6 +496,52 @@ function confirmarOpcoesProduto() {
   fecharOpcoesProduto();
 }
 
+function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
+  const lanches = carrinho
+    .map((item, index) => ({ ...item, indexOriginal: index }))
+    .filter(item => {
+      const nome = String(item.nome || '').toLowerCase();
+
+      return !nome.includes('coca') &&
+        !nome.includes('sprite') &&
+        !nome.includes('fanta') &&
+        !nome.includes('guaraná') &&
+        !nome.includes('guarana');
+    });
+
+  if (lanches.length === 0) {
+    alert('Escolha um lanche primeiro para adicionar este item.');
+    return;
+  }
+
+  adicionalPendente = {
+    nome: nomeAdicional,
+    preco: Number(precoAdicional || 0)
+  };
+
+  produtoOpcoesAtual = null;
+
+  const modal = byId('modalOpcoesProduto');
+  const titulo = byId('tituloOpcoesProduto');
+  const descricao = byId('descricaoOpcoesProduto');
+  const lista = byId('listaOpcoesProduto');
+
+  if (!modal || !titulo || !descricao || !lista) return;
+
+  titulo.innerText = 'Adicionar ' + nomeAdicional;
+  descricao.innerText = 'Escolha em qual lanche será adicionado:';
+
+  lista.innerHTML = lanches.map(item => `
+    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
+      <input type="radio" name="lancheAdicional" value="${item.indexOriginal}">
+      <span>${escaparHtml(item.nome)}</span>
+    </label>
+  `).join('');
+
+  modal.style.display = 'flex';
+  modal.classList.add('ativo');
+}
+
 function aumentarQuantidade(index) {
   carrinho[index].quantidade += 1;
   renderizarCarrinho();
@@ -663,11 +563,11 @@ function removerItem(index) {
 }
 
 function calcularSubtotal() {
-  return carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+  return carrinho.reduce((acc, item) => acc + (Number(item.preco || 0) * Number(item.quantidade || 0)), 0);
 }
 
 function calcularTotal() {
-  return calcularSubtotal() + taxaEntrega;
+  return calcularSubtotal() + Number(taxaEntrega || 0);
 }
 
 function converterHorarioParaMinutos(horario) {
@@ -749,6 +649,7 @@ async function atualizarConfiguracaoLojaStatus() {
     if (!configuracaoLoja) {
       configuracaoLoja = obterConfiguracaoLojaPadrao();
     }
+
     return configuracaoLoja;
   }
 
@@ -798,7 +699,7 @@ async function lojaAbertaAgora() {
 
 async function atualizarStatusLoja() {
   const statusLoja = obterElementoStatusLoja();
-  const btnFinalizar = document.getElementById('btnFinalizar');
+  const btnFinalizar = byId('btnFinalizar');
   const aberta = await lojaAbertaAgora();
 
   if (statusLoja) {
@@ -819,27 +720,30 @@ async function atualizarStatusLoja() {
 }
 
 function atualizarEntrega() {
-  const tipoEntrega = document.getElementById('tipoEntrega').value;
-  const camposEntrega = document.getElementById('camposEntrega');
-  const avisoEntrega = document.getElementById('avisoEntrega');
+  const tipoEntrega = byId('tipoEntrega')?.value;
+  const camposEntrega = byId('camposEntrega');
+  const avisoEntrega = byId('avisoEntrega');
 
   if (tipoEntrega === 'delivery') {
     if (camposEntrega) {
       camposEntrega.style.display = 'grid';
     }
 
-    const rua = document.getElementById('ruaEntrega').value.trim();
-    const numero = document.getElementById('numeroEntrega').value.trim();
-    const bairro = document.getElementById('bairroEntrega').value.trim();
-    const cidade = document.getElementById('cidadeEntrega').value.trim();
+    definirBloqueioCampos();
 
-    if (!rua || !numero || !bairro || !cidade) {
+    const cep = byId('cepEntrega')?.value.trim() || '';
+    const rua = byId('ruaEntrega')?.value.trim() || '';
+    const numero = byId('numeroEntrega')?.value.trim() || '';
+    const bairro = byId('bairroEntrega')?.value.trim() || '';
+    const cidade = byId('cidadeEntrega')?.value.trim() || '';
+
+    if (!cep || !rua || !numero || !bairro || !cidade) {
       taxaEntrega = 0;
       distanciaEntregaKm = null;
       tempoEntregaTexto = null;
 
       if (avisoEntrega) {
-        avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+        avisoEntrega.innerText = 'Digite o CEP e depois informe o número para calcular a entrega.';
       }
     } else {
       agendarCalculoEntrega();
@@ -849,12 +753,12 @@ function atualizarEntrega() {
       camposEntrega.style.display = 'none';
     }
 
-    document.getElementById('cepEntrega').value = '';
-    document.getElementById('ruaEntrega').value = '';
-    document.getElementById('numeroEntrega').value = '';
-    document.getElementById('bairroEntrega').value = '';
-    document.getElementById('cidadeEntrega').value = 'Sorocaba';
-    document.getElementById('complementoEntrega').value = '';
+    if (byId('cepEntrega')) byId('cepEntrega').value = '';
+    if (byId('ruaEntrega')) byId('ruaEntrega').value = '';
+    if (byId('numeroEntrega')) byId('numeroEntrega').value = '';
+    if (byId('bairroEntrega')) byId('bairroEntrega').value = '';
+    if (byId('cidadeEntrega')) byId('cidadeEntrega').value = 'Sorocaba';
+    if (byId('complementoEntrega')) byId('complementoEntrega').value = '';
 
     limparBloqueiosEndereco();
     limparCacheCoordenadaCliente();
@@ -872,7 +776,7 @@ function atualizarEntrega() {
 }
 
 function renderizarCarrinho() {
-  const lista = document.getElementById('listaCarrinho');
+  const lista = byId('listaCarrinho');
   const subtotal = calcularSubtotal();
   const total = calcularTotal();
 
@@ -889,12 +793,14 @@ function renderizarCarrinho() {
                 ${item.observacao ? `<small style="display:block; margin-top:4px;">${escaparHtml(item.observacao)}</small>` : ''}
                 <small>${formatarPreco(item.preco)} cada</small>
               </div>
+
               <div class="acoes-carrinho">
                 <div class="qtd-box">
                   <button class="qtd-btn" onclick="diminuirQuantidade(${index})">-</button>
                   <strong>${item.quantidade}</strong>
                   <button class="qtd-btn" onclick="aumentarQuantidade(${index})">+</button>
                 </div>
+
                 <strong>${formatarPreco(item.preco * item.quantidade)}</strong>
                 <button class="btn-remover" onclick="removerItem(${index})">Remover</button>
               </div>
@@ -905,25 +811,20 @@ function renderizarCarrinho() {
     }
   }
 
-  const resumoItens = document.getElementById('resumoItens');
-  const resumoSubtotal = document.getElementById('resumoSubtotal');
-  const resumoTaxaEntrega = document.getElementById('resumoTaxaEntrega');
-  const resumoTotal = document.getElementById('resumoTotal');
-
-  if (resumoItens) {
-    resumoItens.innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+  if (byId('resumoItens')) {
+    byId('resumoItens').innerText = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
   }
 
-  if (resumoSubtotal) {
-    resumoSubtotal.innerText = formatarPreco(subtotal);
+  if (byId('resumoSubtotal')) {
+    byId('resumoSubtotal').innerText = formatarPreco(subtotal);
   }
 
-  if (resumoTaxaEntrega) {
-    resumoTaxaEntrega.innerText = formatarPreco(taxaEntrega);
+  if (byId('resumoTaxaEntrega')) {
+    byId('resumoTaxaEntrega').innerText = formatarPreco(taxaEntrega);
   }
 
-  if (resumoTotal) {
-    resumoTotal.innerText = formatarPreco(total);
+  if (byId('resumoTotal')) {
+    byId('resumoTotal').innerText = formatarPreco(total);
   }
 
   atualizarContadores();
@@ -932,14 +833,17 @@ function renderizarCarrinho() {
 
 function abrirCarrinho() {
   renderizarCarrinho();
-  const modal = document.getElementById('modalCarrinho');
+
+  const modal = byId('modalCarrinho');
+
   if (modal) {
     modal.classList.add('ativo');
   }
 }
 
 function fecharCarrinho() {
-  const modal = document.getElementById('modalCarrinho');
+  const modal = byId('modalCarrinho');
+
   if (modal) {
     modal.classList.remove('ativo');
   }
@@ -953,16 +857,16 @@ function limparCarrinho() {
   produtoOpcoesAtual = null;
   adicionalPendente = null;
 
-  document.getElementById('nomeCliente').value = '';
-  document.getElementById('tipoEntrega').value = 'retirada';
-  document.getElementById('cepEntrega').value = '';
-  document.getElementById('ruaEntrega').value = '';
-  document.getElementById('numeroEntrega').value = '';
-  document.getElementById('bairroEntrega').value = '';
-  document.getElementById('cidadeEntrega').value = 'Sorocaba';
-  document.getElementById('complementoEntrega').value = '';
-  document.getElementById('formaPagamento').value = '';
-  document.getElementById('observacoes').value = '';
+  if (byId('nomeCliente')) byId('nomeCliente').value = '';
+  if (byId('tipoEntrega')) byId('tipoEntrega').value = 'retirada';
+  if (byId('cepEntrega')) byId('cepEntrega').value = '';
+  if (byId('ruaEntrega')) byId('ruaEntrega').value = '';
+  if (byId('numeroEntrega')) byId('numeroEntrega').value = '';
+  if (byId('bairroEntrega')) byId('bairroEntrega').value = '';
+  if (byId('cidadeEntrega')) byId('cidadeEntrega').value = 'Sorocaba';
+  if (byId('complementoEntrega')) byId('complementoEntrega').value = '';
+  if (byId('formaPagamento')) byId('formaPagamento').value = '';
+  if (byId('observacoes')) byId('observacoes').value = '';
 
   limparBloqueiosEndereco();
   limparCacheCoordenadaCliente();
@@ -1082,6 +986,7 @@ function gerarTentativasEndereco(endereco) {
     if (!texto) continue;
 
     const chave = texto.toLowerCase();
+
     if (vistos.has(chave)) continue;
 
     vistos.add(chave);
@@ -1097,6 +1002,7 @@ async function geocodificarEnderecoProfissional(endereco) {
   for (const texto of tentativas) {
     try {
       console.log('Tentando geocodificar:', texto);
+
       const resultado = await geocodificarEnderecoOpenStreetMap(texto);
 
       if (resultado) {
@@ -1155,6 +1061,7 @@ function formatarDuracao(segundos) {
 function somarTempoPreparoComEntrega(segundosEntrega) {
   const minutosEntrega = Math.round(Number(segundosEntrega || 0) / 60);
   const minutosTotais = TEMPO_PREPARO_FIXO_MINUTOS + minutosEntrega;
+
   return formatarDuracao(minutosTotais * 60);
 }
 
@@ -1167,6 +1074,7 @@ function descobrirTaxaPorDistancia(distanciaKm) {
     const regra = regrasEntrega.find(r => {
       const min = Number(r.km_min);
       const max = Number(r.km_max);
+
       return distanciaKm >= min && distanciaKm <= max;
     });
 
@@ -1183,8 +1091,8 @@ function descobrirTaxaPorDistancia(distanciaKm) {
 }
 
 async function calcularEntregaAutomaticamente() {
-  const tipoEntrega = document.getElementById('tipoEntrega').value;
-  const avisoEntrega = document.getElementById('avisoEntrega');
+  const tipoEntrega = byId('tipoEntrega')?.value;
+  const avisoEntrega = byId('avisoEntrega');
 
   if (tipoEntrega !== 'delivery') {
     taxaEntrega = 0;
@@ -1199,11 +1107,11 @@ async function calcularEntregaAutomaticamente() {
     return;
   }
 
-  const cep = document.getElementById('cepEntrega').value.trim();
-  const rua = document.getElementById('ruaEntrega').value.trim();
-  const numero = document.getElementById('numeroEntrega').value.trim();
-  const bairro = document.getElementById('bairroEntrega').value.trim();
-  const cidade = document.getElementById('cidadeEntrega').value.trim();
+  const cep = byId('cepEntrega')?.value.trim() || '';
+  const rua = byId('ruaEntrega')?.value.trim() || '';
+  const numero = byId('numeroEntrega')?.value.trim() || '';
+  const bairro = byId('bairroEntrega')?.value.trim() || '';
+  const cidade = byId('cidadeEntrega')?.value.trim() || '';
 
   if (!cep || !rua || !numero || !bairro || !cidade) {
     taxaEntrega = 0;
@@ -1211,7 +1119,7 @@ async function calcularEntregaAutomaticamente() {
     tempoEntregaTexto = null;
 
     if (avisoEntrega) {
-      avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
+      avisoEntrega.innerText = 'Digite o CEP e depois informe o número para calcular a entrega.';
     }
 
     renderizarCarrinho();
@@ -1243,6 +1151,7 @@ async function calcularEntregaAutomaticamente() {
 
     if (!coordenadaCliente) {
       coordenadaCliente = await geocodificarEnderecoProfissional(enderecoCliente);
+
       if (coordenadaCliente) {
         salvarCoordenadaClienteNoCache(coordenadaCliente);
       }
@@ -1254,7 +1163,7 @@ async function calcularEntregaAutomaticamente() {
       tempoEntregaTexto = null;
 
       if (avisoEntrega) {
-        avisoEntrega.innerText = 'Não foi possível localizar o endereço. Confira os dados digitados.';
+        avisoEntrega.innerText = 'Não foi possível localizar o endereço. Confira o CEP e o número.';
       }
 
       renderizarCarrinho();
@@ -1282,12 +1191,14 @@ async function calcularEntregaAutomaticamente() {
     taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
 
     if (avisoEntrega) {
-      avisoEntrega.innerText = `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
+      avisoEntrega.innerText =
+        `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
     }
 
     renderizarCarrinho();
   } catch (erro) {
     console.error('Erro ao calcular entrega:', erro);
+
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
@@ -1330,12 +1241,12 @@ async function finalizarPedido() {
     return;
   }
 
-  const nome = document.getElementById('nomeCliente').value.trim();
-  const tipoEntrega = document.getElementById('tipoEntrega').value;
-  const pagamento = document.getElementById('formaPagamento').value;
-  const observacoes = document.getElementById('observacoes').value.trim();
-  const avisoEntrega = document.getElementById('avisoEntrega');
-  const btnFinalizar = document.getElementById('btnFinalizar');
+  const nome = byId('nomeCliente')?.value.trim() || '';
+  const tipoEntrega = byId('tipoEntrega')?.value;
+  const pagamento = byId('formaPagamento')?.value || '';
+  const observacoes = byId('observacoes')?.value.trim() || '';
+  const avisoEntrega = byId('avisoEntrega');
+  const btnFinalizar = byId('btnFinalizar');
 
   const endereco = enderecoClienteTextoHumano();
 
@@ -1345,14 +1256,14 @@ async function finalizarPedido() {
   }
 
   if (tipoEntrega === 'delivery') {
-    const cep = document.getElementById('cepEntrega').value.trim();
-    const rua = document.getElementById('ruaEntrega').value.trim();
-    const numero = document.getElementById('numeroEntrega').value.trim();
-    const bairro = document.getElementById('bairroEntrega').value.trim();
-    const cidade = document.getElementById('cidadeEntrega').value.trim();
+    const cep = byId('cepEntrega')?.value.trim() || '';
+    const rua = byId('ruaEntrega')?.value.trim() || '';
+    const numero = byId('numeroEntrega')?.value.trim() || '';
+    const bairro = byId('bairroEntrega')?.value.trim() || '';
+    const cidade = byId('cidadeEntrega')?.value.trim() || '';
 
     if (!cep || !rua || !numero || !bairro || !cidade) {
-      alert('Preencha CEP, rua, número, bairro e cidade.');
+      alert('Digite o CEP e informe o número.');
       return;
     }
 
@@ -1361,7 +1272,7 @@ async function finalizarPedido() {
     }
 
     if (distanciaEntregaKm === null) {
-      alert('Não foi possível calcular a entrega. Verifique o endereço.');
+      alert('Não foi possível calcular a entrega. Verifique o CEP e o número.');
       return;
     }
   }
@@ -1374,13 +1285,13 @@ async function finalizarPedido() {
     customer_phone: '',
     order_type: tipoEntrega,
     customer_address: tipoEntrega === 'delivery' ? endereco : null,
-    customer_neighborhood: tipoEntrega === 'delivery' ? document.getElementById('bairroEntrega').value.trim() : null,
-    customer_city: tipoEntrega === 'delivery' ? document.getElementById('cidadeEntrega').value.trim() : 'Sorocaba',
+    customer_neighborhood: tipoEntrega === 'delivery' ? byId('bairroEntrega').value.trim() : null,
+    customer_city: tipoEntrega === 'delivery' ? byId('cidadeEntrega').value.trim() : 'Sorocaba',
     customer_notes: [
       pagamento ? `Pagamento: ${pagamento}` : '',
       observacoes ? `Observações: ${observacoes}` : '',
-      tipoEntrega === 'delivery' && document.getElementById('complementoEntrega').value.trim()
-        ? `Complemento: ${document.getElementById('complementoEntrega').value.trim()}`
+      tipoEntrega === 'delivery' && byId('complementoEntrega').value.trim()
+        ? `Complemento: ${byId('complementoEntrega').value.trim()}`
         : '',
       tipoEntrega === 'delivery' && tempoEntregaTexto
         ? `Tempo estimado: ${tempoEntregaTexto}`
@@ -1467,16 +1378,16 @@ async function finalizarPedido() {
     produtoOpcoesAtual = null;
     adicionalPendente = null;
 
-    document.getElementById('nomeCliente').value = '';
-    document.getElementById('tipoEntrega').value = 'retirada';
-    document.getElementById('cepEntrega').value = '';
-    document.getElementById('ruaEntrega').value = '';
-    document.getElementById('numeroEntrega').value = '';
-    document.getElementById('bairroEntrega').value = '';
-    document.getElementById('cidadeEntrega').value = 'Sorocaba';
-    document.getElementById('complementoEntrega').value = '';
-    document.getElementById('formaPagamento').value = '';
-    document.getElementById('observacoes').value = '';
+    if (byId('nomeCliente')) byId('nomeCliente').value = '';
+    if (byId('tipoEntrega')) byId('tipoEntrega').value = 'retirada';
+    if (byId('cepEntrega')) byId('cepEntrega').value = '';
+    if (byId('ruaEntrega')) byId('ruaEntrega').value = '';
+    if (byId('numeroEntrega')) byId('numeroEntrega').value = '';
+    if (byId('bairroEntrega')) byId('bairroEntrega').value = '';
+    if (byId('cidadeEntrega')) byId('cidadeEntrega').value = 'Sorocaba';
+    if (byId('complementoEntrega')) byId('complementoEntrega').value = '';
+    if (byId('formaPagamento')) byId('formaPagamento').value = '';
+    if (byId('observacoes')) byId('observacoes').value = '';
 
     limparBloqueiosEndereco();
     limparCacheCoordenadaCliente();
@@ -1504,8 +1415,8 @@ async function finalizarPedido() {
 }
 
 window.onclick = function (event) {
-  const modalCarrinho = document.getElementById('modalCarrinho');
-  const modalOpcoes = document.getElementById('modalOpcoesProduto');
+  const modalCarrinho = byId('modalCarrinho');
+  const modalOpcoes = byId('modalOpcoesProduto');
 
   if (event.target === modalCarrinho) {
     fecharCarrinho();
@@ -1519,64 +1430,20 @@ window.onclick = function (event) {
 async function iniciarSistema() {
   await carregarConfiguracaoLoja();
   await carregarRegrasEntrega();
+
   aplicarMascaraCep();
   aplicarEventosEntrega();
   atualizarContadores();
   atualizarEntrega();
   limparBloqueiosEndereco();
+
   await atualizarStatusLoja();
 
   setInterval(async () => {
     await atualizarStatusLoja();
   }, 5000);
 
-  console.log('Sistema iniciado com OpenStreetMap + OSRM + geocodificação reforçada.');
+  console.log('Sistema iniciado com CEP via ViaCEP + rota OSRM.');
 }
 
 iniciarSistema();
-
-function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
-  const lanches = carrinho
-    .map((item, index) => ({ ...item, indexOriginal: index }))
-    .filter(item => {
-      const nome = String(item.nome || '').toLowerCase();
-
-      return !nome.includes('coca') &&
-        !nome.includes('sprite') &&
-        !nome.includes('fanta') &&
-        !nome.includes('guaraná') &&
-        !nome.includes('guarana');
-    });
-
-  if (lanches.length === 0) {
-    alert('Escolha um lanche primeiro para adicionar este item.');
-    return;
-  }
-
-  adicionalPendente = {
-    nome: nomeAdicional,
-    preco: Number(precoAdicional || 0)
-  };
-
-  produtoOpcoesAtual = null;
-
-  const modal = document.getElementById('modalOpcoesProduto');
-  const titulo = document.getElementById('tituloOpcoesProduto');
-  const descricao = document.getElementById('descricaoOpcoesProduto');
-  const lista = document.getElementById('listaOpcoesProduto');
-
-  if (!modal || !titulo || !descricao || !lista) return;
-
-  titulo.innerText = 'Adicionar ' + nomeAdicional;
-  descricao.innerText = 'Escolha em qual lanche será adicionado:';
-
-  lista.innerHTML = lanches.map(item => `
-    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
-      <input type="radio" name="lancheAdicional" value="${item.indexOriginal}">
-      <span>${escaparHtml(item.nome)}</span>
-    </label>
-  `).join('');
-
-  modal.style.display = 'flex';
-  modal.classList.add('ativo');
-}
