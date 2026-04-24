@@ -145,20 +145,20 @@ function limparCacheCoordenadaCliente() {
   coordenadaClienteCache = null;
 }
 
-function definirBloqueioCampos({ bloquearCep = false, bloquearEndereco = false } = {}) {
-  const { cep, rua, bairro, cidade } = obterCamposEndereco();
+function definirBloqueioCampos() {
+  const { cep, rua, numero, bairro, cidade } = obterCamposEndereco();
 
-  if (cep) cep.readOnly = bloquearCep;
-  if (rua) rua.readOnly = bloquearEndereco;
-  if (bairro) bairro.readOnly = bloquearEndereco;
-  if (cidade) cidade.readOnly = bloquearEndereco;
+  if (cep) cep.readOnly = false;
+
+  if (rua) rua.readOnly = true;
+  if (bairro) bairro.readOnly = true;
+  if (cidade) cidade.readOnly = true;
+
+  if (numero) numero.readOnly = false;
 }
 
 function limparBloqueiosEndereco() {
-  definirBloqueioCampos({
-    bloquearCep: false,
-    bloquearEndereco: false
-  });
+  definirBloqueioCampos();
 }
 
 function enderecoBasePreenchido() {
@@ -350,59 +350,71 @@ function obterCoordenadaClienteDoCache() {
 }
 
 async function buscarCepEntrega() {
+
   const campoCep = document.getElementById('cepEntrega');
   const avisoEntrega = document.getElementById('avisoEntrega');
   const ruaCampo = document.getElementById('ruaEntrega');
   const bairroCampo = document.getElementById('bairroEntrega');
   const cidadeCampo = document.getElementById('cidadeEntrega');
+  const numeroCampo = document.getElementById('numeroEntrega');
 
   if (!campoCep || !avisoEntrega) return;
 
   const cep = somenteNumeros(campoCep.value);
 
   if (!cep) {
-    limparBloqueiosEndereco();
-    limparCacheCoordenadaCliente();
     return;
   }
 
   if (cep.length !== 8) {
-    avisoEntrega.innerText = 'Digite um CEP válido para buscar o endereço.';
-    sincronizarBloqueiosEndereco('cep');
-    limparCacheCoordenadaCliente();
+    avisoEntrega.innerText = 'Digite um CEP válido.';
     return;
   }
 
   try {
-    avisoEntrega.innerText = 'Consultando CEP...';
-    preenchendoEnderecoAutomaticamente = true;
 
-    const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    avisoEntrega.innerText = 'Consultando CEP...';
+
+    const resposta = await fetch(
+      `https://viacep.com.br/ws/${cep}/json/`
+    );
+
     const dados = await resposta.json();
 
     if (dados.erro) {
-      if (ruaCampo) ruaCampo.value = '';
-      if (bairroCampo) bairroCampo.value = '';
-      if (cidadeCampo) cidadeCampo.value = 'Sorocaba';
-
-      preenchendoEnderecoAutomaticamente = false;
-      limparBloqueiosEndereco();
-      limparCacheCoordenadaCliente();
-      avisoEntrega.innerText = 'CEP não encontrado. Confira o número digitado.';
+      avisoEntrega.innerText = 'CEP não encontrado.';
       return;
     }
 
-    if (ruaCampo) ruaCampo.value = dados.logradouro || '';
-    if (bairroCampo) bairroCampo.value = dados.bairro || '';
-    if (cidadeCampo) cidadeCampo.value = dados.localidade || 'Sorocaba';
+    ruaCampo.value = dados.logradouro || '';
+    bairroCampo.value = dados.bairro || '';
+    cidadeCampo.value = dados.localidade || 'Sorocaba';
 
-    preenchendoEnderecoAutomaticamente = false;
     limparCacheCoordenadaCliente();
 
-    definirBloqueioCampos({
-      bloquearCep: false,
-      bloquearEndereco: true
-    });
+    // trava rua/bairro/cidade e deixa só número editar
+    definirBloqueioCampos();
+
+    // joga cursor pro número
+    if (numeroCampo) {
+      numeroCampo.focus();
+    }
+
+    avisoEntrega.innerText =
+      'CEP localizado. Informe somente o número.';
+
+    agendarCalculoEntrega();
+
+  } catch(e) {
+
+    console.error(e);
+
+    avisoEntrega.innerText =
+      'Erro ao consultar CEP.';
+
+  }
+
+}
 
     avisoEntrega.innerText = 'CEP localizado. Informe o número para calcular a taxa.';
     await calcularEntregaAutomaticamente();
@@ -416,22 +428,8 @@ async function buscarCepEntrega() {
 }
 
 async function buscarCepPorEndereco() {
-  const avisoEntrega = document.getElementById('avisoEntrega');
-  const campoCep = document.getElementById('cepEntrega');
-  const rua = document.getElementById('ruaEntrega')?.value.trim() || '';
-  const numero = document.getElementById('numeroEntrega')?.value.trim() || '';
-  const bairro = document.getElementById('bairroEntrega')?.value.trim() || '';
-  const cidade = document.getElementById('cidadeEntrega')?.value.trim() || 'Sorocaba';
-
-  if (preenchendoEnderecoAutomaticamente) return;
-
-  if (!rua || !bairro || !cidade) {
-    if (!somenteNumeros(campoCep?.value || '')) {
-      limparBloqueiosEndereco();
-    }
-    limparCacheCoordenadaCliente();
-    return;
-  }
+  return;
+}
 
   try {
     if (avisoEntrega) {
