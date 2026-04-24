@@ -446,6 +446,22 @@ function fecharOpcoesProduto() {
 
 function confirmarOpcoesProduto() {
   if (adicionalPendente) {
+    if (adicionalPendente.etapa === 'escolher_queijo') {
+      const queijoSelecionado = document.querySelector('input[name="queijoAdicional"]:checked');
+
+      if (!queijoSelecionado) {
+        alert('Selecione Catupiry, Cheddar ou Mussarela.');
+        return;
+      }
+
+      abrirEscolhaLancheParaAdicional(
+        queijoSelecionado.value,
+        adicionalPendente.preco
+      );
+
+      return;
+    }
+
     const selecionado = document.querySelector('input[name="lancheAdicional"]:checked');
 
     if (!selecionado) {
@@ -498,6 +514,54 @@ function confirmarOpcoesProduto() {
 }
 
 function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
+  const nomeNormalizado = removerAcentos(String(nomeAdicional || '').toLowerCase());
+
+  const precisaEscolherQueijo =
+    nomeNormalizado.includes('catupiry') ||
+    nomeNormalizado.includes('cheddar') ||
+    nomeNormalizado.includes('mussarela');
+
+  if (precisaEscolherQueijo) {
+    abrirEscolhaQueijoAdicional(precoAdicional);
+    return;
+  }
+
+  abrirEscolhaLancheParaAdicional(nomeAdicional, precoAdicional);
+}
+
+function abrirEscolhaQueijoAdicional(precoAdicional) {
+  adicionalPendente = {
+    nome: '',
+    preco: Number(precoAdicional || 0),
+    etapa: 'escolher_queijo'
+  };
+
+  produtoOpcoesAtual = null;
+
+  const modal = byId('modalOpcoesProduto');
+  const titulo = byId('tituloOpcoesProduto');
+  const descricao = byId('descricaoOpcoesProduto');
+  const lista = byId('listaOpcoesProduto');
+
+  if (!modal || !titulo || !descricao || !lista) return;
+
+  titulo.innerText = 'Escolha o queijo';
+  descricao.innerText = 'Escolha uma opção para adicionar ao lanche:';
+
+  const opcoes = ['Catupiry', 'Cheddar', 'Mussarela'];
+
+  lista.innerHTML = opcoes.map(opcao => `
+    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
+      <input type="radio" name="queijoAdicional" value="${escaparHtml(opcao)}">
+      <span>${escaparHtml(opcao)}</span>
+    </label>
+  `).join('');
+
+  modal.style.display = 'flex';
+  modal.classList.add('ativo');
+}
+
+function abrirEscolhaLancheParaAdicional(nomeAdicional, precoAdicional) {
   const lanches = carrinho
     .map((item, index) => ({ ...item, indexOriginal: index }))
     .filter(item => {
@@ -517,7 +581,8 @@ function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
 
   adicionalPendente = {
     nome: nomeAdicional,
-    preco: Number(precoAdicional || 0)
+    preco: Number(precoAdicional || 0),
+    etapa: 'escolher_lanche'
   };
 
   produtoOpcoesAtual = null;
