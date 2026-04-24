@@ -6,6 +6,7 @@ const TEMPO_PREPARO_FIXO_MINUTOS = 45;
 const REGRAS_ENTREGA_PADRAO = [
   { km_min: 0, km_max: 3, fee: 4, active: true },
   { km_min: 3.01, km_max: 5, fee: 6, active: true },
+  { km_min: 5.01, km_max: 6, fee: 7, active: true },
   { km_min: 6.01, km_max: 7, fee: 8, active: true },
   { km_min: 7.01, km_max: 8, fee: 10, active: true },
   { km_min: 8.01, km_max: 9, fee: 12, active: true },
