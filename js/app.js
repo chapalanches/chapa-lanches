@@ -2,14 +2,13 @@ const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) |
 const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa Lanches';
 const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
 const TEMPO_PREPARO_FIXO_MINUTOS = 45;
+const DISTANCIA_MAXIMA_ENTREGA_KM = 10;
 
 const REGRAS_ENTREGA_PADRAO = [
-  { km_min: 0, km_max: 3, fee: 3, active: true },
-  { km_min: 3.01, km_max: 4, fee: 4, active: true },
-  { km_min: 4.01, km_max: 5, fee: 5, active: true },
-  { km_min: 5.01, km_max: 6, fee: 7, active: true },
+  { km_min: 0, km_max: 3, fee: 4, active: true },
+  { km_min: 3.01, km_max: 5, fee: 6, active: true },
   { km_min: 6.01, km_max: 7, fee: 8, active: true },
-  { km_min: 7.01, km_max: 8, fee: 9, active: true },
+  { km_min: 7.01, km_max: 8, fee: 10, active: true },
   { km_min: 8.01, km_max: 9, fee: 12, active: true },
   { km_min: 9.01, km_max: 10, fee: 15, active: true }
 ];
@@ -169,7 +168,6 @@ function aplicarMascaraCep() {
     }
 
     input.value = valor;
-
     limparCacheCoordenadaCliente();
 
     if (somenteNumeros(valor).length > 0) {
@@ -192,7 +190,7 @@ function aplicarMascaraCep() {
 }
 
 function aplicarEventosEntrega() {
-  ['numeroEntrega', 'complementoEntrega'].forEach(id => {
+  ['ruaEntrega', 'numeroEntrega', 'bairroEntrega', 'cidadeEntrega', 'complementoEntrega'].forEach(id => {
     const campo = document.getElementById(id);
     if (!campo) return;
 
@@ -214,9 +212,10 @@ function aplicarEventosEntrega() {
 
 function agendarCalculoEntrega() {
   clearTimeout(timeoutCalculoEntrega);
+
   timeoutCalculoEntrega = setTimeout(() => {
     calcularEntregaAutomaticamente();
-  }, 700);
+  }, 1200);
 }
 
 function montarEnderecoCompletoCliente() {
@@ -621,19 +620,18 @@ function atualizarEntrega() {
       camposEntrega.style.display = 'grid';
     }
 
-    const cep = document.getElementById('cepEntrega').value.trim();
     const rua = document.getElementById('ruaEntrega').value.trim();
     const numero = document.getElementById('numeroEntrega').value.trim();
     const bairro = document.getElementById('bairroEntrega').value.trim();
     const cidade = document.getElementById('cidadeEntrega').value.trim();
 
-    if (!cep || !rua || !numero || !bairro || !cidade) {
+    if (!rua || !numero || !bairro || !cidade) {
       taxaEntrega = 0;
       distanciaEntregaKm = null;
       tempoEntregaTexto = null;
 
       if (avisoEntrega) {
-        avisoEntrega.innerText = 'Preencha o CEP e o número para calcular a entrega.';
+        avisoEntrega.innerText = 'Preencha rua, número, bairro e cidade para calcular a entrega.';
       }
     } else {
       agendarCalculoEntrega();
@@ -968,97 +966,104 @@ function descobrirTaxaPorDistancia(distanciaKm) {
   }
 
   if (distanciaKm <= 3) {
-    return 4;
+    return 3;
   }
 
-  return 4 + Math.ceil(distanciaKm - 3);
+  return 3 + Math.ceil(distanciaKm - 3);
 }
 
 async function calcularEntregaAutomaticamente() {
-  const tipoEntrega = document.getElementById('tipoEntrega').value;
   const avisoEntrega = document.getElementById('avisoEntrega');
 
-  if (tipoEntrega !== 'delivery') {
+  if (document.getElementById('tipoEntrega').value !== 'delivery') {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
-
-    if (avisoEntrega) {
-      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
-    }
-
     renderizarCarrinho();
     return;
   }
 
-  const cep = document.getElementById('cepEntrega').value.trim();
   const rua = document.getElementById('ruaEntrega').value.trim();
   const numero = document.getElementById('numeroEntrega').value.trim();
   const bairro = document.getElementById('bairroEntrega').value.trim();
   const cidade = document.getElementById('cidadeEntrega').value.trim();
 
-  if (!cep || !rua || !numero || !bairro || !cidade) {
+  if (!rua || !numero || !bairro || !cidade) {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
 
     if (avisoEntrega) {
-      avisoEntrega.innerText = 'Preencha o CEP e o número para calcular a entrega.';
+      avisoEntrega.innerText = 'Preencha rua, número, bairro e cidade para calcular a entrega.';
     }
 
     renderizarCarrinho();
     return;
   }
 
-  if (avisoEntrega) {
-    avisoEntrega.innerText = 'Calculando rota real e taxa de entrega...';
-  }
-
   try {
-    const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO;
-    const enderecoCliente = montarEnderecoCompletoCliente();
-
-    let coordenadaLoja = null;
-    let coordenadaCliente = null;
-
-    if (configuracaoLoja?.store_lat && configuracaoLoja?.store_lng) {
-      coordenadaLoja = {
-        lat: Number(configuracaoLoja.store_lat),
-        lng: Number(configuracaoLoja.store_lng),
-        display_name: enderecoLoja
-      };
-    } else {
-      coordenadaLoja = await geocodificarEnderecoProfissional(enderecoLoja);
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Calculando rota...';
     }
 
-    coordenadaCliente = obterCoordenadaClienteDoCache();
+    let origem = null;
 
-    if (!coordenadaCliente) {
-      coordenadaCliente = await geocodificarEnderecoProfissional(enderecoCliente);
+    if (configuracaoLoja?.store_lat && configuracaoLoja?.store_lng) {
+      origem = {
+        lat: Number(configuracaoLoja.store_lat),
+        lng: Number(configuracaoLoja.store_lng),
+        display_name: configuracaoLoja.store_address || ENDERECO_LOJA_PADRAO
+      };
+    } else {
+      origem = await geocodificarEnderecoProfissional(
+        configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO
+      );
+    }
 
-      if (coordenadaCliente) {
-        salvarCoordenadaClienteNoCache(coordenadaCliente);
+    let destino = obterCoordenadaClienteDoCache();
+
+    if (!destino) {
+      destino = await geocodificarEnderecoProfissional(
+        montarEnderecoCompletoCliente()
+      );
+
+      if (destino) {
+        salvarCoordenadaClienteNoCache(destino);
       }
     }
 
-    if (!coordenadaLoja || !coordenadaCliente) {
+    if (!origem || !destino) {
       taxaEntrega = 0;
       distanciaEntregaKm = null;
       tempoEntregaTexto = null;
 
       if (avisoEntrega) {
-        avisoEntrega.innerText = 'Não foi possível localizar o endereço. Confira o número e o CEP.';
+        avisoEntrega.innerText = 'Endereço não localizado. Confira rua, número, bairro e cidade.';
       }
 
       renderizarCarrinho();
       return;
     }
 
-    const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
+    const rota = await calcularRotaRealOSRM(origem, destino);
 
     distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
-    tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
+
+    if (distanciaEntregaKm > DISTANCIA_MAXIMA_ENTREGA_KM) {
+      taxaEntrega = 0;
+      tempoEntregaTexto = null;
+
+      if (avisoEntrega) {
+        avisoEntrega.innerText =
+          `Fora da área de entrega (${distanciaEntregaKm.toFixed(2)} km). Entregamos até ${DISTANCIA_MAXIMA_ENTREGA_KM} km.`;
+      }
+
+      renderizarCarrinho();
+      return;
+    }
+
     taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
+    tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
 
     if (avisoEntrega) {
       avisoEntrega.innerText =
@@ -1067,13 +1072,14 @@ async function calcularEntregaAutomaticamente() {
 
     renderizarCarrinho();
   } catch (erro) {
-    console.error('Erro ao calcular entrega:', erro);
+    console.error('Erro ao calcular rota:', erro);
+
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
 
     if (avisoEntrega) {
-      avisoEntrega.innerText = 'Erro ao calcular a entrega. Tente novamente.';
+      avisoEntrega.innerText = 'Erro ao calcular rota. Confira o endereço e tente novamente.';
     }
 
     renderizarCarrinho();
@@ -1125,23 +1131,27 @@ async function finalizarPedido() {
   }
 
   if (tipoEntrega === 'delivery') {
-    const cep = document.getElementById('cepEntrega').value.trim();
     const rua = document.getElementById('ruaEntrega').value.trim();
     const numero = document.getElementById('numeroEntrega').value.trim();
     const bairro = document.getElementById('bairroEntrega').value.trim();
     const cidade = document.getElementById('cidadeEntrega').value.trim();
 
-    if (!cep || !rua || !numero || !bairro || !cidade) {
-      alert('Preencha o CEP e o número.');
+    if (!rua || !numero || !bairro || !cidade) {
+      alert('Preencha rua, número, bairro e cidade.');
       return;
     }
 
-    if (distanciaEntregaKm === null) {
+    if (distanciaEntregaKm === null || distanciaEntregaKm > DISTANCIA_MAXIMA_ENTREGA_KM) {
       await calcularEntregaAutomaticamente();
     }
 
     if (distanciaEntregaKm === null) {
-      alert('Não foi possível calcular a entrega. Verifique o CEP e o número.');
+      alert('Não foi possível calcular a entrega. Verifique o endereço.');
+      return;
+    }
+
+    if (distanciaEntregaKm > DISTANCIA_MAXIMA_ENTREGA_KM) {
+      alert(`Endereço fora da área de entrega. Entregamos até ${DISTANCIA_MAXIMA_ENTREGA_KM} km.`);
       return;
     }
   }
@@ -1309,7 +1319,7 @@ async function iniciarSistema() {
     await atualizarStatusLoja();
   }, 5000);
 
-  console.log('Sistema iniciado com busca por CEP + rota real.');
+  console.log('Sistema iniciado com OpenStreetMap Nominatim + OSRM + limite de 10 km.');
 }
 
 iniciarSistema();
