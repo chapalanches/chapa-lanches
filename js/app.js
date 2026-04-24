@@ -1250,17 +1250,32 @@ async function calcularEntregaAutomaticamente() {
       return;
     }
 
-    const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
+const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
 
-    distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
-    tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
-    taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
+distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
 
-    if (avisoEntrega) {
-      avisoEntrega.innerText =
-        `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
-    }
+if (distanciaEntregaKm > 10) {
+  taxaEntrega = 0;
+  tempoEntregaTexto = null;
+  distanciaEntregaKm = null;
 
+  if (avisoEntrega) {
+    avisoEntrega.innerText =
+      'Desculpe, entregamos somente até 10 km do estabelecimento.';
+  }
+
+  renderizarCarrinho();
+  return;
+}
+
+tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
+taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
+
+if (avisoEntrega) {
+  avisoEntrega.innerText =
+    `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
+}
+    
     renderizarCarrinho();
   } catch (erro) {
     console.error('Erro ao calcular entrega:', erro);
