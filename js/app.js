@@ -68,6 +68,7 @@ let regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
 let configuracaoLoja = null;
 let timeoutCalculoEntrega = null;
 let produtoOpcoesAtual = null;
+let adicionalPendente = null;
 let preenchendoEnderecoAutomaticamente = false;
 let preenchendoCepAutomaticamente = false;
 let coordenadaClienteCache = null;
@@ -557,6 +558,7 @@ function abrirOpcoesProduto(produtoId) {
 
   if (!produto || !modal || !titulo || !descricao || !lista) return;
 
+  adicionalPendente = null;
   produtoOpcoesAtual = produto;
   titulo.innerText = produto.titulo;
   descricao.innerText = produto.descricao;
@@ -577,6 +579,7 @@ function fecharOpcoesProduto() {
   const lista = document.getElementById('listaOpcoesProduto');
 
   produtoOpcoesAtual = null;
+  adicionalPendente = null;
 
   if (lista) {
     lista.innerHTML = '';
@@ -589,6 +592,35 @@ function fecharOpcoesProduto() {
 }
 
 function confirmarOpcoesProduto() {
+  if (adicionalPendente) {
+    const selecionado = document.querySelector('input[name="lancheAdicional"]:checked');
+
+    if (!selecionado) {
+      alert('Selecione um lanche para adicionar o item.');
+      return;
+    }
+
+    const index = Number(selecionado.value);
+    const lanche = carrinho[index];
+
+    if (!lanche) {
+      alert('Lanche não encontrado.');
+      return;
+    }
+
+    lanche.preco = Number(lanche.preco || 0) + Number(adicionalPendente.preco || 0);
+
+    lanche.observacao = lanche.observacao
+      ? lanche.observacao + ' | Adicional: ' + adicionalPendente.nome
+      : 'Adicional: ' + adicionalPendente.nome;
+
+    adicionalPendente = null;
+
+    fecharOpcoesProduto();
+    renderizarCarrinho();
+    return;
+  }
+
   if (!produtoOpcoesAtual) return;
 
   const selecionado = document.querySelector('input[name="opcaoProdutoAtual"]:checked');
@@ -921,6 +953,7 @@ function limparCarrinho() {
   distanciaEntregaKm = null;
   tempoEntregaTexto = null;
   produtoOpcoesAtual = null;
+  adicionalPendente = null;
 
   document.getElementById('nomeCliente').value = '';
   document.getElementById('tipoEntrega').value = 'retirada';
@@ -998,28 +1031,16 @@ function gerarTentativasEndereco(endereco) {
 
   const tentativas = [
     base,
-
-    // sem número
     base.replace(/,\s*\d+\s*,/g, ', '),
-
-    // sem CEP
     base.replace(/,\s*\d{5}-?\d{3}/g, ''),
-
-    // sem Brasil
     base.replace(/,\s*Brasil/gi, ''),
-
-    // sem número e sem CEP
     base
       .replace(/,\s*\d+\s*,/g, ', ')
       .replace(/,\s*\d{5}-?\d{3}/g, ''),
-
-    // sem número, sem CEP e sem Brasil
     base
       .replace(/,\s*\d+\s*,/g, ', ')
       .replace(/,\s*\d{5}-?\d{3}/g, '')
       .replace(/,\s*Brasil/gi, ''),
-
-    // rua + bairro + cidade
     (() => {
       const partes = base.split(',').map(p => p.trim()).filter(Boolean);
       if (partes.length >= 4) {
@@ -1030,8 +1051,6 @@ function gerarTentativasEndereco(endereco) {
       }
       return base;
     })(),
-
-    // rua + cidade
     (() => {
       const partes = base.split(',').map(p => p.trim()).filter(Boolean);
       if (partes.length >= 4) {
@@ -1041,17 +1060,11 @@ function gerarTentativasEndereco(endereco) {
       }
       return base;
     })(),
-
-    // só CEP
     (() => {
       const cep = (base.match(/\d{5}-?\d{3}/) || [])[0];
       return cep || '';
     })(),
-
-    // sem acentos completo
     semAcentos,
-
-    // sem acentos + sem número/CEP/Brasil
     semAcentos
       .replace(/,\s*\d+\s*,/g, ', ')
       .replace(/,\s*\d{5}-?\d{3}/g, '')
@@ -1250,32 +1263,30 @@ async function calcularEntregaAutomaticamente() {
       return;
     }
 
-const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
+    const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
 
-distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
+    distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
 
-if (distanciaEntregaKm > 10) {
-  taxaEntrega = 0;
-  tempoEntregaTexto = null;
-  distanciaEntregaKm = null;
+    if (distanciaEntregaKm > 10) {
+      taxaEntrega = 0;
+      tempoEntregaTexto = null;
+      distanciaEntregaKm = null;
 
-  if (avisoEntrega) {
-    avisoEntrega.innerText =
-      'Desculpe, entregamos somente até 10 km do estabelecimento.';
-  }
+      if (avisoEntrega) {
+        avisoEntrega.innerText = 'Desculpe, entregamos somente até 10 km do estabelecimento.';
+      }
 
-  renderizarCarrinho();
-  return;
-}
+      renderizarCarrinho();
+      return;
+    }
 
-tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
-taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
+    tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
+    taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
 
-if (avisoEntrega) {
-  avisoEntrega.innerText =
-    `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
-}
-    
+    if (avisoEntrega) {
+      avisoEntrega.innerText = `Distância real: ${distanciaEntregaKm.toFixed(2)} km | Tempo estimado: ${tempoEntregaTexto || '-'} | Taxa: ${formatarPreco(taxaEntrega)}`;
+    }
+
     renderizarCarrinho();
   } catch (erro) {
     console.error('Erro ao calcular entrega:', erro);
@@ -1456,6 +1467,7 @@ async function finalizarPedido() {
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
     produtoOpcoesAtual = null;
+    adicionalPendente = null;
 
     document.getElementById('nomeCliente').value = '';
     document.getElementById('tipoEntrega').value = 'retirada';
@@ -1524,48 +1536,49 @@ async function iniciarSistema() {
 }
 
 iniciarSistema();
-function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
-  const lanches = carrinho.filter(item => {
-    const nome = String(item.nome || '').toLowerCase();
 
-    return !nome.includes('coca') &&
-      !nome.includes('sprite') &&
-      !nome.includes('fanta') &&
-      !nome.includes('guaraná') &&
-      !nome.includes('guarana');
-  });
+function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
+  const lanches = carrinho
+    .map((item, index) => ({ ...item, indexOriginal: index }))
+    .filter(item => {
+      const nome = String(item.nome || '').toLowerCase();
+
+      return !nome.includes('coca') &&
+        !nome.includes('sprite') &&
+        !nome.includes('fanta') &&
+        !nome.includes('guaraná') &&
+        !nome.includes('guarana');
+    });
 
   if (lanches.length === 0) {
     alert('Escolha um lanche primeiro para adicionar este item.');
     return;
   }
 
-  let mensagem = 'Em qual lanche deseja adicionar ' + nomeAdicional + '?\n\n';
+  adicionalPendente = {
+    nome: nomeAdicional,
+    preco: Number(precoAdicional || 0)
+  };
 
-  lanches.forEach((item, index) => {
-    mensagem += (index + 1) + ' - ' + item.nome + '\n';
-  });
+  produtoOpcoesAtual = null;
 
-  const escolha = prompt(mensagem);
+  const modal = document.getElementById('modalOpcoesProduto');
+  const titulo = document.getElementById('tituloOpcoesProduto');
+  const descricao = document.getElementById('descricaoOpcoesProduto');
+  const lista = document.getElementById('listaOpcoesProduto');
 
-  if (!escolha) return;
+  if (!modal || !titulo || !descricao || !lista) return;
 
-  const indice = Number(escolha) - 1;
+  titulo.innerText = 'Adicionar ' + nomeAdicional;
+  descricao.innerText = 'Escolha em qual lanche será adicionado:';
 
-  if (indice < 0 || indice >= lanches.length) {
-    alert('Opção inválida.');
-    return;
-  }
+  lista.innerHTML = lanches.map(item => `
+    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
+      <input type="radio" name="lancheAdicional" value="${item.indexOriginal}">
+      <span>${escaparHtml(item.nome)}</span>
+    </label>
+  `).join('');
 
-  const lanche = lanches[indice];
-
-  lanche.preco = Number(lanche.preco || 0) + Number(precoAdicional || 0);
-
-  lanche.observacao = lanche.observacao
-    ? lanche.observacao + ' | Adicional: ' + nomeAdicional
-    : 'Adicional: ' + nomeAdicional;
-
-  renderizarCarrinho();
-
-  alert(nomeAdicional + ' adicionado em: ' + lanche.nome);
+  modal.style.display = 'flex';
+  modal.classList.add('ativo');
 }
