@@ -1044,6 +1044,7 @@ function montarTextoRapido48mm(pedido) {
   linhas.push("");
 
   linhas.push(`PEDIDO: ${pedido.id}`);
+  linhas.push(`CLIENTE: ${pedido.cliente}`);
   linhas.push(`HORA: ${formatarHora(pedido.dataObj)}`);
   linhas.push(`ENTREGA: ${pedido.tipoEntrega === "delivery" ? "DELIVERY" : "RETIRADA"}`);
 
@@ -1080,7 +1081,6 @@ function montarTextoRapido48mm(pedido) {
           linhas.push(`      > ${String(item.observacao).toUpperCase()}`);
         }
 
-        linhas.push("");
         return;
       }
 
