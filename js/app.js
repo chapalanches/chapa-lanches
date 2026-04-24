@@ -589,45 +589,6 @@ function fecharOpcoesProduto() {
 }
 
 function confirmarOpcoesProduto() {
-  if (adicionalPendente) {
-    const escolhido = document.querySelector('input[name="lancheAdicional"]:checked');
-
-    if (!escolhido) {
-      alert('Selecione um lanche.');
-      return;
-    }
-
-    const indice = Number(escolhido.value);
-    const lanches = carrinho.filter(item => {
-      const nome = String(item.nome || '').toLowerCase();
-
-      return !nome.includes('coca') &&
-        !nome.includes('sprite') &&
-        !nome.includes('fanta') &&
-        !nome.includes('guaraná') &&
-        !nome.includes('guarana');
-    });
-
-    const lanche = lanches[indice];
-
-    if (!lanche) {
-      alert('Lanche não encontrado.');
-      return;
-    }
-
-    lanche.preco = Number(lanche.preco || 0) + Number(adicionalPendente.preco || 0);
-
-    lanche.observacao = lanche.observacao
-      ? lanche.observacao + ' | Adicional: ' + adicionalPendente.nome
-      : 'Adicional: ' + adicionalPendente.nome;
-
-    adicionalPendente = null;
-
-    fecharOpcoesProduto();
-    renderizarCarrinho();
-    return;
-  }
-
   if (!produtoOpcoesAtual) return;
 
   const selecionado = document.querySelector('input[name="opcaoProdutoAtual"]:checked');
@@ -650,6 +611,7 @@ function confirmarOpcoesProduto() {
 
   fecharOpcoesProduto();
 }
+
 function aumentarQuantidade(index) {
   carrinho[index].quantidade += 1;
   renderizarCarrinho();
@@ -1562,9 +1524,6 @@ async function iniciarSistema() {
 }
 
 iniciarSistema();
-
-let adicionalPendente = null;
-
 function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
   const lanches = carrinho.filter(item => {
     const nome = String(item.nome || '').toLowerCase();
@@ -1581,30 +1540,32 @@ function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
     return;
   }
 
-  adicionalPendente = {
-    nome: nomeAdicional,
-    preco: Number(precoAdicional || 0)
-  };
+  let mensagem = 'Em qual lanche deseja adicionar ' + nomeAdicional + '?\n\n';
 
-  produtoOpcoesAtual = null;
+  lanches.forEach((item, index) => {
+    mensagem += (index + 1) + ' - ' + item.nome + '\n';
+  });
 
-  const modal = document.getElementById('modalOpcoesProduto');
-  const titulo = document.getElementById('tituloOpcoesProduto');
-  const descricao = document.getElementById('descricaoOpcoesProduto');
-  const lista = document.getElementById('listaOpcoesProduto');
+  const escolha = prompt(mensagem);
 
-  if (!modal || !titulo || !descricao || !lista) return;
+  if (!escolha) return;
 
-  titulo.innerText = 'Adicionar ' + nomeAdicional;
-  descricao.innerText = 'Escolha em qual lanche adicionar:';
+  const indice = Number(escolha) - 1;
 
-  lista.innerHTML = lanches.map((item, index) => `
-    <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
-      <input type="radio" name="lancheAdicional" value="${index}">
-      <span>${escaparHtml(item.nome)}</span>
-    </label>
-  `).join('');
+  if (indice < 0 || indice >= lanches.length) {
+    alert('Opção inválida.');
+    return;
+  }
 
-  modal.style.display = 'flex';
-  modal.classList.add('ativo');
+  const lanche = lanches[indice];
+
+  lanche.preco = Number(lanche.preco || 0) + Number(precoAdicional || 0);
+
+  lanche.observacao = lanche.observacao
+    ? lanche.observacao + ' | Adicional: ' + nomeAdicional
+    : 'Adicional: ' + nomeAdicional;
+
+  renderizarCarrinho();
+
+  alert(nomeAdicional + ' adicionado em: ' + lanche.nome);
 }
