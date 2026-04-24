@@ -1524,48 +1524,66 @@ async function iniciarSistema() {
 }
 
 iniciarSistema();
-function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
-  const lanches = carrinho.filter(item => {
-    const nome = String(item.nome || '').toLowerCase();
+function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {let adicionalPendente = null;
 
-    return !nome.includes('coca') &&
-      !nome.includes('sprite') &&
-      !nome.includes('fanta') &&
-      !nome.includes('guaraná') &&
-      !nome.includes('guarana');
-  });
+function abrirAdicionalParaLanche(nomeAdicional, precoAdicional){
 
-  if (lanches.length === 0) {
-    alert('Escolha um lanche primeiro para adicionar este item.');
-    return;
-  }
+const lanches = carrinho.filter(item=>{
 
-  let mensagem = 'Em qual lanche deseja adicionar ' + nomeAdicional + '?\n\n';
+const nome=(item.nome||'').toLowerCase();
 
-  lanches.forEach((item, index) => {
-    mensagem += (index + 1) + ' - ' + item.nome + '\n';
-  });
+return !nome.includes('coca')
+&& !nome.includes('sprite')
+&& !nome.includes('fanta')
+&& !nome.includes('guarana')
+&& !nome.includes('guaraná');
 
-  const escolha = prompt(mensagem);
+});
 
-  if (!escolha) return;
+if(lanches.length===0){
+alert('Escolha um lanche primeiro para adicionar este item.');
+return;
+}
 
-  const indice = Number(escolha) - 1;
+adicionalPendente={
+nome:nomeAdicional,
+preco:precoAdicional
+};
 
-  if (indice < 0 || indice >= lanches.length) {
-    alert('Opção inválida.');
-    return;
-  }
+document.getElementById('tituloOpcoesProduto').innerText=
+'Adicionar '+nomeAdicional;
 
-  const lanche = lanches[indice];
+document.getElementById('descricaoOpcoesProduto').innerText=
+'Escolha em qual lanche adicionar:';
 
-  lanche.preco = Number(lanche.preco || 0) + Number(precoAdicional || 0);
+document.getElementById('listaOpcoesProduto').innerHTML=
+lanches.map((item,i)=>`
+<label style="
+display:flex;
+align-items:center;
+padding:12px;
+border:1px solid rgba(255,255,255,.12);
+border-radius:12px;
+margin-bottom:10px;
+cursor:pointer;
+">
+<input
+type="radio"
+name="lancheAdicional"
+value="${i}"
+>
 
-  lanche.observacao = lanche.observacao
-    ? lanche.observacao + ' | Adicional: ' + nomeAdicional
-    : 'Adicional: ' + nomeAdicional;
+<span style="margin-left:10px;">
+${item.nome}
+</span>
 
-  renderizarCarrinho();
+</label>
+`).join('');
 
-  alert(nomeAdicional + ' adicionado em: ' + lanche.nome);
+document.getElementById('modalOpcoesProduto').style.display='flex';
+
+document
+.getElementById('modalOpcoesProduto')
+.classList.add('ativo');
+
 }
