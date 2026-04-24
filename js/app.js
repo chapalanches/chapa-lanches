@@ -789,29 +789,40 @@ async function carregarRegrasEntrega() {
 }
 
 async function geocodificarEnderecoOpenStreetMap(endereco) {
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
 
-  const resposta = await fetch(url, {
-    headers: {
-      'Accept': 'application/json'
+  const url=`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
+
+  const resposta=await fetch(url,{
+    headers:{
+      'Accept':'application/json'
     }
   });
 
-  if (!resposta.ok) {
-    throw new Error('Erro ao consultar geocodificação no OpenStreetMap.');
+  if(!resposta.ok){
+    throw new Error('Erro ao consultar geocodificação');
   }
 
-  const dados = await resposta.json();
+  const dados=await resposta.json();
 
-  if (!Array.isArray(dados) || dados.length === 0) {
+  console.log('Nominatim:',endereco,dados);
+
+  if(!Array.isArray(dados) || !dados.length){
     return null;
   }
 
-  return {
-    lat: Number(dados[0].lat),
-    lng: Number(dados[0].lon),
-    display_name: dados[0].display_name || endereco
+  const lat=Number(dados[0].lat);
+  const lng=Number(dados[0].lon);
+
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)){
+    return null;
+  }
+
+  return{
+    lat,
+    lng,
+    display_name:dados[0].display_name || endereco
   };
+
 }
 
 function gerarTentativasEndereco(endereco) {
@@ -900,29 +911,65 @@ async function geocodificarEnderecoProfissional(endereco) {
   return null;
 }
 
-async function calcularRotaRealOSRM(origem, destino) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${origem.lng},${origem.lat};${destino.lng},${destino.lat}?overview=false&steps=false`;
+async function ajustarPontoNaRuaOSRM(ponto){
 
-  const resposta = await fetch(url);
+ const url=`https://router.project-osrm.org/nearest/v1/driving/${ponto.lng},${ponto.lat}?number=1`;
 
-  if (!resposta.ok) {
-    throw new Error('Erro ao calcular rota no OSRM.');
-  }
+ const resposta=await fetch(url);
+ const dados=await resposta.json();
 
-  const dados = await resposta.json();
+ if(
+   dados &&
+   dados.code==='Ok' &&
+   dados.waypoints &&
+   dados.waypoints.length &&
+   dados.waypoints[0].location
+ ){
+   return{
+      lng:Number(dados.waypoints[0].location[0]),
+      lat:Number(dados.waypoints[0].location[1])
+   };
+ }
 
-  if (!dados || dados.code !== 'Ok' || !dados.routes || !dados.routes.length) {
+ return ponto;
+
+}
+
+
+
+async function calcularRotaRealOSRM(origem,destino){
+
+ const origemAjustada=
+    await ajustarPontoNaRuaOSRM(origem);
+
+ const destinoAjustado=
+    await ajustarPontoNaRuaOSRM(destino);
+
+ const url=`https://router.project-osrm.org/route/v1/driving/${origemAjustada.lng},${origemAjustada.lat};${destinoAjustado.lng},${destinoAjustado.lat}?overview=false&steps=false`;
+
+ const resposta=await fetch(url);
+
+ const dados=await resposta.json();
+
+ if(
+   !dados ||
+   dados.code!=='Ok' ||
+   !dados.routes ||
+   !dados.routes.length
+ ){
+    console.error('Erro OSRM:',dados);
     throw new Error('Não foi possível calcular a rota.');
-  }
+ }
 
-  const rota = dados.routes[0];
+ const rota=dados.routes[0];
 
-  return {
-    distanciaMetros: rota.distance,
-    distanciaTexto: `${(rota.distance / 1000).toFixed(2)} km`,
-    duracaoSegundos: rota.duration,
-    duracaoTexto: formatarDuracao(rota.duration)
-  };
+ return{
+   distanciaMetros:rota.distance,
+   distanciaTexto:`${(rota.distance/1000).toFixed(2)} km`,
+   duracaoSegundos:rota.duration,
+   duracaoTexto:formatarDuracao(rota.duration)
+ };
+
 }
 
 function formatarDuracao(segundos) {
