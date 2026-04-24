@@ -446,21 +446,21 @@ function fecharOpcoesProduto() {
 
 function confirmarOpcoesProduto() {
   if (adicionalPendente) {
-    if (adicionalPendente.etapa === 'escolher_queijo') {
-      const queijoSelecionado = document.querySelector('input[name="queijoAdicional"]:checked');
+if (adicionalPendente.etapa === 'escolher_opcao') {
+  const opcaoSelecionada = document.querySelector('input[name="opcaoAdicional"]:checked');
 
-      if (!queijoSelecionado) {
-        alert('Selecione Catupiry, Cheddar ou Mussarela.');
-        return;
-      }
+  if (!opcaoSelecionada) {
+    alert('Selecione uma opção.');
+    return;
+  }
 
-      abrirEscolhaLancheParaAdicional(
-        queijoSelecionado.value,
-        adicionalPendente.preco
-      );
+  abrirEscolhaLancheParaAdicional(
+    opcaoSelecionada.value,
+    adicionalPendente.preco
+  );
 
-      return;
-    }
+  return;
+}
 
     const selecionado = document.querySelector('input[name="lancheAdicional"]:checked');
 
@@ -516,24 +516,40 @@ function confirmarOpcoesProduto() {
 function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
   const nomeNormalizado = removerAcentos(String(nomeAdicional || '').toLowerCase());
 
-  const precisaEscolherQueijo =
-    nomeNormalizado.includes('catupiry') ||
-    nomeNormalizado.includes('cheddar') ||
-    nomeNormalizado.includes('mussarela');
+const precisaEscolherOpcao =
+  nomeNormalizado.includes('catupiry') ||
+  nomeNormalizado.includes('cheddar') ||
+  nomeNormalizado.includes('mussarela') ||
+  nomeNormalizado.includes('calabresa') ||
+  nomeNormalizado.includes('bacon') ||
+  nomeNormalizado.includes('ovo') ||
+  nomeNormalizado.includes('salsicha');
 
-  if (precisaEscolherQueijo) {
-    abrirEscolhaQueijoAdicional(precoAdicional);
-    return;
-  }
+if (precisaEscolherOpcao) {
+  abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional);
+  return;
+}
 
   abrirEscolhaLancheParaAdicional(nomeAdicional, precoAdicional);
 }
 
-function abrirEscolhaQueijoAdicional(precoAdicional) {
+function abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional) {
+  const nomeNormalizado = removerAcentos(String(nomeAdicional || '').toLowerCase());
+
+  let opcoes = ['Catupiry', 'Cheddar', 'Mussarela'];
+
+  if (nomeNormalizado.includes('calabresa') || nomeNormalizado.includes('bacon')) {
+    opcoes = ['Calabresa', 'Bacon'];
+  }
+
+  if (nomeNormalizado.includes('ovo') || nomeNormalizado.includes('salsicha')) {
+    opcoes = ['Ovo', 'Salsicha'];
+  }
+
   adicionalPendente = {
     nome: '',
     preco: Number(precoAdicional || 0),
-    etapa: 'escolher_queijo'
+    etapa: 'escolher_opcao'
   };
 
   produtoOpcoesAtual = null;
@@ -545,14 +561,12 @@ function abrirEscolhaQueijoAdicional(precoAdicional) {
 
   if (!modal || !titulo || !descricao || !lista) return;
 
-  titulo.innerText = 'Escolha o queijo';
-  descricao.innerText = 'Escolha uma opção para adicionar ao lanche:';
-
-  const opcoes = ['Catupiry', 'Cheddar', 'Mussarela'];
+  titulo.innerText = 'Escolha uma opção';
+  descricao.innerText = 'Escolha o adicional para colocar no lanche:';
 
   lista.innerHTML = opcoes.map(opcao => `
     <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
-      <input type="radio" name="queijoAdicional" value="${escaparHtml(opcao)}">
+      <input type="radio" name="opcaoAdicional" value="${escaparHtml(opcao)}">
       <span>${escaparHtml(opcao)}</span>
     </label>
   `).join('');
