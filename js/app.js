@@ -786,7 +786,8 @@ async function atualizarStatusLoja() {
 }
 
 function atualizarEntrega() {
-  const tipoEntrega = byId('tipoEntrega')?.value;
+  const selectTipoEntrega = byId('tipoEntrega');
+  const tipoEntrega = selectTipoEntrega ? selectTipoEntrega.value : 'retirada';
   const camposEntrega = byId('camposEntrega');
   const avisoEntrega = byId('avisoEntrega');
 
@@ -814,9 +815,15 @@ function atualizarEntrega() {
     } else {
       agendarCalculoEntrega();
     }
+
   } else {
+    if (selectTipoEntrega) {
+      selectTipoEntrega.value = 'retirada';
+    }
+
     if (camposEntrega) {
       camposEntrega.style.display = 'none';
+      camposEntrega.hidden = true;
     }
 
     if (byId('cepEntrega')) byId('cepEntrega').value = '';
@@ -836,6 +843,10 @@ function atualizarEntrega() {
     if (avisoEntrega) {
       avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
     }
+  }
+
+  if (tipoEntrega === 'delivery' && camposEntrega) {
+    camposEntrega.hidden = false;
   }
 
   renderizarCarrinho();
@@ -1548,5 +1559,19 @@ async function iniciarSistema() {
 
   console.log('Sistema iniciado com CEP via ViaCEP + rota OSRM.');
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+  const tipoEntrega = byId('tipoEntrega');
+  const camposEntrega = byId('camposEntrega');
+
+  if (tipoEntrega) {
+    tipoEntrega.value = 'retirada';
+  }
+
+  if (camposEntrega) {
+    camposEntrega.style.display = 'none';
+    camposEntrega.hidden = true;
+  }
+});
 
 iniciarSistema();
