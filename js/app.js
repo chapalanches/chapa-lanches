@@ -2,7 +2,6 @@ const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) |
 const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa Lanches';
 const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
 const TEMPO_PREPARO_FIXO_MINUTOS = 45;
-const DISTANCIA_MAXIMA_ENTREGA_KM = 10;
 
 const REGRAS_ENTREGA_PADRAO = [
   { km_min: 0, km_max: 3, fee: 4, active: true },
@@ -68,7 +67,6 @@ let regrasEntrega = [...REGRAS_ENTREGA_PADRAO];
 let configuracaoLoja = null;
 let timeoutCalculoEntrega = null;
 let produtoOpcoesAtual = null;
-let coordenadaClienteCache = null;
 
 function formatarPreco(valor) {
   return Number(valor || 0).toLocaleString('pt-BR', {
@@ -79,12 +77,6 @@ function formatarPreco(valor) {
 
 function somenteNumeros(texto) {
   return (texto || '').replace(/\D/g, '');
-}
-
-function removerAcentos(texto) {
-  return String(texto || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
 }
 
 function formatarTipoEntregaTexto(tipo) {
@@ -117,45 +109,6 @@ function obterElementoStatusLoja() {
   return document.getElementById('statusLoja') || document.getElementById('status-loja');
 }
 
-function obterCamposEndereco() {
-  return {
-    cep: document.getElementById('cepEntrega'),
-    rua: document.getElementById('ruaEntrega'),
-    numero: document.getElementById('numeroEntrega'),
-    bairro: document.getElementById('bairroEntrega'),
-    cidade: document.getElementById('cidadeEntrega'),
-    complemento: document.getElementById('complementoEntrega')
-  };
-}
-
-function obterEnderecoAtualComoChave() {
-  const { cep, rua, numero, bairro, cidade } = obterCamposEndereco();
-
-  return [
-    rua?.value.trim() || '',
-    numero?.value.trim() || '',
-    bairro?.value.trim() || '',
-    cidade?.value.trim() || 'Sorocaba',
-    cep?.value.trim() || ''
-  ].join('|').toLowerCase();
-}
-
-function limparCacheCoordenadaCliente() {
-  coordenadaClienteCache = null;
-}
-
-function definirBloqueioEnderecoPorCep(bloquear) {
-  const { rua, bairro, cidade } = obterCamposEndereco();
-
-  if (rua) rua.readOnly = bloquear;
-  if (bairro) bairro.readOnly = bloquear;
-  if (cidade) cidade.readOnly = bloquear;
-}
-
-function limparBloqueiosEndereco() {
-  definirBloqueioEnderecoPorCep(false);
-}
-
 function aplicarMascaraCep() {
   const input = document.getElementById('cepEntrega');
   if (!input) return;
@@ -168,74 +121,45 @@ function aplicarMascaraCep() {
     }
 
     input.value = valor;
-    limparCacheCoordenadaCliente();
-
-    if (somenteNumeros(valor).length > 0) {
-      definirBloqueioEnderecoPorCep(true);
-    } else {
-      limparBloqueiosEndereco();
-
-      const { rua, bairro, cidade } = obterCamposEndereco();
-      if (rua) rua.value = '';
-      if (bairro) bairro.value = '';
-      if (cidade) cidade.value = 'Sorocaba';
-    }
-
-    if (somenteNumeros(valor).length === 8) {
-      buscarCepEntrega();
-    }
+    agendarCalculoEntrega();
   });
 
   input.addEventListener('blur', buscarCepEntrega);
 }
 
 function aplicarEventosEntrega() {
-  ['ruaEntrega', 'numeroEntrega', 'bairroEntrega', 'cidadeEntrega', 'complementoEntrega'].forEach(id => {
+  const ids = [
+    'ruaEntrega',
+    'numeroEntrega',
+    'bairroEntrega',
+    'cidadeEntrega',
+    'complementoEntrega'
+  ];
+
+  ids.forEach(id => {
     const campo = document.getElementById(id);
     if (!campo) return;
 
-    campo.addEventListener('input', () => {
-      limparCacheCoordenadaCliente();
-      agendarCalculoEntrega();
-    });
-
-    campo.addEventListener('change', () => {
-      limparCacheCoordenadaCliente();
-      agendarCalculoEntrega();
-    });
-
-    campo.addEventListener('blur', () => {
-      agendarCalculoEntrega();
-    });
+    campo.addEventListener('input', agendarCalculoEntrega);
+    campo.addEventListener('change', agendarCalculoEntrega);
+    campo.addEventListener('blur', agendarCalculoEntrega);
   });
 }
 
 function agendarCalculoEntrega() {
   clearTimeout(timeoutCalculoEntrega);
-
   timeoutCalculoEntrega = setTimeout(() => {
     calcularEntregaAutomaticamente();
-  }, 1200);
+  }, 700);
 }
 
 function montarEnderecoCompletoCliente() {
   const rua = document.getElementById('ruaEntrega').value.trim();
   const numero = document.getElementById('numeroEntrega').value.trim();
-  const bairro = document.getElementById('bairroEntrega').value.trim();
   const cidade = document.getElementById('cidadeEntrega').value.trim() || 'Sorocaba';
   const cep = document.getElementById('cepEntrega').value.trim();
 
-  const partes = [];
-
-  if (rua) partes.push(rua);
-  if (numero) partes.push(numero);
-  if (bairro) partes.push(bairro);
-  if (cidade) partes.push(cidade);
-  partes.push('SP');
-  if (cep) partes.push(cep);
-  partes.push('Brasil');
-
-  return partes.join(', ');
+  return `${rua}, ${numero}, ${cidade}, SP, ${cep}`;
 }
 
 function enderecoClienteTextoHumano() {
@@ -258,84 +182,44 @@ function enderecoClienteTextoHumano() {
   return partes.join(', ');
 }
 
-function salvarCoordenadaClienteNoCache(coordenada) {
-  if (!coordenada) return;
-
-  coordenadaClienteCache = {
-    chave: obterEnderecoAtualComoChave(),
-    valor: coordenada
-  };
-}
-
-function obterCoordenadaClienteDoCache() {
-  const chaveAtual = obterEnderecoAtualComoChave();
-
-  if (coordenadaClienteCache && coordenadaClienteCache.chave === chaveAtual) {
-    return coordenadaClienteCache.valor;
-  }
-
-  return null;
-}
-
 async function buscarCepEntrega() {
-  const { cep, rua, numero, bairro, cidade } = obterCamposEndereco();
+  const campoCep = document.getElementById('cepEntrega');
   const avisoEntrega = document.getElementById('avisoEntrega');
 
-  if (!cep || !avisoEntrega) return;
+  if (!campoCep || !avisoEntrega) return;
 
-  const cepNumerico = somenteNumeros(cep.value);
+  const cep = somenteNumeros(campoCep.value);
 
-  if (!cepNumerico) {
-    limparBloqueiosEndereco();
-    limparCacheCoordenadaCliente();
-    return;
-  }
-
-  if (cepNumerico.length !== 8) {
-    avisoEntrega.innerText = 'Digite um CEP válido.';
-    definirBloqueioEnderecoPorCep(true);
-    limparCacheCoordenadaCliente();
-    return;
-  }
+  if (cep.length !== 8) return;
 
   try {
-    avisoEntrega.innerText = 'Buscando CEP...';
-    definirBloqueioEnderecoPorCep(true);
+    avisoEntrega.innerText = 'Consultando CEP...';
 
-    const resposta = await fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`);
+    const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
     const dados = await resposta.json();
 
     if (dados.erro) {
-      if (rua) rua.value = '';
-      if (bairro) bairro.value = '';
-      if (cidade) cidade.value = 'Sorocaba';
-
-      limparBloqueiosEndereco();
-      limparCacheCoordenadaCliente();
-
       avisoEntrega.innerText = 'CEP não encontrado. Confira o número digitado.';
       return;
     }
 
-    if (rua) rua.value = dados.logradouro || '';
-    if (bairro) bairro.value = dados.bairro || '';
-    if (cidade) cidade.value = dados.localidade || 'Sorocaba';
-
-    definirBloqueioEnderecoPorCep(true);
-    limparCacheCoordenadaCliente();
-
-    avisoEntrega.innerText = 'Endereço localizado ✔ Informe o número para calcular a taxa.';
-
-    if (numero) {
-      setTimeout(() => numero.focus(), 100);
+    if (!document.getElementById('ruaEntrega').value.trim()) {
+      document.getElementById('ruaEntrega').value = dados.logradouro || '';
     }
 
+    if (!document.getElementById('bairroEntrega').value.trim()) {
+      document.getElementById('bairroEntrega').value = dados.bairro || '';
+    }
+
+    if (!document.getElementById('cidadeEntrega').value.trim()) {
+      document.getElementById('cidadeEntrega').value = dados.localidade || 'Sorocaba';
+    }
+
+    avisoEntrega.innerText = 'CEP localizado. Informe o número para calcular a taxa.';
     await calcularEntregaAutomaticamente();
   } catch (erro) {
     console.error(erro);
-    limparBloqueiosEndereco();
-    limparCacheCoordenadaCliente();
-    avisoEntrega.innerText = 'Erro ao consultar CEP. Tente novamente.';
+    avisoEntrega.innerText = 'Não foi possível consultar o CEP agora.';
   }
 }
 
@@ -383,9 +267,9 @@ function abrirOpcoesProduto(produtoId) {
   titulo.innerText = produto.titulo;
   descricao.innerText = produto.descricao;
 
-  lista.innerHTML = produto.opcoes.map((opcao) => `
+  lista.innerHTML = produto.opcoes.map((opcao, index) => `
     <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
-      <input type="radio" name="opcaoProdutoAtual" value="${escaparHtml(opcao)}">
+      <input type="radio" name="opcaoProdutoAtual" value="${escaparHtml(opcao)}" ${index === 0 ? '' : ''}>
       <span>${escaparHtml(opcao)}</span>
     </label>
   `).join('');
@@ -629,9 +513,8 @@ function atualizarEntrega() {
       taxaEntrega = 0;
       distanciaEntregaKm = null;
       tempoEntregaTexto = null;
-
       if (avisoEntrega) {
-        avisoEntrega.innerText = 'Preencha rua, número, bairro e cidade para calcular a entrega.';
+        avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
       }
     } else {
       agendarCalculoEntrega();
@@ -647,10 +530,6 @@ function atualizarEntrega() {
     document.getElementById('bairroEntrega').value = '';
     document.getElementById('cidadeEntrega').value = 'Sorocaba';
     document.getElementById('complementoEntrega').value = '';
-
-    limparBloqueiosEndereco();
-    limparCacheCoordenadaCliente();
-
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
@@ -755,9 +634,6 @@ function limparCarrinho() {
   document.getElementById('formaPagamento').value = '';
   document.getElementById('observacoes').value = '';
 
-  limparBloqueiosEndereco();
-  limparCacheCoordenadaCliente();
-
   atualizarEntrega();
   renderizarCarrinho();
 }
@@ -789,93 +665,44 @@ async function carregarRegrasEntrega() {
 }
 
 async function geocodificarEnderecoOpenStreetMap(endereco) {
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
 
-  const url=`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&countrycodes=br&q=${encodeURIComponent(endereco)}`;
-
-  const resposta=await fetch(url,{
-    headers:{
-      'Accept':'application/json'
+  const resposta = await fetch(url, {
+    headers: {
+      'Accept': 'application/json'
     }
   });
 
-  if(!resposta.ok){
-    throw new Error('Erro ao consultar geocodificação');
+  if (!resposta.ok) {
+    throw new Error('Erro ao consultar geocodificação no OpenStreetMap.');
   }
 
-  const dados=await resposta.json();
+  const dados = await resposta.json();
+  console.log('Geocodificando:', endereco, dados);
 
-  console.log('Nominatim:',endereco,dados);
-
-  if(!Array.isArray(dados) || !dados.length){
+  if (!Array.isArray(dados) || dados.length === 0) {
     return null;
   }
 
-  const lat=Number(dados[0].lat);
-  const lng=Number(dados[0].lon);
-
-  if(!Number.isFinite(lat) || !Number.isFinite(lng)){
-    return null;
-  }
-
-  return{
-    lat,
-    lng,
-    display_name:dados[0].display_name || endereco
+  return {
+    lat: Number(dados[0].lat),
+    lng: Number(dados[0].lon),
+    display_name: dados[0].display_name || endereco
   };
-
 }
 
-function gerarTentativasEndereco(endereco) {
-  const base = String(endereco || '').trim();
-  const semAcentos = removerAcentos(base);
-
+async function geocodificarEnderecoProfissional(endereco) {
   const tentativas = [
-    base,
-    base.replace(/,\s*\d+\s*,/g, ', '),
-    base.replace(/,\s*\d{5}-?\d{3}/g, ''),
-    base.replace(/,\s*Brasil/gi, ''),
-    base
-      .replace(/,\s*\d+\s*,/g, ', ')
-      .replace(/,\s*\d{5}-?\d{3}/g, ''),
-    base
-      .replace(/,\s*\d+\s*,/g, ', ')
-      .replace(/,\s*\d{5}-?\d{3}/g, '')
-      .replace(/,\s*Brasil/gi, ''),
-    (() => {
-      const partes = base.split(',').map(p => p.trim()).filter(Boolean);
-      if (partes.length >= 4) {
-        const rua = partes[0] || '';
-        const bairro = partes[2] || '';
-        const cidade = partes[3] || '';
-        return [rua, bairro, cidade, 'SP'].filter(Boolean).join(', ');
-      }
-      return base;
-    })(),
-    (() => {
-      const partes = base.split(',').map(p => p.trim()).filter(Boolean);
-      if (partes.length >= 4) {
-        const rua = partes[0] || '';
-        const cidade = partes[3] || '';
-        return [rua, cidade, 'SP'].filter(Boolean).join(', ');
-      }
-      return base;
-    })(),
-    (() => {
-      const cep = (base.match(/\d{5}-?\d{3}/) || [])[0];
-      return cep || '';
-    })(),
-    semAcentos,
-    semAcentos
-      .replace(/,\s*\d+\s*,/g, ', ')
-      .replace(/,\s*\d{5}-?\d{3}/g, '')
-      .replace(/,\s*Brasil/gi, '')
+    endereco,
+    endereco.replace(/,\s*\d+\s*,/g, ', '),
+    endereco.replace(/,\s*\d+\s*,/g, ', ').replace(/,\s*\d{5}-?\d{3}/g, ''),
+    endereco.replace(/,\s*\d{5}-?\d{3}/g, ''),
+    endereco.replace(/,\s*Brasil/gi, ''),
+    endereco.replace(/,\s*\d+\s*,/g, ', ').replace(/,\s*Brasil/gi, '').replace(/,\s*\d{5}-?\d{3}/g, '')
   ];
 
-  const unicas = [];
-  const vistos = new Set();
-
   for (const tentativa of tentativas) {
-    const texto = String(tentativa || '')
+    const texto = tentativa
       .replace(/\s+,/g, ',')
       .replace(/,\s*,/g, ',')
       .replace(/,\s*$/, '')
@@ -883,93 +710,40 @@ function gerarTentativasEndereco(endereco) {
 
     if (!texto) continue;
 
-    const chave = texto.toLowerCase();
-    if (vistos.has(chave)) continue;
-
-    vistos.add(chave);
-    unicas.push(texto);
-  }
-
-  return unicas;
-}
-
-async function geocodificarEnderecoProfissional(endereco) {
-  const tentativas = gerarTentativasEndereco(endereco);
-
-  for (const texto of tentativas) {
     try {
       const resultado = await geocodificarEnderecoOpenStreetMap(texto);
-
-      if (resultado) {
-        return resultado;
-      }
+      if (resultado) return resultado;
     } catch (erro) {
-      console.warn('Falhou ao geocodificar:', texto, erro.message);
+      console.warn('Falha ao geocodificar:', texto, erro.message);
     }
   }
 
   return null;
 }
 
-async function ajustarPontoNaRuaOSRM(ponto){
+async function calcularRotaRealOSRM(origem, destino) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${origem.lng},${origem.lat};${destino.lng},${destino.lat}?overview=false&steps=false`;
 
- const url=`https://router.project-osrm.org/nearest/v1/driving/${ponto.lng},${ponto.lat}?number=1`;
+  const resposta = await fetch(url);
 
- const resposta=await fetch(url);
- const dados=await resposta.json();
+  if (!resposta.ok) {
+    throw new Error('Erro ao calcular rota no OSRM.');
+  }
 
- if(
-   dados &&
-   dados.code==='Ok' &&
-   dados.waypoints &&
-   dados.waypoints.length &&
-   dados.waypoints[0].location
- ){
-   return{
-      lng:Number(dados.waypoints[0].location[0]),
-      lat:Number(dados.waypoints[0].location[1])
-   };
- }
+  const dados = await resposta.json();
 
- return ponto;
-
-}
-
-
-
-async function calcularRotaRealOSRM(origem,destino){
-
- const origemAjustada=
-    await ajustarPontoNaRuaOSRM(origem);
-
- const destinoAjustado=
-    await ajustarPontoNaRuaOSRM(destino);
-
- const url=`https://router.project-osrm.org/route/v1/driving/${origemAjustada.lng},${origemAjustada.lat};${destinoAjustado.lng},${destinoAjustado.lat}?overview=false&steps=false`;
-
- const resposta=await fetch(url);
-
- const dados=await resposta.json();
-
- if(
-   !dados ||
-   dados.code!=='Ok' ||
-   !dados.routes ||
-   !dados.routes.length
- ){
-    console.error('Erro OSRM:',dados);
+  if (!dados || dados.code !== 'Ok' || !dados.routes || !dados.routes.length) {
     throw new Error('Não foi possível calcular a rota.');
- }
+  }
 
- const rota=dados.routes[0];
+  const rota = dados.routes[0];
 
- return{
-   distanciaMetros:rota.distance,
-   distanciaTexto:`${(rota.distance/1000).toFixed(2)} km`,
-   duracaoSegundos:rota.duration,
-   duracaoTexto:formatarDuracao(rota.duration)
- };
-
+  return {
+    distanciaMetros: rota.distance,
+    distanciaTexto: `${(rota.distance / 1000).toFixed(2)} km`,
+    duracaoSegundos: rota.duration,
+    duracaoTexto: formatarDuracao(rota.duration)
+  };
 }
 
 function formatarDuracao(segundos) {
@@ -1013,104 +787,82 @@ function descobrirTaxaPorDistancia(distanciaKm) {
   }
 
   if (distanciaKm <= 3) {
-    return 3;
+    return 4;
   }
 
-  return 3 + Math.ceil(distanciaKm - 3);
+  return 4 + Math.ceil(distanciaKm - 3);
 }
 
 async function calcularEntregaAutomaticamente() {
+  const tipoEntrega = document.getElementById('tipoEntrega').value;
   const avisoEntrega = document.getElementById('avisoEntrega');
 
-  if (document.getElementById('tipoEntrega').value !== 'delivery') {
+  if (tipoEntrega !== 'delivery') {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    }
     renderizarCarrinho();
     return;
   }
 
+  const cep = document.getElementById('cepEntrega').value.trim();
   const rua = document.getElementById('ruaEntrega').value.trim();
   const numero = document.getElementById('numeroEntrega').value.trim();
   const bairro = document.getElementById('bairroEntrega').value.trim();
   const cidade = document.getElementById('cidadeEntrega').value.trim();
 
-  if (!rua || !numero || !bairro || !cidade) {
+  if (!cep || !rua || !numero || !bairro || !cidade) {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
-
     if (avisoEntrega) {
-      avisoEntrega.innerText = 'Preencha rua, número, bairro e cidade para calcular a entrega.';
+      avisoEntrega.innerText = 'Preencha CEP, rua, número, bairro e cidade para calcular a entrega.';
     }
-
     renderizarCarrinho();
     return;
   }
 
-  try {
-    if (avisoEntrega) {
-      avisoEntrega.innerText = 'Calculando rota...';
-    }
+  if (avisoEntrega) {
+    avisoEntrega.innerText = 'Calculando rota real e taxa de entrega...';
+  }
 
-    let origem = null;
+  try {
+    const enderecoLoja = configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO;
+    const enderecoCliente = montarEnderecoCompletoCliente();
+
+    let coordenadaLoja = null;
 
     if (configuracaoLoja?.store_lat && configuracaoLoja?.store_lng) {
-      origem = {
+      coordenadaLoja = {
         lat: Number(configuracaoLoja.store_lat),
         lng: Number(configuracaoLoja.store_lng),
-        display_name: configuracaoLoja.store_address || ENDERECO_LOJA_PADRAO
+        display_name: enderecoLoja
       };
     } else {
-      origem = await geocodificarEnderecoProfissional(
-        configuracaoLoja?.store_address || ENDERECO_LOJA_PADRAO
-      );
+      coordenadaLoja = await geocodificarEnderecoProfissional(enderecoLoja);
     }
 
-    let destino = obterCoordenadaClienteDoCache();
+    const coordenadaCliente = await geocodificarEnderecoProfissional(enderecoCliente);
 
-    if (!destino) {
-      destino = await geocodificarEnderecoProfissional(
-        montarEnderecoCompletoCliente()
-      );
-
-      if (destino) {
-        salvarCoordenadaClienteNoCache(destino);
-      }
-    }
-
-    if (!origem || !destino) {
+    if (!coordenadaLoja || !coordenadaCliente) {
       taxaEntrega = 0;
       distanciaEntregaKm = null;
       tempoEntregaTexto = null;
-
       if (avisoEntrega) {
-        avisoEntrega.innerText = 'Endereço não localizado. Confira rua, número, bairro e cidade.';
+        avisoEntrega.innerText = 'Não foi possível localizar o endereço. Confira os dados digitados.';
       }
-
       renderizarCarrinho();
       return;
     }
 
-    const rota = await calcularRotaRealOSRM(origem, destino);
+    const rota = await calcularRotaRealOSRM(coordenadaLoja, coordenadaCliente);
 
     distanciaEntregaKm = Number((rota.distanciaMetros / 1000).toFixed(2));
-
-    if (distanciaEntregaKm > DISTANCIA_MAXIMA_ENTREGA_KM) {
-      taxaEntrega = 0;
-      tempoEntregaTexto = null;
-
-      if (avisoEntrega) {
-        avisoEntrega.innerText =
-          `Fora da área de entrega (${distanciaEntregaKm.toFixed(2)} km). Entregamos até ${DISTANCIA_MAXIMA_ENTREGA_KM} km.`;
-      }
-
-      renderizarCarrinho();
-      return;
-    }
-
-    taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
     tempoEntregaTexto = somarTempoPreparoComEntrega(rota.duracaoSegundos);
+    taxaEntrega = descobrirTaxaPorDistancia(distanciaEntregaKm);
 
     if (avisoEntrega) {
       avisoEntrega.innerText =
@@ -1119,16 +871,13 @@ async function calcularEntregaAutomaticamente() {
 
     renderizarCarrinho();
   } catch (erro) {
-    console.error('Erro ao calcular rota:', erro);
-
+    console.error('Erro ao calcular entrega:', erro);
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
-
     if (avisoEntrega) {
-      avisoEntrega.innerText = 'Erro ao calcular rota. Confira o endereço e tente novamente.';
+      avisoEntrega.innerText = 'Erro ao calcular a entrega. Tente novamente em instantes.';
     }
-
     renderizarCarrinho();
   }
 }
@@ -1178,27 +927,23 @@ async function finalizarPedido() {
   }
 
   if (tipoEntrega === 'delivery') {
+    const cep = document.getElementById('cepEntrega').value.trim();
     const rua = document.getElementById('ruaEntrega').value.trim();
     const numero = document.getElementById('numeroEntrega').value.trim();
     const bairro = document.getElementById('bairroEntrega').value.trim();
     const cidade = document.getElementById('cidadeEntrega').value.trim();
 
-    if (!rua || !numero || !bairro || !cidade) {
-      alert('Preencha rua, número, bairro e cidade.');
+    if (!cep || !rua || !numero || !bairro || !cidade) {
+      alert('Preencha CEP, rua, número, bairro e cidade.');
       return;
     }
 
-    if (distanciaEntregaKm === null || distanciaEntregaKm > DISTANCIA_MAXIMA_ENTREGA_KM) {
+    if (distanciaEntregaKm === null) {
       await calcularEntregaAutomaticamente();
     }
 
     if (distanciaEntregaKm === null) {
       alert('Não foi possível calcular a entrega. Verifique o endereço.');
-      return;
-    }
-
-    if (distanciaEntregaKm > DISTANCIA_MAXIMA_ENTREGA_KM) {
-      alert(`Endereço fora da área de entrega. Entregamos até ${DISTANCIA_MAXIMA_ENTREGA_KM} km.`);
       return;
     }
   }
@@ -1314,9 +1059,6 @@ async function finalizarPedido() {
     document.getElementById('formaPagamento').value = '';
     document.getElementById('observacoes').value = '';
 
-    limparBloqueiosEndereco();
-    limparCacheCoordenadaCliente();
-
     if (avisoEntrega) {
       avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
     }
@@ -1359,14 +1101,13 @@ async function iniciarSistema() {
   aplicarEventosEntrega();
   atualizarContadores();
   atualizarEntrega();
-  limparBloqueiosEndereco();
   await atualizarStatusLoja();
 
   setInterval(async () => {
     await atualizarStatusLoja();
   }, 5000);
 
-  console.log('Sistema iniciado com OpenStreetMap Nominatim + OSRM + limite de 10 km.');
+  console.log('Sistema iniciado com OpenStreetMap + OSRM + status da loja via Supabase.');
 }
 
 iniciarSistema();
