@@ -1524,3 +1524,48 @@ async function iniciarSistema() {
 }
 
 iniciarSistema();
+function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
+  const lanches = carrinho.filter(item => {
+    const nome = String(item.nome || '').toLowerCase();
+
+    return !nome.includes('coca') &&
+      !nome.includes('sprite') &&
+      !nome.includes('fanta') &&
+      !nome.includes('guaraná') &&
+      !nome.includes('guarana');
+  });
+
+  if (lanches.length === 0) {
+    alert('Escolha um lanche primeiro para adicionar este item.');
+    return;
+  }
+
+  let mensagem = 'Em qual lanche deseja adicionar ' + nomeAdicional + '?\n\n';
+
+  lanches.forEach((item, index) => {
+    mensagem += (index + 1) + ' - ' + item.nome + '\n';
+  });
+
+  const escolha = prompt(mensagem);
+
+  if (!escolha) return;
+
+  const indice = Number(escolha) - 1;
+
+  if (indice < 0 || indice >= lanches.length) {
+    alert('Opção inválida.');
+    return;
+  }
+
+  const lanche = lanches[indice];
+
+  lanche.preco = Number(lanche.preco || 0) + Number(precoAdicional || 0);
+
+  lanche.observacao = lanche.observacao
+    ? lanche.observacao + ' | Adicional: ' + nomeAdicional
+    : 'Adicional: ' + nomeAdicional;
+
+  renderizarCarrinho();
+
+  alert(nomeAdicional + ' adicionado em: ' + lanche.nome);
+}
