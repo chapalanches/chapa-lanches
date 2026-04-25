@@ -71,127 +71,95 @@ let coordenadaClienteCache = null;
 let produtoPersonalizacaoAtual = null;
 
 const INGREDIENTES_REMOVIVEIS_PADRAO = [
-  'Hambúrguer',
-  'Presunto',
-  'Queijo',
-  'Ovo',
-  'Bacon',
-  'Calabresa',
-  'Frango',
-  'Salsicha',
-  'Alface',
-  'Tomate',
-  'Cebola',
-  'Batata palha',
-  'Maionese',
-  'Ketchup'
+ 'Maionese',
+ 'Tomate',
+ 'Cebola',
+ 'Ketchup'
 ];
 
 const INGREDIENTES_POR_LANCHE = {
-  'hot dog duplo': [
-    'Salsicha',
-    'Batata palha',
-    'Ketchup',
-    'Maionese'
-  ],
 
-  'duplo': [
-    'Salsicha',
-    'Batata palha',
-    'Ketchup',
-    'Maionese'
-  ],
+ 'duplo':[
+   'Maionese',
+   'Batata palha',
+   'Tomate',
+   'Cebola',
+   'Ketchup'
+ ],
 
-  'x-frango especial': [
-    'Frango',
-    'Complemento escolhido',
-    'Queijo',
-    'Presunto',
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+ 'x-burger':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Ketchup'
+ ],
 
-  'x-frango': [
-    'Frango',
-    'Queijo escolhido',
-    'Presunto',
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+ 'x-salada':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Alface',
+   'Ketchup'
+ ],
 
-  'x-bacon': [
-    'Hambúrguer',
-    'Bacon',
-    'Queijo',
-    'Presunto',
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+ 'x-egg':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Alface',
+   'Ketchup'
+ ],
 
-  'x-calabresa': [
-    'Hambúrguer',
-    'Calabresa',
-    'Queijo',
-    'Presunto',
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+ 'x-bacon':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Alface',
+   'Ketchup'
+ ],
 
-  'x-egg': [
-    'Hambúrguer',
-    'Ovo',
-    'Queijo',
-    'Presunto',
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+ 'x-calabresa':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Alface',
+   'Ketchup'
+ ],
 
-  'x-salada': [
-    'Hambúrguer',
-    'Queijo',
-    'Presunto',
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+ 'x-frango':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Ketchup'
+ ],
 
-  'x-burger': [
-    'Hambúrguer',
-    'Queijo',
-    'Presunto',
-    'Batata palha',
-    'Maionese'
-  ],
+ 'x-frango especial':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Ketchup'
+ ],
 
-  'o chapeiro': [
-    'Hambúrguer',
-    'Queijo',
-    'Presunto',
-    'Ovo',
-    'Bacon',
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ]
+ 'omelete':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Ketchup'
+ ],
+
+ 'o chapeiro':[
+   'Tomate',
+   'Cebola',
+   'Ketchup'
+ ],
+
+ 'x-tudo':[
+   'Maionese',
+   'Tomate',
+   'Cebola',
+   'Ketchup'
+ ]
+
 };
 
 function formatarPreco(valor) {
