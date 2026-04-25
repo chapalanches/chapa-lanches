@@ -70,16 +70,83 @@ let adicionalPendente = null;
 let coordenadaClienteCache = null;
 let produtoPersonalizacaoAtual = null;
 
-const INGREDIENTES_REMOVIVEIS = [
+const INGREDIENTES_REMOVIVEIS_PADRAO = [
   'Alface',
   'Tomate',
   'Cebola',
-  'Milho',
   'Batata palha',
   'Maionese',
-  'Ketchup',
-  'Mostarda'
+  'Ketchup'
 ];
+
+const INGREDIENTES_POR_LANCHE = {
+  'hot dog duplo': [
+    'Batata palha',
+    'Ketchup',
+    'Maionese'
+  ],
+  'duplo': [
+    'Batata palha',
+    'Ketchup',
+    'Maionese'
+  ],
+  'x-frango': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+  'x-frango especial': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+  'x-salada': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+  'x-burger': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+  'x-bacon': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+  'x-egg': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+  'x-calabresa': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+  'o chapeiro': [
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ]
+};
 
 function formatarPreco(valor) {
   return Number(valor || 0).toLocaleString('pt-BR', {
@@ -188,6 +255,20 @@ function obterCoordenadaClienteDoCache() {
   }
 
   return null;
+}
+
+function obterIngredientesRemoviveisPorLanche(nome) {
+  const nomeNormalizado = removerAcentos(String(nome || '').toLowerCase());
+
+  for (const chave in INGREDIENTES_POR_LANCHE) {
+    const chaveNormalizada = removerAcentos(chave.toLowerCase());
+
+    if (nomeNormalizado.includes(chaveNormalizada)) {
+      return INGREDIENTES_POR_LANCHE[chave];
+    }
+  }
+
+  return INGREDIENTES_REMOVIVEIS_PADRAO;
 }
 
 function aplicarMascaraCep() {
@@ -450,12 +531,14 @@ function abrirPersonalizacaoLanche(produto) {
 
   if (!modal || !titulo || !descricao || !lista) return;
 
+  const ingredientes = obterIngredientesRemoviveisPorLanche(produto.nome);
+
   titulo.innerText = produto.nome;
   descricao.innerText = 'Deseja remover algum ingrediente?';
 
   lista.innerHTML = `
-    <div style="display:grid; gap:10px;">
-      ${INGREDIENTES_REMOVIVEIS.map(ingrediente => `
+    <div style="display:grid; gap:10px; padding-bottom:15px;">
+      ${ingredientes.map(ingrediente => `
         <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
           <input type="checkbox" name="ingredienteRemover" value="${escaparHtml(ingrediente)}">
           <span>Sem ${escaparHtml(ingrediente)}</span>
@@ -464,7 +547,7 @@ function abrirPersonalizacaoLanche(produto) {
 
       <label style="display:block; margin-top:8px;">
         <span style="display:block; margin-bottom:6px;">Observação do lanche:</span>
-        <textarea id="observacaoItemLanche" placeholder="Ex: carne bem passada, pouco molho..." style="width:100%; min-height:80px; border-radius:12px; padding:10px;"></textarea>
+        <textarea id="observacaoItemLanche" placeholder="Ex: carne bem passada, pouco molho..." style="width:100%; min-height:70px; border-radius:12px; padding:10px; box-sizing:border-box;"></textarea>
       </label>
     </div>
   `;
