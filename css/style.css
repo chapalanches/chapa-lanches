@@ -599,3 +599,16 @@
         bottom: 12px;
       }
     }
+
+#modalOpcoesProduto {
+  overflow-y: auto;
+  align-items: flex-start;
+  padding: 20px 12px;
+}
+
+#modalOpcoesProduto .modal-content,
+#modalOpcoesProduto .modal-conteudo,
+#modalOpcoesProduto .modal-box {
+  max-height: 85vh;
+  overflow-y: auto;
+}
