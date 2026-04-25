@@ -4,13 +4,13 @@ const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP,
 const TEMPO_PREPARO_FIXO_MINUTOS = 45;
 
 const REGRAS_ENTREGA_PADRAO = [
-  { km_min: 0, km_max: 3, fee: 4, active: true },
-  { km_min: 3.01, km_max: 4.50, fee: 5, active: true },
-  { km_min: 4.51, km_max: 5, fee: 6, active: true },
-  { km_min: 5.01, km_max: 6, fee: 7, active: true },
-  { km_min: 6.01, km_max: 7, fee: 8, active: true },
-  { km_min: 7.01, km_max: 8, fee: 10, active: true },
-  { km_min: 8.01, km_max: 9, fee: 12, active: true },
+  { km_min: 0, km_max: 2, fee: 4, active: true },
+  { km_min: 2.01, km_max: 3, fee: 5, active: true },
+  { km_min: 3.01, km_max: 4, fee: 6, active: true },
+  { km_min: 4.01, km_max: 6, fee: 8, active: true },
+  { km_min: 6.01, km_max: 7, fee: 9, active: true },
+  { km_min: 7.01, km_max: 8, fee: 11, active: true },
+  { km_min: 8.01, km_max: 9, fee: 13, active: true },
   { km_min: 9.01, km_max: 10, fee: 15, active: true }
 ];
 
