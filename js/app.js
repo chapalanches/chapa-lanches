@@ -71,6 +71,14 @@ let coordenadaClienteCache = null;
 let produtoPersonalizacaoAtual = null;
 
 const INGREDIENTES_REMOVIVEIS_PADRAO = [
+  'Hambúrguer',
+  'Presunto',
+  'Queijo',
+  'Ovo',
+  'Bacon',
+  'Calabresa',
+  'Frango',
+  'Salsicha',
   'Alface',
   'Tomate',
   'Cebola',
@@ -81,65 +89,103 @@ const INGREDIENTES_REMOVIVEIS_PADRAO = [
 
 const INGREDIENTES_POR_LANCHE = {
   'hot dog duplo': [
+    'Salsicha',
     'Batata palha',
     'Ketchup',
     'Maionese'
   ],
+
   'duplo': [
+    'Salsicha',
     'Batata palha',
     'Ketchup',
     'Maionese'
   ],
-  'x-frango': [
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+
   'x-frango especial': [
+    'Frango',
+    'Complemento escolhido',
+    'Queijo',
+    'Presunto',
     'Alface',
     'Tomate',
     'Cebola',
     'Batata palha',
     'Maionese'
   ],
-  'x-salada': [
+
+  'x-frango': [
+    'Frango',
+    'Queijo escolhido',
+    'Presunto',
     'Alface',
     'Tomate',
     'Cebola',
     'Batata palha',
     'Maionese'
   ],
-  'x-burger': [
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+
   'x-bacon': [
+    'Hambúrguer',
+    'Bacon',
+    'Queijo',
+    'Presunto',
     'Alface',
     'Tomate',
     'Cebola',
     'Batata palha',
     'Maionese'
   ],
-  'x-egg': [
-    'Alface',
-    'Tomate',
-    'Cebola',
-    'Batata palha',
-    'Maionese'
-  ],
+
   'x-calabresa': [
+    'Hambúrguer',
+    'Calabresa',
+    'Queijo',
+    'Presunto',
     'Alface',
     'Tomate',
     'Cebola',
     'Batata palha',
     'Maionese'
   ],
+
+  'x-egg': [
+    'Hambúrguer',
+    'Ovo',
+    'Queijo',
+    'Presunto',
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+
+  'x-salada': [
+    'Hambúrguer',
+    'Queijo',
+    'Presunto',
+    'Alface',
+    'Tomate',
+    'Cebola',
+    'Batata palha',
+    'Maionese'
+  ],
+
+  'x-burger': [
+    'Hambúrguer',
+    'Queijo',
+    'Presunto',
+    'Batata palha',
+    'Maionese'
+  ],
+
   'o chapeiro': [
+    'Hambúrguer',
+    'Queijo',
+    'Presunto',
+    'Ovo',
+    'Bacon',
     'Alface',
     'Tomate',
     'Cebola',
@@ -260,7 +306,10 @@ function obterCoordenadaClienteDoCache() {
 function obterIngredientesRemoviveisPorLanche(nome) {
   const nomeNormalizado = removerAcentos(String(nome || '').toLowerCase());
 
-  for (const chave in INGREDIENTES_POR_LANCHE) {
+  const chavesOrdenadas = Object.keys(INGREDIENTES_POR_LANCHE)
+    .sort((a, b) => b.length - a.length);
+
+  for (const chave of chavesOrdenadas) {
     const chaveNormalizada = removerAcentos(chave.toLowerCase());
 
     if (nomeNormalizado.includes(chaveNormalizada)) {
