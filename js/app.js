@@ -68,6 +68,18 @@ let timeoutCalculoEntrega = null;
 let produtoOpcoesAtual = null;
 let adicionalPendente = null;
 let coordenadaClienteCache = null;
+let produtoPersonalizacaoAtual = null;
+
+const INGREDIENTES_REMOVIVEIS = [
+  'Alface',
+  'Tomate',
+  'Cebola',
+  'Milho',
+  'Batata palha',
+  'Maionese',
+  'Ketchup',
+  'Mostarda'
+];
 
 function formatarPreco(valor) {
   return Number(valor || 0).toLocaleString('pt-BR', {
@@ -377,11 +389,23 @@ function atualizarContadores() {
   }
 }
 
+function ehLanche(nome) {
+  const n = removerAcentos(String(nome || '').toLowerCase());
+
+  return !n.includes('coca') &&
+    !n.includes('sprite') &&
+    !n.includes('fanta') &&
+    !n.includes('guarana') &&
+    !n.includes('agua') &&
+    !n.includes('suco') &&
+    !n.includes('refrigerante');
+}
+
 function gerarChaveItem(nome, preco, observacao = '') {
   return `${nome}||${preco}||${observacao}`;
 }
 
-function adicionarAoCarrinho(nome, preco, observacao = '') {
+function adicionarItemFinalAoCarrinho(nome, preco, observacao = '') {
   const chave = gerarChaveItem(nome, preco, observacao);
   const itemExistente = carrinho.find(item => item.chave === chave);
 
@@ -401,6 +425,54 @@ function adicionarAoCarrinho(nome, preco, observacao = '') {
   renderizarCarrinho();
 }
 
+function adicionarAoCarrinho(nome, preco, observacao = '') {
+  if (ehLanche(nome)) {
+    abrirPersonalizacaoLanche({
+      nome,
+      preco,
+      observacaoBase: observacao
+    });
+    return;
+  }
+
+  adicionarItemFinalAoCarrinho(nome, preco, observacao);
+}
+
+function abrirPersonalizacaoLanche(produto) {
+  produtoPersonalizacaoAtual = produto;
+  produtoOpcoesAtual = null;
+  adicionalPendente = null;
+
+  const modal = byId('modalOpcoesProduto');
+  const titulo = byId('tituloOpcoesProduto');
+  const descricao = byId('descricaoOpcoesProduto');
+  const lista = byId('listaOpcoesProduto');
+
+  if (!modal || !titulo || !descricao || !lista) return;
+
+  titulo.innerText = produto.nome;
+  descricao.innerText = 'Deseja remover algum ingrediente?';
+
+  lista.innerHTML = `
+    <div style="display:grid; gap:10px;">
+      ${INGREDIENTES_REMOVIVEIS.map(ingrediente => `
+        <label style="display:flex; align-items:center; gap:10px; padding:12px; border:1px solid rgba(255,255,255,0.12); border-radius:12px; cursor:pointer;">
+          <input type="checkbox" name="ingredienteRemover" value="${escaparHtml(ingrediente)}">
+          <span>Sem ${escaparHtml(ingrediente)}</span>
+        </label>
+      `).join('')}
+
+      <label style="display:block; margin-top:8px;">
+        <span style="display:block; margin-bottom:6px;">Observação do lanche:</span>
+        <textarea id="observacaoItemLanche" placeholder="Ex: carne bem passada, pouco molho..." style="width:100%; min-height:80px; border-radius:12px; padding:10px;"></textarea>
+      </label>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+  modal.classList.add('ativo');
+}
+
 function abrirOpcoesProduto(produtoId) {
   const produto = PRODUTOS_COM_OPCOES[produtoId];
   const modal = byId('modalOpcoesProduto');
@@ -411,6 +483,7 @@ function abrirOpcoesProduto(produtoId) {
   if (!produto || !modal || !titulo || !descricao || !lista) return;
 
   adicionalPendente = null;
+  produtoPersonalizacaoAtual = null;
   produtoOpcoesAtual = produto;
 
   titulo.innerText = produto.titulo;
@@ -433,6 +506,7 @@ function fecharOpcoesProduto() {
 
   produtoOpcoesAtual = null;
   adicionalPendente = null;
+  produtoPersonalizacaoAtual = null;
 
   if (lista) {
     lista.innerHTML = '';
@@ -445,22 +519,44 @@ function fecharOpcoesProduto() {
 }
 
 function confirmarOpcoesProduto() {
-  if (adicionalPendente) {
-if (adicionalPendente.etapa === 'escolher_opcao') {
-  const opcaoSelecionada = document.querySelector('input[name="opcaoAdicional"]:checked');
+  if (produtoPersonalizacaoAtual) {
+    const removidos = Array.from(document.querySelectorAll('input[name="ingredienteRemover"]:checked'))
+      .map(input => `Sem ${input.value}`);
 
-  if (!opcaoSelecionada) {
-    alert('Selecione uma opção.');
+    const observacaoItem = byId('observacaoItemLanche')?.value.trim() || '';
+
+    const observacoesFinais = [
+      produtoPersonalizacaoAtual.observacaoBase || '',
+      ...removidos,
+      observacaoItem ? `Obs: ${observacaoItem}` : ''
+    ].filter(Boolean).join(' | ');
+
+    adicionarItemFinalAoCarrinho(
+      produtoPersonalizacaoAtual.nome,
+      produtoPersonalizacaoAtual.preco,
+      observacoesFinais
+    );
+
+    fecharOpcoesProduto();
     return;
   }
 
-  abrirEscolhaLancheParaAdicional(
-    opcaoSelecionada.value,
-    adicionalPendente.preco
-  );
+  if (adicionalPendente) {
+    if (adicionalPendente.etapa === 'escolher_opcao') {
+      const opcaoSelecionada = document.querySelector('input[name="opcaoAdicional"]:checked');
 
-  return;
-}
+      if (!opcaoSelecionada) {
+        alert('Selecione uma opção.');
+        return;
+      }
+
+      abrirEscolhaLancheParaAdicional(
+        opcaoSelecionada.value,
+        adicionalPendente.preco
+      );
+
+      return;
+    }
 
     const selecionado = document.querySelector('input[name="lancheAdicional"]:checked');
 
@@ -504,31 +600,29 @@ if (adicionalPendente.etapa === 'escolher_opcao') {
     ? `${produtoOpcoesAtual.grupoLabel}: ${valorSelecionado}`
     : '';
 
-  adicionarAoCarrinho(
-    produtoOpcoesAtual.nome,
-    produtoOpcoesAtual.preco,
-    observacao
-  );
-
-  fecharOpcoesProduto();
+  abrirPersonalizacaoLanche({
+    nome: produtoOpcoesAtual.nome,
+    preco: produtoOpcoesAtual.preco,
+    observacaoBase: observacao
+  });
 }
 
 function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
   const nomeNormalizado = removerAcentos(String(nomeAdicional || '').toLowerCase());
 
-const precisaEscolherOpcao =
-  nomeNormalizado.includes('catupiry') ||
-  nomeNormalizado.includes('cheddar') ||
-  nomeNormalizado.includes('mussarela') ||
-  nomeNormalizado.includes('calabresa') ||
-  nomeNormalizado.includes('bacon') ||
-  nomeNormalizado.includes('ovo') ||
-  nomeNormalizado.includes('salsicha');
+  const precisaEscolherOpcao =
+    nomeNormalizado.includes('catupiry') ||
+    nomeNormalizado.includes('cheddar') ||
+    nomeNormalizado.includes('mussarela') ||
+    nomeNormalizado.includes('calabresa') ||
+    nomeNormalizado.includes('bacon') ||
+    nomeNormalizado.includes('ovo') ||
+    nomeNormalizado.includes('salsicha');
 
-if (precisaEscolherOpcao) {
-  abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional);
-  return;
-}
+  if (precisaEscolherOpcao) {
+    abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional);
+    return;
+  }
 
   abrirEscolhaLancheParaAdicional(nomeAdicional, precoAdicional);
 }
@@ -553,6 +647,7 @@ function abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional) {
   };
 
   produtoOpcoesAtual = null;
+  produtoPersonalizacaoAtual = null;
 
   const modal = byId('modalOpcoesProduto');
   const titulo = byId('tituloOpcoesProduto');
@@ -578,15 +673,7 @@ function abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional) {
 function abrirEscolhaLancheParaAdicional(nomeAdicional, precoAdicional) {
   const lanches = carrinho
     .map((item, index) => ({ ...item, indexOriginal: index }))
-    .filter(item => {
-      const nome = String(item.nome || '').toLowerCase();
-
-      return !nome.includes('coca') &&
-        !nome.includes('sprite') &&
-        !nome.includes('fanta') &&
-        !nome.includes('guaraná') &&
-        !nome.includes('guarana');
-    });
+    .filter(item => ehLanche(item.nome));
 
   if (lanches.length === 0) {
     alert('Escolha um lanche primeiro para adicionar este item.');
@@ -600,6 +687,7 @@ function abrirEscolhaLancheParaAdicional(nomeAdicional, precoAdicional) {
   };
 
   produtoOpcoesAtual = null;
+  produtoPersonalizacaoAtual = null;
 
   const modal = byId('modalOpcoesProduto');
   const titulo = byId('tituloOpcoesProduto');
@@ -947,6 +1035,7 @@ function limparCarrinho() {
   tempoEntregaTexto = null;
   produtoOpcoesAtual = null;
   adicionalPendente = null;
+  produtoPersonalizacaoAtual = null;
 
   if (byId('nomeCliente')) byId('nomeCliente').value = '';
   if (byId('tipoEntrega')) byId('tipoEntrega').value = 'retirada';
@@ -993,41 +1082,34 @@ async function carregarRegrasEntrega() {
 }
 
 async function geocodificarEnderecoOpenStreetMap(endereco) {
-
- return new Promise((resolve,reject)=>{
-
-   if(!window.google || !google.maps){
+  return new Promise((resolve, reject) => {
+    if (!window.google || !google.maps) {
       reject(new Error('Google Maps não carregado'));
       return;
-   }
+    }
 
-   const geocoder = new google.maps.Geocoder();
+    const geocoder = new google.maps.Geocoder();
 
-   geocoder.geocode(
+    geocoder.geocode(
       {
-        address:endereco,
-        region:'BR'
+        address: endereco,
+        region: 'BR'
       },
 
-      (results,status)=>{
-
-        if(status!=="OK" || !results.length){
+      (results, status) => {
+        if (status !== 'OK' || !results.length) {
           resolve(null);
           return;
         }
 
         resolve({
-          lat:results[0].geometry.location.lat(),
-          lng:results[0].geometry.location.lng(),
-          display_name:results[0].formatted_address
+          lat: results[0].geometry.location.lat(),
+          lng: results[0].geometry.location.lng(),
+          display_name: results[0].formatted_address
         });
-
       }
-
-   );
-
- });
-
+    );
+  });
 }
 
 function gerarTentativasEndereco(endereco) {
@@ -1119,54 +1201,47 @@ async function geocodificarEnderecoProfissional(endereco) {
   return null;
 }
 
-async function calcularRotaRealOSRM(origem,destino){
-
- return new Promise((resolve,reject)=>{
-
-   if(!window.google || !google.maps){
+async function calcularRotaRealOSRM(origem, destino) {
+  return new Promise((resolve, reject) => {
+    if (!window.google || !google.maps) {
       reject(new Error('Google Maps não carregado'));
       return;
-   }
+    }
 
-   const service = new google.maps.DirectionsService();
+    const service = new google.maps.DirectionsService();
 
-   service.route(
+    service.route(
       {
-        origin:{
-          lat:Number(origem.lat),
-          lng:Number(origem.lng)
+        origin: {
+          lat: Number(origem.lat),
+          lng: Number(origem.lng)
         },
 
-        destination:{
-          lat:Number(destino.lat),
-          lng:Number(destino.lng)
+        destination: {
+          lat: Number(destino.lat),
+          lng: Number(destino.lng)
         },
 
-        travelMode:'DRIVING'
+        travelMode: 'DRIVING'
       },
 
-      (result,status)=>{
+      (result, status) => {
+        if (status !== 'OK') {
+          reject(new Error('Erro rota google'));
+          return;
+        }
 
-         if(status!=="OK"){
-            reject(new Error('Erro rota google'));
-            return;
-         }
+        const leg = result.routes[0].legs[0];
 
-         const leg=result.routes[0].legs[0];
-
-         resolve({
-            distanciaMetros:leg.distance.value,
-            distanciaTexto:leg.distance.text,
-            duracaoSegundos:leg.duration.value,
-            duracaoTexto:leg.duration.text
-         });
-
+        resolve({
+          distanciaMetros: leg.distance.value,
+          distanciaTexto: leg.distance.text,
+          duracaoSegundos: leg.duration.value,
+          duracaoTexto: leg.duration.text
+        });
       }
-
-   );
-
- });
-
+    );
+  });
 }
 
 function formatarDuracao(segundos) {
@@ -1505,6 +1580,7 @@ async function finalizarPedido() {
     tempoEntregaTexto = null;
     produtoOpcoesAtual = null;
     adicionalPendente = null;
+    produtoPersonalizacaoAtual = null;
 
     if (byId('nomeCliente')) byId('nomeCliente').value = '';
     if (byId('tipoEntrega')) byId('tipoEntrega').value = 'retirada';
