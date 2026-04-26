@@ -443,7 +443,7 @@ function atualizarResumo() {
   const pedidosHojeLista = pedidos.filter((p) => pedidoEhDeHoje(p));
 
   const faturamento = pedidosHojeLista.reduce(
-    (acc, pedido) => acc + Number(pedido.total || 0),
+    (acc, pedido) => acc + Number(pedido.subtotal || 0),
     0
   );
 
