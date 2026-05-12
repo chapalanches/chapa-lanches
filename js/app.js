@@ -2,6 +2,7 @@ const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) |
 const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa Lanches';
 const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
 const TEMPO_PREPARO_FIXO_MINUTOS = 45;
+const CHAVE_PIX = '35155218870';
 
 const REGRAS_ENTREGA_PADRAO = [
   { km_min: 0, km_max: 2, fee: 4, active: true },
@@ -71,95 +72,24 @@ let coordenadaClienteCache = null;
 let produtoPersonalizacaoAtual = null;
 
 const INGREDIENTES_REMOVIVEIS_PADRAO = [
- 'Maionese',
- 'Tomate',
- 'Cebola',
- 'Ketchup'
+  'Maionese',
+  'Tomate',
+  'Cebola',
+  'Ketchup'
 ];
 
 const INGREDIENTES_POR_LANCHE = {
-
- 'duplo':[
-   'Maionese',
-   'Batata palha',
-   'Tomate',
-   'Cebola',
-   'Ketchup'
- ],
-
- 'x-burger':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Ketchup'
- ],
-
- 'x-salada':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Alface',
-   'Ketchup'
- ],
-
- 'x-egg':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Alface',
-   'Ketchup'
- ],
-
- 'x-bacon':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Alface',
-   'Ketchup'
- ],
-
- 'x-calabresa':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Alface',
-   'Ketchup'
- ],
-
- 'x-frango':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Ketchup'
- ],
-
- 'x-frango especial':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Ketchup'
- ],
-
- 'omelete':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Ketchup'
- ],
-
- 'o chapeiro':[
-   'Tomate',
-   'Cebola',
-   'Ketchup'
- ],
-
- 'x-tudo':[
-   'Maionese',
-   'Tomate',
-   'Cebola',
-   'Ketchup'
- ]
-
+  'duplo': ['Maionese', 'Batata palha', 'Tomate', 'Cebola', 'Ketchup'],
+  'x-burger': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
+  'x-salada': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
+  'x-egg': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
+  'x-bacon': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
+  'x-calabresa': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
+  'x-frango': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
+  'x-frango especial': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
+  'omelete': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
+  'o chapeiro': ['Tomate', 'Cebola', 'Ketchup'],
+  'x-tudo': ['Maionese', 'Tomate', 'Cebola', 'Ketchup']
 };
 
 function formatarPreco(valor) {
@@ -207,6 +137,29 @@ function abrirWhatsapp(url) {
 
 function byId(id) {
   return document.getElementById(id);
+}
+
+function atualizarPagamento() {
+  const pagamento = byId('formaPagamento')?.value || '';
+  const boxPix = byId('boxPix');
+
+  if (!boxPix) return;
+
+  boxPix.style.display = pagamento.toLowerCase() === 'pix' ? 'block' : 'none';
+}
+
+function copiarPix() {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(CHAVE_PIX)
+      .then(() => {
+        alert('Chave PIX copiada com sucesso!');
+      })
+      .catch(() => {
+        alert('Não foi possível copiar automaticamente. Chave PIX: ' + CHAVE_PIX);
+      });
+  } else {
+    alert('Chave PIX: ' + CHAVE_PIX);
+  }
 }
 
 function obterElementoStatusLoja() {
@@ -1148,6 +1101,7 @@ function limparCarrinho() {
   if (byId('formaPagamento')) byId('formaPagamento').value = '';
   if (byId('observacoes')) byId('observacoes').value = '';
 
+  atualizarPagamento();
   limparBloqueiosEndereco();
   limparCacheCoordenadaCliente();
 
@@ -1558,6 +1512,11 @@ async function finalizarPedido() {
     return;
   }
 
+  if (!pagamento) {
+    alert('Selecione a forma de pagamento.');
+    return;
+  }
+
   if (tipoEntrega === 'delivery') {
     const cep = byId('cepEntrega')?.value.trim() || '';
     const rua = byId('ruaEntrega')?.value.trim() || '';
@@ -1592,6 +1551,7 @@ async function finalizarPedido() {
     customer_city: tipoEntrega === 'delivery' ? byId('cidadeEntrega').value.trim() : 'Sorocaba',
     customer_notes: [
       pagamento ? `Pagamento: ${pagamento}` : '',
+      pagamento.toLowerCase() === 'pix' ? `Chave PIX: ${CHAVE_PIX}` : '',
       observacoes ? `Observações: ${observacoes}` : '',
       tipoEntrega === 'delivery' && byId('complementoEntrega').value.trim()
         ? `Complemento: ${byId('complementoEntrega').value.trim()}`
@@ -1664,6 +1624,11 @@ async function finalizarPedido() {
     if (pagamento) {
       mensagem += `
 *Pagamento:* ${pagamento}`;
+
+      if (pagamento.toLowerCase() === 'pix') {
+        mensagem += `
+*Chave PIX:* ${CHAVE_PIX}`;
+      }
     }
 
     if (observacoes) {
@@ -1693,6 +1658,7 @@ async function finalizarPedido() {
     if (byId('formaPagamento')) byId('formaPagamento').value = '';
     if (byId('observacoes')) byId('observacoes').value = '';
 
+    atualizarPagamento();
     limparBloqueiosEndereco();
     limparCacheCoordenadaCliente();
 
@@ -1739,6 +1705,7 @@ async function iniciarSistema() {
   aplicarEventosEntrega();
   atualizarContadores();
   atualizarEntrega();
+  atualizarPagamento();
   limparBloqueiosEndereco();
 
   await atualizarStatusLoja();
@@ -1747,12 +1714,13 @@ async function iniciarSistema() {
     await atualizarStatusLoja();
   }, 5000);
 
-  console.log('Sistema iniciado com CEP via ViaCEP + rota OSRM.');
+  console.log('Sistema iniciado com CEP via ViaCEP + rota OSRM + PIX copia e cola.');
 }
 
 document.addEventListener('DOMContentLoaded', function () {
   const tipoEntrega = byId('tipoEntrega');
   const camposEntrega = byId('camposEntrega');
+  const formaPagamento = byId('formaPagamento');
 
   if (tipoEntrega) {
     tipoEntrega.value = 'retirada';
@@ -1762,6 +1730,12 @@ document.addEventListener('DOMContentLoaded', function () {
     camposEntrega.style.display = 'none';
     camposEntrega.hidden = true;
   }
+
+  if (formaPagamento) {
+    formaPagamento.addEventListener('change', atualizarPagamento);
+  }
+
+  atualizarPagamento();
 });
 
 iniciarSistema();
