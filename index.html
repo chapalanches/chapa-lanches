@@ -554,12 +554,21 @@ onclick="abrirAdicionalParaLanche('Alface',2)">
 
         <div class="campo">
           <label for="formaPagamento">Forma de pagamento</label>
-          <select id="formaPagamento">
+          <select id="formaPagamento" onchange="atualizarPagamento()">
             <option value="">Selecione</option>
             <option value="Dinheiro">Dinheiro</option>
             <option value="Pix">Pix</option>
             <option value="Cartão">Cartão</option>
           </select>
+
+        <div id="boxPix" style="display:none; margin-top:10px; padding:12px; background:#1f2937; border:1px solid rgba(255,255,255,0.12); border-radius:12px;">
+          <strong>Pagamento via PIX</strong>
+          <p style="margin:8px 0;">
+            Chave PIX: <b id="chavePixTexto">35155218870</b>
+          </p>
+          <button type="button" class="btn btn-add" onclick="copiarPix()">
+            Copiar chave PIX
+          </button>
         </div>
 
         <div class="campo">
