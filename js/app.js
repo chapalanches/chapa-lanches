@@ -139,6 +139,14 @@ function byId(id) {
   return document.getElementById(id);
 }
 
+function garantirModalOpcoesForaDoCarrinho() {
+  const modalOpcoes = byId('modalOpcoesProduto');
+
+  if (modalOpcoes && modalOpcoes.parentElement !== document.body) {
+    document.body.appendChild(modalOpcoes);
+  }
+}
+
 function atualizarPagamento() {
   const pagamento = byId('formaPagamento')?.value || '';
   const boxPix = byId('boxPix');
@@ -490,6 +498,8 @@ function adicionarAoCarrinho(nome, preco, observacao = '') {
 }
 
 function abrirPersonalizacaoLanche(produto) {
+  garantirModalOpcoesForaDoCarrinho();
+
   produtoPersonalizacaoAtual = produto;
   produtoOpcoesAtual = null;
   adicionalPendente = null;
@@ -527,6 +537,8 @@ function abrirPersonalizacaoLanche(produto) {
 }
 
 function abrirOpcoesProduto(produtoId) {
+  garantirModalOpcoesForaDoCarrinho();
+
   const produto = PRODUTOS_COM_OPCOES[produtoId];
   const modal = byId('modalOpcoesProduto');
   const titulo = byId('tituloOpcoesProduto');
@@ -681,6 +693,8 @@ function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
 }
 
 function abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional) {
+  garantirModalOpcoesForaDoCarrinho();
+
   const nomeNormalizado = removerAcentos(String(nomeAdicional || '').toLowerCase());
 
   let opcoes = ['Catupiry', 'Cheddar', 'Mussarela'];
@@ -724,6 +738,8 @@ function abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional) {
 }
 
 function abrirEscolhaLancheParaAdicional(nomeAdicional, precoAdicional) {
+  garantirModalOpcoesForaDoCarrinho();
+
   const lanches = carrinho
     .map((item, index) => ({ ...item, indexOriginal: index }))
     .filter(item => ehLanche(item.nome));
@@ -1701,6 +1717,7 @@ async function iniciarSistema() {
   await carregarConfiguracaoLoja();
   await carregarRegrasEntrega();
 
+  garantirModalOpcoesForaDoCarrinho();
   aplicarMascaraCep();
   aplicarEventosEntrega();
   atualizarContadores();
@@ -1735,6 +1752,7 @@ document.addEventListener('DOMContentLoaded', function () {
     formaPagamento.addEventListener('change', atualizarPagamento);
   }
 
+  garantirModalOpcoesForaDoCarrinho();
   atualizarPagamento();
 });
 
