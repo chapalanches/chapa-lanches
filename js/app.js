@@ -128,11 +128,7 @@ function isIOS() {
 }
 
 function abrirWhatsapp(url) {
-  if (isIOS()) {
-    window.location.href = url;
-  } else {
-    window.open(url, '_blank');
-  }
+  window.location.href = url;
 }
 
 function byId(id) {
@@ -1660,8 +1656,7 @@ try {
 📌 *Observações:* ${observacoes}`;
   }
 
-  const textoWhatsapp = encodeURIComponent(mensagem);
-  const urlWhatsapp = `https://wa.me/${numeroWhatsapp}?text=${textoWhatsapp}`;
+  const urlWhatsapp = `https://api.whatsapp.com/send?phone=${numeroWhatsapp}&text=${encodeURIComponent(mensagem)}`;
 
   carrinho = [];
   taxaEntrega = 0;
