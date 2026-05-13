@@ -10,8 +10,8 @@ const TABELA_CONFIG_LOJA = "store_settings";
 const STORE_SETTINGS_ID = 1;
 const COLUNAS_STORAGE_KEY = "chapa_admin_colunas_recolhidas";
 const MOTOBOYS_ENTREGA = [
-  { nome: "Motoboy 1", telefone: "5515999999999" },
-  { nome: "Motoboy 2", telefone: "5515988888888" }
+  { nome: "Paulinho", telefone: "5515998338356" },
+  { nome: "Guilherme", telefone: "5515981107343" }
 ];
 
 let supabaseClient = null;
