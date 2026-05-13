@@ -634,6 +634,7 @@ body {
   .status-select {
     min-height: 46px;
   }
+}
 
 .column-toggle {
   display: flex;
