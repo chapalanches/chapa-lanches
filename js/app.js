@@ -1656,7 +1656,8 @@ try {
 📌 *Observações:* ${observacoes}`;
   }
 
-  const urlWhatsapp = `https://api.whatsapp.com/send?phone=${numeroWhatsapp}&text=${encodeURIComponent(mensagem)}`;
+  const textoWhatsapp = btoa(unescape(encodeURIComponent(mensagem)));
+  const urlWhatsapp = `https://api.whatsapp.com/send?phone=${numeroWhatsapp}&text=${decodeURIComponent(escape(atob(textoWhatsapp)))}`;
 
   carrinho = [];
   taxaEntrega = 0;
