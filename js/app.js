@@ -128,7 +128,13 @@ function isIOS() {
 }
 
 function abrirWhatsapp(url) {
-  window.location.href = url;
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if (mobile) {
+    window.location.href = url;
+  } else {
+    window.open(url, '_blank');
+  }
 }
 
 function byId(id) {
