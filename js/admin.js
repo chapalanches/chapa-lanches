@@ -7,6 +7,10 @@ const TABELA_PEDIDOS = "orders";
 const TABELA_CONFIG_LOJA = "store_settings";
 const STORE_SETTINGS_ID = 1;
 const COLUNAS_STORAGE_KEY = "chapa_admin_colunas_recolhidas";
+const MOTOBOYS_ENTREGA = [
+  { nome: "Motoboy 1", telefone: "5515999999999" },
+  { nome: "Motoboy 2", telefone: "5515988888888" }
+];
 
 let supabaseClient = null;
 let realtimeChannel = null;
@@ -136,6 +140,120 @@ function converterDataSegura(valor) {
 
 function formatarDataBR(data) {
   return data.toLocaleString("pt-BR");
+}
+
+function formatarDataCurtaBR(data) {
+  const dia = String(data.getDate()).padStart(2, "0");
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const ano = data.getFullYear();
+  return `${dia}/${mes}/${ano}`;
+}
+
+function obterNumeroDeliveryDoDia(pedidoAtual) {
+  const deliveriesDoDia = pedidos
+    .filter((p) => pedidoEhDeHoje(p) && p.tipoEntrega === "delivery")
+    .sort((a, b) => a.dataObj - b.dataObj);
+
+  const indice = deliveriesDoDia.findIndex((p) => p.uid === pedidoAtual.uid);
+  return indice >= 0 ? indice + 1 : 1;
+}
+
+function montarLinkMapaPedido(pedido) {
+  const rua = String((pedido.endereco || "").split(",")[0] || "").trim();
+
+  const numero = String(
+    pedido.numero ||
+    ((pedido.endereco || "").split(",")[1] || "").trim() ||
+    ""
+  ).trim();
+
+  const enderecoMapa = [
+    rua,
+    numero,
+    pedido.bairro,
+    pedido.cidade || "Sorocaba"
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa)}`;
+}
+
+function montarMensagemMotoboy(pedido) {
+  const numeroDelivery = obterNumeroDeliveryDoDia(pedido);
+  const dataPedido = formatarDataCurtaBR(pedido.dataObj);
+
+  const rua = String((pedido.endereco || "").split(",")[0] || "Não informado").trim();
+
+  const numero = String(
+    pedido.numero ||
+    ((pedido.endereco || "").split(",")[1] || "").trim() ||
+    "-"
+  ).trim();
+
+  const linhas = [];
+
+  linhas.push("🚚 *NOVA ENTREGA - CHAPA LANCHES*");
+  linhas.push("");
+  linhas.push(`📦 *Pedido:* ${dataPedido} - Delivery #${numeroDelivery}`);
+  linhas.push("");
+  linhas.push(`👤 *Cliente:* ${pedido.cliente}`);
+  linhas.push("");
+  linhas.push("📍 *Entrega:*");
+  linhas.push(`${rua}, ${numero}`);
+  linhas.push(`${pedido.bairro || "-"}`);
+  linhas.push(`${pedido.cidade || "Sorocaba/SP"}`);
+
+  if (pedido.complemento) {
+    linhas.push(pedido.complemento);
+  }
+
+  linhas.push("");
+  linhas.push(`💰 *Taxa de entrega:* ${formatarMoeda(pedido.taxaEntrega)}`);
+  linhas.push(`💵 *Total pedido:* ${formatarMoeda(pedido.total)}`);
+  linhas.push(`💳 *Pagamento:* ${pedido.pagamento || "Não informado"}`);
+  linhas.push("");
+  linhas.push("🗺️ *Mapa:*");
+  linhas.push(montarLinkMapaPedido(pedido));
+
+  return linhas.join("\n");
+}
+
+function enviarPedidoMotoboy(uidPedido) {
+  const pedido = buscarPedidoPorUid(uidPedido);
+
+  if (!pedido) {
+    alert("Pedido não encontrado.");
+    return;
+  }
+
+  if (pedido.tipoEntrega !== "delivery") {
+    alert("Somente pedidos delivery.");
+    return;
+  }
+
+  let mensagem = "Escolha o motoboy:\n\n";
+
+  MOTOBOYS_ENTREGA.forEach((motoboy, index) => {
+    mensagem += `${index + 1} - ${motoboy.nome}\n`;
+  });
+
+  const escolha = prompt(mensagem);
+
+  if (!escolha) return;
+
+  const indice = Number(escolha) - 1;
+  const motoboy = MOTOBOYS_ENTREGA[indice];
+
+  if (!motoboy) {
+    alert("Opção inválida.");
+    return;
+  }
+
+  const texto = montarMensagemMotoboy(pedido);
+  const url = `https://wa.me/${motoboy.telefone}?text=${encodeURIComponent(texto)}`;
+
+  window.open(url, "_blank");
 }
 
 function formatarHora(data) {
@@ -697,6 +815,11 @@ function criarCardPedido(pedido) {
         </select>
 
         <div class="action-grid">
+         ${
+    pedido.tipoEntrega === "delivery"
+      ? `<button class="btn btn-green btn-small" onclick="enviarPedidoMotoboy('${pedido.uid}')">Enviar motoboy</button>`
+      : ""
+          }
           <button class="btn btn-yellow btn-small" onclick="imprimirPedidoRapido('${pedido.uid}')">Impressão rápida</button>
           <button class="btn btn-green btn-small" onclick="imprimirPedidoRawBT('${pedido.uid}')">Imprimir RawBT</button>
           <button class="btn btn-blue btn-small" onclick="copiarPedido('${pedido.uid}')">Copiar</button>
@@ -1816,6 +1939,7 @@ window.imprimirPedidoRapido = imprimirPedidoRapido;
 window.imprimirPedidoRawBT = imprimirPedidoRawBT;
 window.copiarPedido = copiarPedido;
 window.toggleColuna = toggleColuna;
+window.enviarPedidoMotoboy = enviarPedidoMotoboy;
 
 console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA");
 
