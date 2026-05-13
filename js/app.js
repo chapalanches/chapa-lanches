@@ -959,69 +959,55 @@ async function atualizarStatusLoja() {
 }
 
 function atualizarEntrega() {
-  const selectTipoEntrega = byId('tipoEntrega');
-  const tipoEntrega = selectTipoEntrega ? selectTipoEntrega.value : 'retirada';
+  const tipoEntrega = byId('tipoEntrega')?.value || 'retirada';
   const camposEntrega = byId('camposEntrega');
   const avisoEntrega = byId('avisoEntrega');
 
-  if (tipoEntrega === 'delivery') {
-    if (camposEntrega) {
-      camposEntrega.style.display = 'grid';
-    }
+  if (tipoEntrega !== 'delivery') {
+    taxaEntrega = 0;
+    distanciaEntregaKm = null;
+    tempoEntregaTexto = null;
 
-    definirBloqueioCampos();
-
-    const cep = byId('cepEntrega')?.value.trim() || '';
-    const rua = byId('ruaEntrega')?.value.trim() || '';
-    const numero = byId('numeroEntrega')?.value.trim() || '';
-    const bairro = byId('bairroEntrega')?.value.trim() || '';
-    const cidade = byId('cidadeEntrega')?.value.trim() || '';
-
-    if (!cep || !rua || !numero || !bairro || !cidade) {
-      taxaEntrega = 0;
-      distanciaEntregaKm = null;
-      tempoEntregaTexto = null;
-
-      if (avisoEntrega) {
-        avisoEntrega.innerText = 'Digite o CEP e depois informe o número para calcular a entrega.';
-      }
-    } else {
-      agendarCalculoEntrega();
-    }
-
-  } else {
-    if (selectTipoEntrega) {
-      selectTipoEntrega.value = 'retirada';
-    }
+    clearTimeout(timeoutCalculoEntrega);
 
     if (camposEntrega) {
       camposEntrega.style.display = 'none';
-      camposEntrega.hidden = true;
     }
 
-    if (byId('cepEntrega')) byId('cepEntrega').value = '';
-    if (byId('ruaEntrega')) byId('ruaEntrega').value = '';
-    if (byId('numeroEntrega')) byId('numeroEntrega').value = '';
-    if (byId('bairroEntrega')) byId('bairroEntrega').value = '';
-    if (byId('cidadeEntrega')) byId('cidadeEntrega').value = 'Sorocaba';
-    if (byId('complementoEntrega')) byId('complementoEntrega').value = '';
+    if (avisoEntrega) {
+      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+    }
 
-    limparBloqueiosEndereco();
-    limparCacheCoordenadaCliente();
+    renderizarCarrinho();
+    return;
+  }
 
+  if (camposEntrega) {
+    camposEntrega.style.display = 'grid';
+  }
+
+  definirBloqueioCampos();
+
+  const cep = byId('cepEntrega')?.value.trim() || '';
+  const rua = byId('ruaEntrega')?.value.trim() || '';
+  const numero = byId('numeroEntrega')?.value.trim() || '';
+  const bairro = byId('bairroEntrega')?.value.trim() || '';
+  const cidade = byId('cidadeEntrega')?.value.trim() || '';
+
+  if (!cep || !rua || !numero || !bairro || !cidade) {
     taxaEntrega = 0;
     distanciaEntregaKm = null;
     tempoEntregaTexto = null;
 
     if (avisoEntrega) {
-      avisoEntrega.innerText = 'Retirada no local sem taxa de entrega.';
+      avisoEntrega.innerText = 'Digite o CEP e depois informe o número para calcular a entrega.';
     }
+
+    renderizarCarrinho();
+    return;
   }
 
-  if (tipoEntrega === 'delivery' && camposEntrega) {
-    camposEntrega.hidden = false;
-  }
-
+  agendarCalculoEntrega();
   renderizarCarrinho();
 }
 
@@ -1754,7 +1740,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (camposEntrega) {
     camposEntrega.style.display = 'none';
-    camposEntrega.hidden = true;
   }
 
   if (formaPagamento) {
