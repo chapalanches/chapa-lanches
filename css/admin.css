@@ -680,3 +680,117 @@ body {
 .board-column.collapsed .toggle-column-btn {
   transform: rotate(0deg);
 }
+  
+.hidden {
+  display: none !important;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.modal-box {
+  width: 100%;
+  max-width: 460px;
+  background: linear-gradient(180deg, #1d1d20, #25252a);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+  animation: modalZoom 0.2s ease;
+}
+
+@keyframes modalZoom {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.modal-header h3 {
+  color: var(--yellow);
+  font-size: 1.35rem;
+}
+
+.modal-close {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.modal-content {
+  padding: 20px;
+}
+
+.modal-content p {
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.motoboy-list {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.motoboy-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.motoboy-option:hover {
+  border-color: rgba(37,211,102,0.45);
+}
+
+.motoboy-option.selected {
+  border-color: #25d366;
+  background: rgba(37,211,102,0.08);
+}
+
+.motoboy-info strong {
+  display: block;
+  color: #fff;
+}
+
+.motoboy-info span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
