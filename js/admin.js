@@ -1,5 +1,7 @@
 let pedidos = [];
 let ultimaQuantidadePedidos = 0;
+let pedidoMotoboySelecionado = null;
+let motoboySelecionado = null;
 
 const STORAGE_KEYS = ["pedidos", "chapa_pedidos", "pedidos_chapa"];
 const LOGIN_STORAGE_KEY = "chapa_admin_logado";
@@ -232,28 +234,81 @@ function enviarPedidoMotoboy(uidPedido) {
     return;
   }
 
-  let mensagem = "Escolha o motoboy:\n\n";
+  pedidoMotoboySelecionado = pedido;
+  motoboySelecionado = null;
 
-  MOTOBOYS_ENTREGA.forEach((motoboy, index) => {
-    mensagem += `${index + 1} - ${motoboy.nome}\n`;
-  });
+  const modal = byId("modalMotoboy");
+  const lista = byId("listaMotoboys");
 
-  const escolha = prompt(mensagem);
-
-  if (!escolha) return;
-
-  const indice = Number(escolha) - 1;
-  const motoboy = MOTOBOYS_ENTREGA[indice];
-
-  if (!motoboy) {
-    alert("Opção inválida.");
+  if (!modal || !lista) {
+    alert("Modal de motoboy não encontrado no HTML.");
     return;
   }
 
-  const texto = montarMensagemMotoboy(pedido);
-  const url = `https://wa.me/${motoboy.telefone}?text=${encodeURIComponent(texto)}`;
+  lista.innerHTML = "";
+
+  MOTOBOYS_ENTREGA.forEach((motoboy, index) => {
+    const item = document.createElement("div");
+    item.className = "motoboy-option";
+
+    item.innerHTML = `
+      <input type="radio" name="motoboyEscolha" value="${index}">
+      <div class="motoboy-info">
+        <strong>${motoboy.nome}</strong>
+        <span>${motoboy.telefone}</span>
+      </div>
+    `;
+
+    item.addEventListener("click", () => {
+      document.querySelectorAll(".motoboy-option").forEach((el) => {
+        el.classList.remove("selected");
+      });
+
+      item.classList.add("selected");
+
+      const radio = item.querySelector("input");
+      if (radio) radio.checked = true;
+
+      motoboySelecionado = motoboy;
+    });
+
+    lista.appendChild(item);
+  });
+
+  modal.classList.remove("hidden");
+}
+
+function fecharModalMotoboy() {
+  const modal = byId("modalMotoboy");
+
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+
+  pedidoMotoboySelecionado = null;
+  motoboySelecionado = null;
+}
+
+function confirmarEnvioMotoboy() {
+  if (!pedidoMotoboySelecionado) {
+    alert("Pedido não selecionado.");
+    return;
+  }
+
+  if (!motoboySelecionado) {
+    alert("Selecione um motoboy.");
+    return;
+  }
+
+  const texto = montarMensagemMotoboy(pedidoMotoboySelecionado);
+
+  const url =
+    `https://wa.me/${motoboySelecionado.telefone}?text=` +
+    encodeURIComponent(texto);
 
   window.open(url, "_blank");
+
+  fecharModalMotoboy();
 }
 
 function formatarHora(data) {
@@ -1940,6 +1995,8 @@ window.imprimirPedidoRawBT = imprimirPedidoRawBT;
 window.copiarPedido = copiarPedido;
 window.toggleColuna = toggleColuna;
 window.enviarPedidoMotoboy = enviarPedidoMotoboy;
+window.fecharModalMotoboy = fecharModalMotoboy;
+window.confirmarEnvioMotoboy = confirmarEnvioMotoboy;
 
 console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA");
 
