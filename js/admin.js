@@ -202,7 +202,7 @@ function montarMensagemMotoboy(pedido) {
     : "Sorocaba/SP";
 
   let mensagem = "";
-  mensagem += "🚚 *NOVA ENTREGA - CHAPA LANCHES*\n\n";
+  mensagem += "🛵 *NOVA ENTREGA - CHAPA LANCHES*\n\n";
   mensagem += `📦 *Pedido:* ${dataPedido} - Delivery #${numeroDelivery}\n\n`;
   mensagem += `👤 *Cliente:* ${pedido.cliente}\n\n`;
   mensagem += "📍 *Entrega:*\n";
