@@ -185,7 +185,9 @@ function montarMensagemMotoboy(pedido) {
   const numeroDelivery = obterNumeroDeliveryDoDia(pedido);
   const dataPedido = formatarDataCurtaBR(pedido.dataObj);
 
-  const rua = String((pedido.endereco || "").split(",")[0] || "Não informado").trim();
+  const rua = String(
+    (pedido.endereco || "").split(",")[0] || "Não informado"
+  ).trim();
 
   const numero = String(
     pedido.numero ||
@@ -199,32 +201,27 @@ function montarMensagemMotoboy(pedido) {
       : `${pedido.cidade}/SP`
     : "Sorocaba/SP";
 
-  const linhas = [];
-
-  linhas.push("\uD83D\uDE9A *NOVA ENTREGA - CHAPA LANCHES*");
-  linhas.push("");
-  linhas.push(`\uD83D\uDCE6 *Pedido:* ${dataPedido} - Delivery #${numeroDelivery}`);
-  linhas.push("");
-  linhas.push(`\uD83D\uDC64 *Cliente:* ${pedido.cliente}`);
-  linhas.push("");
-  linhas.push("\uD83D\uDCCD *Entrega:*");
-  linhas.push(`${rua}, ${numero}`);
-  linhas.push(`${pedido.bairro || "-"}`);
-  linhas.push(`${cidade}`);
+  let mensagem = "";
+  mensagem += "🚚 *NOVA ENTREGA - CHAPA LANCHES*\n\n";
+  mensagem += `📦 *Pedido:* ${dataPedido} - Delivery #${numeroDelivery}\n\n`;
+  mensagem += `👤 *Cliente:* ${pedido.cliente}\n\n`;
+  mensagem += "📍 *Entrega:*\n";
+  mensagem += `${rua}, ${numero}\n`;
+  mensagem += `${pedido.bairro || "-"}\n`;
+  mensagem += `${cidade}\n`;
 
   if (pedido.complemento) {
-    linhas.push(`${pedido.complemento}`);
+    mensagem += `${pedido.complemento}\n`;
   }
 
-  linhas.push("");
-  linhas.push(`\uD83D\uDCB0 *Taxa de entrega:* ${formatarMoeda(pedido.taxaEntrega)}`);
-  linhas.push(`\uD83D\uDCB5 *Total pedido:* ${formatarMoeda(pedido.total)}`);
-  linhas.push(`\uD83D\uDCB3 *Pagamento:* ${pedido.pagamento || "Não informado"}`);
-  linhas.push("");
-  linhas.push("\uD83D\uDDFA\uFE0F *Mapa:*");
-  linhas.push(montarLinkMapaPedido(pedido));
+  mensagem += "\n";
+  mensagem += `💰 *Taxa de entrega:* ${formatarMoeda(pedido.taxaEntrega)}\n`;
+  mensagem += `💵 *Total pedido:* ${formatarMoeda(pedido.total)}\n`;
+  mensagem += `💳 *Pagamento:* ${pedido.pagamento || "Não informado"}\n\n`;
+  mensagem += "🗺️ *Mapa:*\n";
+  mensagem += montarLinkMapaPedido(pedido);
 
-  return linhas.join("\n");
+  return mensagem;
 }
 
 function enviarPedidoMotoboy(uidPedido) {
@@ -309,8 +306,7 @@ function confirmarEnvioMotoboy() {
   const texto = montarMensagemMotoboy(pedidoMotoboySelecionado);
 
   const url =
-    `https://wa.me/${motoboySelecionado.telefone}?text=` +
-    encodeURIComponent(texto);
+    `https://api.whatsapp.com/send?phone=${motoboySelecionado.telefone}&text=${encodeURIComponent(texto)}`;
 
   window.open(url, "_blank");
 
