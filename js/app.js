@@ -1589,79 +1589,87 @@ async function finalizarPedido() {
     status: 'novo'
   };
 
-  try {
-    if (btnFinalizar) {
-      btnFinalizar.disabled = true;
-      btnFinalizar.innerText = 'Salvando pedido...';
-    }
+try {
+  if (btnFinalizar) {
+    btnFinalizar.disabled = true;
+    btnFinalizar.innerText = 'Salvando pedido...';
+  }
 
-    const pedidoSalvo = await salvarPedidoNoBanco(payload);
+  const pedidoSalvo = await salvarPedidoNoBanco(payload);
 
-    let mensagem = `🍔 *Pedido - ${nomeLoja}*
+  let mensagem = `🍔 *Pedido - ${nomeLoja}*
 
-*Pedido:* #${pedidoSalvo.id}
-*Cliente:* ${nome}
-*Tipo do pedido:* ${formatarTipoEntregaTexto(tipoEntrega)}`;
+📦 *Pedido:* #${pedidoSalvo.id}
+👤 *Cliente:* ${nome}
+🏠 *Tipo do pedido:* ${formatarTipoEntregaTexto(tipoEntrega)}`;
 
-    if (tipoEntrega === 'delivery') {
+  if (tipoEntrega === 'delivery') {
+    mensagem += `
+📍 *Endereço:* ${endereco}
+🛣️ *Distância real:* ${distanciaEntregaKm.toFixed(2)} km`;
+
+    if (tempoEntregaTexto) {
       mensagem += `
-*Endereço:* ${endereco}
-*Distância real:* ${distanciaEntregaKm.toFixed(2)} km`;
-
-      if (tempoEntregaTexto) {
-        mensagem += `
-*Tempo estimado:* ${tempoEntregaTexto}`;
-      }
-    } else {
-      mensagem += `
-*Tempo estimado:* ${formatarDuracao(TEMPO_PREPARO_FIXO_MINUTOS * 60)}`;
+⏱️ *Tempo estimado:* ${tempoEntregaTexto}`;
     }
+  } else {
+    mensagem += `
+⏱️ *Tempo estimado:* ${formatarDuracao(TEMPO_PREPARO_FIXO_MINUTOS * 60)}`;
+  }
+
+  mensagem += `
+
+🍔 *Itens do pedido:*`;
+
+  payload.items.forEach(item => {
+    const nomeItem = item.nome || 'Item';
+    const quantidadeItem = Number(item.quantidade || 1);
+    const precoItem = Number(item.preco || 0);
+    const obsItem = item.observacao || '';
 
     mensagem += `
+━━━━━━━━━━━━━━
+🍟 *${quantidadeItem}x ${nomeItem}*
+💰 ${formatarPreco(precoItem * quantidadeItem)}`;
 
-*Itens do pedido:*`;
-
-    carrinho.forEach(item => {
+    if (obsItem) {
       mensagem += `
-- ${item.quantidade}x ${item.nome} - ${formatarPreco(item.preco * item.quantidade)}`;
+📝 ${obsItem}`;
+    }
+  });
 
-      if (item.observacao) {
-        mensagem += `
-  ↳ ${item.observacao}`;
-      }
-    });
+  mensagem += `
 
+━━━━━━━━━━━━━━
+💵 *Subtotal:* ${formatarPreco(subtotal)}
+🚚 *Taxa de entrega:* ${formatarPreco(taxaEntrega)}
+💲 *Total:* ${formatarPreco(total)}`;
+
+  if (pagamento) {
     mensagem += `
+💳 *Pagamento:* ${pagamento}`;
 
-*Subtotal:* ${formatarPreco(subtotal)}
-*Taxa de entrega:* ${formatarPreco(taxaEntrega)}
-*Total:* ${formatarPreco(total)}`;
-
-    if (pagamento) {
+    if (pagamento.toLowerCase() === 'pix') {
       mensagem += `
-*Pagamento:* ${pagamento}`;
-
-      if (pagamento.toLowerCase() === 'pix') {
-        mensagem += `
-*Chave PIX:* ${CHAVE_PIX}`;
-      }
+📲 *Chave PIX:* ${CHAVE_PIX}`;
     }
+  }
 
-    if (observacoes) {
-      mensagem += `
-*Observações:* ${observacoes}`;
-    }
+  if (observacoes) {
+    mensagem += `
+📌 *Observações:* ${observacoes}`;
+  }
 
-    const textoWhatsapp = encodeURIComponent(mensagem);
-    const urlWhatsapp = `https://wa.me/${numeroWhatsapp}?text=${textoWhatsapp}`;
+  const textoWhatsapp = encodeURIComponent(mensagem);
+  const urlWhatsapp = `https://wa.me/${numeroWhatsapp}?text=${textoWhatsapp}`;
 
-    carrinho = [];
-    taxaEntrega = 0;
-    distanciaEntregaKm = null;
-    tempoEntregaTexto = null;
-    produtoOpcoesAtual = null;
-    adicionalPendente = null;
-    produtoPersonalizacaoAtual = null;
+  carrinho = [];
+  taxaEntrega = 0;
+  distanciaEntregaKm = null;
+  tempoEntregaTexto = null;
+  produtoOpcoesAtual = null;
+  adicionalPendente = null;
+  produtoPersonalizacaoAtual = null;
 
     if (byId('nomeCliente')) byId('nomeCliente').value = '';
     if (byId('tipoEntrega')) byId('tipoEntrega').value = 'retirada';
