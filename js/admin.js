@@ -193,29 +193,35 @@ function montarMensagemMotoboy(pedido) {
     "-"
   ).trim();
 
+  const cidade = pedido.cidade
+    ? String(pedido.cidade).includes("/")
+      ? pedido.cidade
+      : `${pedido.cidade}/SP`
+    : "Sorocaba/SP";
+
   const linhas = [];
 
-  linhas.push("🚚 *NOVA ENTREGA - CHAPA LANCHES*");
+  linhas.push("\uD83D\uDE9A *NOVA ENTREGA - CHAPA LANCHES*");
   linhas.push("");
-  linhas.push(`📦 *Pedido:* ${dataPedido} - Delivery #${numeroDelivery}`);
+  linhas.push(`\uD83D\uDCE6 *Pedido:* ${dataPedido} - Delivery #${numeroDelivery}`);
   linhas.push("");
-  linhas.push(`👤 *Cliente:* ${pedido.cliente}`);
+  linhas.push(`\uD83D\uDC64 *Cliente:* ${pedido.cliente}`);
   linhas.push("");
-  linhas.push("📍 *Entrega:*");
+  linhas.push("\uD83D\uDCCD *Entrega:*");
   linhas.push(`${rua}, ${numero}`);
   linhas.push(`${pedido.bairro || "-"}`);
-  linhas.push(`${pedido.cidade || "Sorocaba/SP"}`);
+  linhas.push(`${cidade}`);
 
   if (pedido.complemento) {
-    linhas.push(pedido.complemento);
+    linhas.push(`${pedido.complemento}`);
   }
 
   linhas.push("");
-  linhas.push(`💰 *Taxa de entrega:* ${formatarMoeda(pedido.taxaEntrega)}`);
-  linhas.push(`💵 *Total pedido:* ${formatarMoeda(pedido.total)}`);
-  linhas.push(`💳 *Pagamento:* ${pedido.pagamento || "Não informado"}`);
+  linhas.push(`\uD83D\uDCB0 *Taxa de entrega:* ${formatarMoeda(pedido.taxaEntrega)}`);
+  linhas.push(`\uD83D\uDCB5 *Total pedido:* ${formatarMoeda(pedido.total)}`);
+  linhas.push(`\uD83D\uDCB3 *Pagamento:* ${pedido.pagamento || "Não informado"}`);
   linhas.push("");
-  linhas.push("🗺️ *Mapa:*");
+  linhas.push("\uD83D\uDDFA\uFE0F *Mapa:*");
   linhas.push(montarLinkMapaPedido(pedido));
 
   return linhas.join("\n");
