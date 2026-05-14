@@ -578,14 +578,21 @@ onclick="abrirAdicionalParaLanche('Alface',2)">
         </div>
       </div>
 
-      <div class="acoes-final">
-        <button class="btn btn-limpar" onclick="limparCarrinho()">Limpar carrinho</button>
-        <button class="btn btn-finalizar" id="btnFinalizar" onclick="finalizarPedido()">Finalizar no WhatsApp</button>
-      </div>
+<div class="acoes-final">
+  <button class="btn btn-limpar" onclick="limparCarrinho()">Limpar carrinho</button>
 
-      <div class="obs">
-        Confira o pedido antes de finalizar. Ao clicar em finalizar, o WhatsApp abrirá com a mensagem pronta.
-      </div>
+  <button class="btn btn-finalizar" id="btnFinalizarWhatsapp" onclick="finalizarPedido(true)">
+    Finalizar Pedido WhatsApp
+  </button>
+
+  <button class="btn btn-finalizar" id="btnFinalizar" onclick="finalizarPedido(false)">
+    Finalizar
+  </button>
+</div>
+
+<div class="obs">
+  Confira o pedido antes de finalizar. O botão WhatsApp salva e abre a mensagem. O botão Finalizar apenas salva o pedido.
+</div>
     </div>
   </div>
 </div>
