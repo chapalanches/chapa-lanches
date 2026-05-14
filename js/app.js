@@ -939,6 +939,7 @@ async function lojaAbertaAgora() {
 async function atualizarStatusLoja() {
   const statusLoja = obterElementoStatusLoja();
   const btnFinalizar = byId('btnFinalizar');
+  const btnFinalizarWhatsapp = byId('btnFinalizarWhatsapp');
   const aberta = await lojaAbertaAgora();
 
   if (statusLoja) {
@@ -956,8 +957,11 @@ async function atualizarStatusLoja() {
   if (btnFinalizar) {
     btnFinalizar.disabled = !aberta;
   }
-}
 
+  if (btnFinalizarWhatsapp) {
+    btnFinalizarWhatsapp.disabled = !aberta;
+  }
+}
 function atualizarEntrega() {
   const tipoEntrega = byId('tipoEntrega')?.value || 'retirada';
   const camposEntrega = byId('camposEntrega');
@@ -1491,7 +1495,7 @@ async function salvarPedidoNoBanco(payload) {
   return data;
 }
 
-async function finalizarPedido() {
+async function finalizarPedido(enviarWhatsapp = true) {
   if (carrinho.length === 0) {
     alert('Seu carrinho está vazio.');
     return;
@@ -1507,7 +1511,7 @@ async function finalizarPedido() {
   const pagamento = byId('formaPagamento')?.value || '';
   const observacoes = byId('observacoes')?.value.trim() || '';
   const avisoEntrega = byId('avisoEntrega');
-  const btnFinalizar = byId('btnFinalizar');
+  const btnFinalizar = enviarWhatsapp ? byId('btnFinalizarWhatsapp') : byId('btnFinalizar');
 
   const endereco = enderecoClienteTextoHumano();
 
@@ -1681,16 +1685,20 @@ try {
     fecharOpcoesProduto();
     renderizarCarrinho();
 
-    setTimeout(() => {
-      abrirWhatsapp(urlWhatsapp);
-    }, 150);
+if (enviarWhatsapp) {
+  setTimeout(() => {
+    abrirWhatsapp(urlWhatsapp);
+  }, 150);
+} else {
+  alert('Pedido finalizado com sucesso!');
+}
   } catch (erro) {
     alert('Erro ao salvar o pedido. Verifique a configuração do Supabase.');
     console.error(erro);
   } finally {
-    if (btnFinalizar) {
-      btnFinalizar.innerText = 'Finalizar no WhatsApp';
-      btnFinalizar.disabled = !(await lojaAbertaAgora());
+  if (btnFinalizar) {
+  btnFinalizar.innerText = enviarWhatsapp ? 'Finalizar Pedido WhatsApp' : 'Finalizar';
+  btnFinalizar.disabled = !(await lojaAbertaAgora());
     }
   }
 }
