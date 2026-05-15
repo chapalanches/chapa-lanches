@@ -1,7 +1,7 @@
 const numeroWhatsapp = (window.APP_CONFIG && window.APP_CONFIG.whatsappNumber) || '5515996179172';
 const nomeLoja = (window.APP_CONFIG && window.APP_CONFIG.storeName) || 'Chapa Lanches';
 const ENDERECO_LOJA_PADRAO = 'Avenida Doutor Artur Bernardes, 235, Sorocaba, SP, 18081-000';
-const TEMPO_PREPARO_FIXO_MINUTOS = 45;
+const TEMPO_PREPARO_FIXO_MINUTOS = 70;
 const CHAVE_PIX = '35155218870';
 
 const REGRAS_ENTREGA_PADRAO = [
