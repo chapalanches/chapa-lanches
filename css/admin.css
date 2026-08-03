@@ -795,3 +795,214 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+
+/* =====================================================
+   EDIÇÃO DE PEDIDOS
+===================================================== */
+.modal-box-large {
+  max-width: 760px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.modal-subtitle {
+  display: block;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.modal-content-edit {
+  display: grid;
+  gap: 16px;
+}
+
+.edit-section {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.edit-section-title {
+  margin-bottom: 14px;
+}
+
+.edit-section-title h4 {
+  color: var(--yellow);
+  margin-bottom: 4px;
+}
+
+.edit-section-title span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.edit-items-list {
+  display: grid;
+  gap: 10px;
+}
+
+.edit-item-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  background: #18181b;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.edit-item-info strong,
+.edit-item-info small {
+  display: block;
+}
+
+.edit-item-info strong {
+  color: #fff;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.edit-item-info small {
+  color: var(--muted);
+}
+
+.edit-qty-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  padding: 5px;
+  border-radius: 12px;
+}
+
+.edit-qty-control button,
+.edit-remove-btn {
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.edit-qty-control button {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #303036;
+  color: #fff;
+  font-size: 19px;
+}
+
+.edit-qty-control span {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.edit-remove-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(255,90,90,0.14);
+  color: #ff8f8f;
+  font-size: 18px;
+}
+
+.add-item-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 1fr 90px auto;
+  gap: 10px;
+}
+
+.add-item-grid input,
+#editarPedidoObservacao {
+  width: 100%;
+  background: #161619;
+  color: var(--text);
+  border: 1px solid #2e2e34;
+  border-radius: 12px;
+  padding: 13px 14px;
+  font: inherit;
+  outline: none;
+}
+
+#editarPedidoObservacao {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.edit-label {
+  display: block;
+  color: var(--yellow);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.edit-summary {
+  background: #18181b;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 15px 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.edit-summary > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+}
+
+.edit-summary strong {
+  color: #fff;
+}
+
+.edit-summary-total {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 12px;
+  font-size: 1.08rem;
+}
+
+.edit-summary-total strong {
+  color: var(--yellow);
+  font-size: 1.2rem;
+}
+
+.btn-edit-order {
+  background: linear-gradient(135deg, #f2b300, #ffcb3d);
+  color: #151515;
+}
+
+.btn-edit-order:hover {
+  background: linear-gradient(135deg, #d99f00, #f2b300);
+}
+
+@media (max-width: 700px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .modal-box-large {
+    max-height: calc(100vh - 20px);
+  }
+
+  .edit-item-row {
+    grid-template-columns: 1fr auto;
+  }
+
+  .edit-remove-btn {
+    grid-column: 2;
+  }
+
+  .add-item-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .add-item-grid input:first-child,
+  .add-item-grid .btn {
+    grid-column: 1 / -1;
+  }
+}
