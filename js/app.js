@@ -72,24 +72,37 @@ let coordenadaClienteCache = null;
 let produtoPersonalizacaoAtual = null;
 
 const INGREDIENTES_REMOVIVEIS_PADRAO = [
+  'Vinagrete',
   'Maionese',
-  'Tomate',
-  'Cebola',
-  'Ketchup'
+  'Ketchup',
+  'Batata palha',
+  'Alface'
 ];
 
 const INGREDIENTES_POR_LANCHE = {
-  'duplo': ['Maionese', 'Batata palha', 'Tomate', 'Cebola', 'Ketchup'],
-  'x-burger': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
-  'x-salada': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
-  'x-egg': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
-  'x-bacon': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
-  'x-calabresa': ['Maionese', 'Tomate', 'Cebola', 'Alface', 'Ketchup'],
-  'x-frango': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
-  'x-frango especial': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
-  'omelete': ['Maionese', 'Tomate', 'Cebola', 'Ketchup'],
-  'o chapeiro': ['Tomate', 'Cebola', 'Ketchup'],
-  'x-tudo': ['Maionese', 'Tomate', 'Cebola', 'Ketchup']
+  'hot dog simples': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
+  'duplo': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
+  'cachorrão três queijos': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
+  'dogfrango': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
+  'hot dog especial': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
+  'hot dog vegetariano': ['Vinagrete', 'Maionese', 'Ketchup'],
+
+  'x-burguer': ['Vinagrete', 'Maionese'],
+  'x-salada': ['Alface', 'Vinagrete', 'Maionese'],
+  'x-egg': ['Alface', 'Vinagrete', 'Maionese'],
+  'egg especial': ['Alface', 'Vinagrete', 'Maionese'],
+  'x-bacon': ['Alface', 'Vinagrete', 'Maionese'],
+  'x-calabresa': ['Alface', 'Vinagrete', 'Maionese'],
+  'x-calabacon': ['Alface', 'Vinagrete', 'Maionese'],
+
+  'x-frango': ['Vinagrete', 'Maionese'],
+  'frango três queijos': ['Vinagrete', 'Maionese'],
+  'x-frango especial': ['Vinagrete', 'Maionese'],
+  'omelete': ['Vinagrete', 'Maionese'],
+  'x-salame': ['Alface', 'Vinagrete', 'Maionese'],
+  'a moda': ['Vinagrete', 'Maionese'],
+  'o chapeiro': ['Vinagrete', 'Maionese'],
+  'x-tudo': ['Vinagrete', 'Batata palha', 'Maionese']
 };
 
 function formatarPreco(valor) {
