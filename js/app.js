@@ -23,7 +23,7 @@ const PRODUTOS_COM_OPCOES = {
     descricao: 'Escolha o queijo do seu lanche:',
     grupoLabel: 'Queijo',
     obrigatorio: true,
-    opcoes: ['Catupiry', 'Cheddar', 'Mussarela']
+    opcoes: ['Catupiry', 'Cheddar', 'Muçarela']
   },
   xfrango: {
     nome: 'X-Frango',
@@ -32,7 +32,7 @@ const PRODUTOS_COM_OPCOES = {
     descricao: 'Escolha o queijo do seu lanche:',
     grupoLabel: 'Queijo',
     obrigatorio: true,
-    opcoes: ['Catupiry', 'Cheddar', 'Mussarela']
+    opcoes: ['Catupiry', 'Cheddar', 'Muçarela']
   },
   xfrangoespecial: {
     nome: 'X-Frango Especial',
@@ -693,7 +693,7 @@ function abrirAdicionalParaLanche(nomeAdicional, precoAdicional) {
   const precisaEscolherOpcao =
     nomeNormalizado.includes('catupiry') ||
     nomeNormalizado.includes('cheddar') ||
-    nomeNormalizado.includes('mussarela') ||
+    nomeNormalizado.includes('muçarela') ||
     nomeNormalizado.includes('calabresa') ||
     nomeNormalizado.includes('bacon') ||
     nomeNormalizado.includes('ovo') ||
@@ -712,7 +712,7 @@ function abrirEscolhaOpcaoAdicional(nomeAdicional, precoAdicional) {
 
   const nomeNormalizado = removerAcentos(String(nomeAdicional || '').toLowerCase());
 
-  let opcoes = ['Catupiry', 'Cheddar', 'Mussarela'];
+  let opcoes = ['Catupiry', 'Cheddar', 'Muçarela'];
 
   if (nomeNormalizado.includes('calabresa') || nomeNormalizado.includes('bacon')) {
     opcoes = ['Calabresa', 'Bacon'];
