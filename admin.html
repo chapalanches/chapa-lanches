@@ -209,6 +209,59 @@
     </footer>
 
   </main>
+  <!-- MODAL EDITAR PEDIDO -->
+  <div id="modalEditarPedido" class="modal-overlay hidden">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <div>
+          <h3>✏️ Editar pedido</h3>
+          <span id="editarPedidoIdentificacao" class="modal-subtitle"></span>
+        </div>
+        <button type="button" class="modal-close" onclick="fecharModalEditarPedido()">×</button>
+      </div>
+
+      <div class="modal-content modal-content-edit">
+        <section class="edit-section">
+          <div class="edit-section-title">
+            <h4>Itens do pedido</h4>
+            <span>Altere quantidades ou remova itens.</span>
+          </div>
+          <div id="editarPedidoItens" class="edit-items-list"></div>
+        </section>
+
+        <section class="edit-section add-item-box">
+          <div class="edit-section-title">
+            <h4>Adicionar item</h4>
+            <span>Informe o nome, valor e quantidade.</span>
+          </div>
+
+          <div class="add-item-grid">
+            <input id="novoItemNome" type="text" placeholder="Ex.: Coca-Cola 2L" autocomplete="off">
+            <input id="novoItemPreco" type="number" min="0" step="0.01" placeholder="Valor unitário">
+            <input id="novoItemQuantidade" type="number" min="1" step="1" value="1" aria-label="Quantidade">
+            <button class="btn btn-blue" type="button" onclick="adicionarItemEdicao()">+ Adicionar</button>
+          </div>
+        </section>
+
+        <section class="edit-section">
+          <label class="edit-label" for="editarPedidoObservacao">Observação geral</label>
+          <textarea id="editarPedidoObservacao" rows="3" placeholder="Observação do pedido"></textarea>
+        </section>
+
+        <section class="edit-summary">
+          <div><span>Subtotal</span><strong id="editarPedidoSubtotal">R$ 0,00</strong></div>
+          <div><span>Taxa de entrega</span><strong id="editarPedidoTaxa">R$ 0,00</strong></div>
+          <div class="edit-summary-total"><span>Total</span><strong id="editarPedidoTotal">R$ 0,00</strong></div>
+        </section>
+
+        <div class="modal-actions edit-modal-actions">
+          <button class="btn btn-dark" type="button" onclick="fecharModalEditarPedido()">Cancelar</button>
+          <button id="btnSalvarEdicaoPedido" class="btn btn-green" type="button" onclick="salvarEdicaoPedido()">Salvar alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL MOTOBOY -->
 <div id="modalMotoboy" class="modal-overlay hidden">
   <div class="modal-box">
