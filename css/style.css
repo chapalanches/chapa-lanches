@@ -612,3 +612,110 @@
   max-height: 85vh;
   overflow-y: auto;
 }
+
+/* ==========================================================
+   LANCHES EM DESTAQUE
+========================================================== */
+
+.item.destaque {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #f2b300;
+    transition: .25s;
+}
+
+.item.destaque:hover{
+    transform: translateY(-4px) scale(1.01);
+}
+
+.item.destaque::before{
+    content:"DESTAQUE";
+    position:absolute;
+    top:12px;
+    right:-42px;
+
+    width:160px;
+    text-align:center;
+
+    transform:rotate(40deg);
+
+    padding:5px 0;
+
+    font-size:11px;
+    font-weight:bold;
+    letter-spacing:1px;
+
+    color:#fff;
+}
+
+
+/* X-SALAME */
+
+.item.destaque.salame{
+    border-color:#70ff3b;
+    box-shadow:0 0 18px rgba(112,255,59,.28);
+}
+
+.item.destaque.salame::before{
+    background:#70ff3b;
+    color:#111;
+}
+
+
+/* A MODA */
+
+.item.destaque.amoda{
+    border-color:#ffb100;
+    box-shadow:0 0 18px rgba(255,177,0,.30);
+}
+
+.item.destaque.amoda::before{
+    background:#ffb100;
+    color:#111;
+}
+
+
+/* O CHAPEIRO */
+
+.item.destaque.chapeiro{
+    border-color:#ff3838;
+    box-shadow:0 0 20px rgba(255,56,56,.35);
+}
+
+.item.destaque.chapeiro::before{
+    background:#ff3838;
+}
+
+
+/* X-TUDO */
+
+.item.destaque.xtudo{
+    border-color:#b14dff;
+    box-shadow:0 0 20px rgba(177,77,255,.35);
+}
+
+.item.destaque.xtudo::before{
+    background:#b14dff;
+}
+
+
+/* Badge do código */
+
+.item.destaque .codigo{
+    font-size:18px;
+    font-weight:bold;
+}
+
+
+/* Nome */
+
+.item.destaque h3{
+    font-size:28px;
+}
+
+
+/* Preço */
+
+.item.destaque .preco{
+    font-size:32px;
+}
