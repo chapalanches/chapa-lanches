@@ -618,104 +618,127 @@
 ========================================================== */
 
 .item.destaque {
-    position: relative;
-    overflow: hidden;
-    border: 2px solid #f2b300;
-    transition: .25s;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #f2b300;
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
 }
 
-.item.destaque:hover{
-    transform: translateY(-4px) scale(1.01);
+.item.destaque:hover {
+  transform: translateY(-4px) scale(1.01);
 }
 
-.item.destaque::before{
-    content:"DESTAQUE";
-    position:absolute;
-    top:12px;
-    right:-42px;
+.item.destaque::before {
+  content: "DESTAQUE";
+  position: absolute;
+  top: 12px;
+  right: -42px;
+  z-index: 2;
 
-    width:160px;
-    text-align:center;
+  width: 160px;
+  padding: 5px 0;
 
-    transform:rotate(40deg);
+  text-align: center;
+  transform: rotate(40deg);
 
-    padding:5px 0;
-
-    font-size:11px;
-    font-weight:bold;
-    letter-spacing:1px;
-
-    color:#fff;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #fff;
 }
 
+/* 18 - X-Salame */
 
-/* X-SALAME */
-
-.item.destaque.salame{
-    border-color:#70ff3b;
-    box-shadow:0 0 18px rgba(112,255,59,.28);
+.item.destaque-verde {
+  border-color: #70ff3b;
+  box-shadow: 0 0 18px rgba(112, 255, 59, 0.28);
 }
 
-.item.destaque.salame::before{
-    background:#70ff3b;
-    color:#111;
+.item.destaque-verde::before {
+  background: #70ff3b;
+  color: #111;
 }
 
-
-/* A MODA */
-
-.item.destaque.amoda{
-    border-color:#ffb100;
-    box-shadow:0 0 18px rgba(255,177,0,.30);
+.item.destaque-verde .codigo,
+.item.destaque-verde .preco {
+  color: #70ff3b;
 }
 
-.item.destaque.amoda::before{
-    background:#ffb100;
-    color:#111;
+/* 19 - À Moda */
+
+.item.destaque-laranja {
+  border-color: #ffb100;
+  box-shadow: 0 0 18px rgba(255, 177, 0, 0.30);
 }
 
-
-/* O CHAPEIRO */
-
-.item.destaque.chapeiro{
-    border-color:#ff3838;
-    box-shadow:0 0 20px rgba(255,56,56,.35);
+.item.destaque-laranja::before {
+  background: #ffb100;
+  color: #111;
 }
 
-.item.destaque.chapeiro::before{
-    background:#ff3838;
+.item.destaque-laranja .codigo,
+.item.destaque-laranja .preco {
+  color: #ffb100;
 }
 
+/* 20 - O Chapeiro */
 
-/* X-TUDO */
-
-.item.destaque.xtudo{
-    border-color:#b14dff;
-    box-shadow:0 0 20px rgba(177,77,255,.35);
+.item.destaque-vermelho {
+  border-color: #ff3838;
+  box-shadow: 0 0 20px rgba(255, 56, 56, 0.35);
 }
 
-.item.destaque.xtudo::before{
-    background:#b14dff;
+.item.destaque-vermelho::before {
+  background: #ff3838;
+  color: #fff;
 }
 
-
-/* Badge do código */
-
-.item.destaque .codigo{
-    font-size:18px;
-    font-weight:bold;
+.item.destaque-vermelho .codigo,
+.item.destaque-vermelho .preco {
+  color: #ff3838;
 }
 
+/* 21 - X-Tudo */
 
-/* Nome */
-
-.item.destaque h3{
-    font-size:28px;
+.item.destaque-roxo {
+  border-color: #b14dff;
+  box-shadow: 0 0 20px rgba(177, 77, 255, 0.35);
 }
 
+.item.destaque-roxo::before {
+  background: #b14dff;
+  color: #fff;
+}
 
-/* Preço */
+.item.destaque-roxo .codigo,
+.item.destaque-roxo .preco {
+  color: #b14dff;
+}
 
-.item.destaque .preco{
-    font-size:32px;
+/* Tamanhos especiais */
+
+.item.destaque .codigo {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.item.destaque h3 {
+  font-size: 28px;
+}
+
+.item.destaque .preco {
+  font-size: 32px;
+}
+
+@media (max-width: 700px) {
+  .item.destaque h3 {
+    font-size: 24px;
+  }
+
+  .item.destaque .preco {
+    font-size: 26px;
+  }
 }
