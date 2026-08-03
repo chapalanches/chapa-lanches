@@ -18,7 +18,7 @@ const REGRAS_ENTREGA_PADRAO = [
 const PRODUTOS_COM_OPCOES = {
   duplo: {
     nome: 'Hot Dog Duplo',
-    preco: 16,
+    preco: 18,
     titulo: 'Hot Dog Duplo',
     descricao: 'Escolha o queijo do seu lanche:',
     grupoLabel: 'Queijo',
@@ -27,7 +27,7 @@ const PRODUTOS_COM_OPCOES = {
   },
   xfrango: {
     nome: 'X-Frango',
-    preco: 21,
+    preco: 23,
     titulo: 'X-Frango',
     descricao: 'Escolha o queijo do seu lanche:',
     grupoLabel: 'Queijo',
@@ -36,7 +36,7 @@ const PRODUTOS_COM_OPCOES = {
   },
   xfrangoespecial: {
     nome: 'X-Frango Especial',
-    preco: 22,
+    preco: 25,
     titulo: 'X-Frango Especial',
     descricao: 'Escolha um complemento do seu lanche:',
     grupoLabel: 'Complemento',
@@ -82,7 +82,7 @@ const INGREDIENTES_REMOVIVEIS_PADRAO = [
 const INGREDIENTES_POR_LANCHE = {
   'hot dog simples': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
   'duplo': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
-  'cachorrão três queijos': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
+  'cachorrao tres queijos': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
   'dogfrango': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
   'hot dog especial': ['Vinagrete', 'Batata palha', 'Maionese', 'Ketchup'],
   'hot dog vegetariano': ['Vinagrete', 'Maionese', 'Ketchup'],
@@ -96,7 +96,7 @@ const INGREDIENTES_POR_LANCHE = {
   'x-calabacon': ['Alface', 'Vinagrete', 'Maionese'],
 
   'x-frango': ['Vinagrete', 'Maionese'],
-  'frango três queijos': ['Vinagrete', 'Maionese'],
+  'frango tres queijos': ['Vinagrete', 'Maionese'],
   'x-frango especial': ['Vinagrete', 'Maionese'],
   'omelete': ['Vinagrete', 'Maionese'],
   'x-salame': ['Alface', 'Vinagrete', 'Maionese'],
@@ -847,7 +847,7 @@ function lojaAbertaPorHorario(config = null) {
   const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
 
   const abre = converterHorarioParaMinutos(config?.open_time) ?? (19 * 60);
-  const fecha = converterHorarioParaMinutos(config?.close_time) ?? (22 * 60 + 30);
+  const fecha = converterHorarioParaMinutos(config?.close_time) ?? (22 * 60 + 45);
 
   return minutosAgora >= abre && minutosAgora < fecha;
 }
@@ -861,7 +861,7 @@ function obterConfiguracaoLojaPadrao() {
     store_lat: null,
     store_lng: null,
     open_time: '19:00:00',
-    close_time: '22:30:00',
+    close_time: '22:45:00',
     auto_open: true,
     manual_force_open: false,
     manual_force_closed: false
