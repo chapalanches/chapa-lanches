@@ -3,6 +3,10 @@ let ultimaQuantidadePedidos = 0;
 let pedidoMotoboySelecionado = null;
 let motoboySelecionado = null;
 
+let pedidoEmEdicao = null;
+let uidPedidoEmEdicao = null;
+let salvandoEdicaoPedido = false;
+
 const STORAGE_KEYS = ["pedidos", "chapa_pedidos", "pedidos_chapa"];
 const LOGIN_STORAGE_KEY = "chapa_admin_logado";
 const TABELA_PEDIDOS = "orders";
@@ -442,7 +446,11 @@ function normalizarPedido(pedido, index) {
     nome: item.nome || item.titulo || item.name || "Item",
     quantidade: Number(item.quantidade || item.quantity || 1),
     preco: Number(item.preco || item.valor || item.price || 0),
-    observacao: item.observacao || item.observacoes || ""
+    observacao:
+      item.observacao ||
+      item.observacoes ||
+      item.observation ||
+      ""
   }));
 
   const tipoEntregaBruto =
@@ -514,6 +522,7 @@ function gerarHashPedidos(lista) {
         id: p.id,
         status: p.status,
         total: p.total,
+        itens: p.itens,
         data: p.dataTexto
       }))
     );
@@ -872,6 +881,13 @@ function criarCardPedido(pedido) {
         </select>
 
         <div class="action-grid">
+          <button
+            class="btn btn-edit-order btn-small"
+            onclick="abrirModalEditarPedido('${pedido.uid}')"
+          >
+            ✏️ Editar pedido
+          </button>
+
          ${
     pedido.tipoEntrega === "delivery"
       ? `<button class="btn btn-green btn-small" onclick="enviarPedidoMotoboy('${pedido.uid}')">Enviar motoboy</button>`
@@ -1467,7 +1483,6 @@ function imprimirPedidoRapido(uidPedido) {
 
 function normalizarTextoParaRawBT(texto) {
   return String(texto || "")
-    // espaços especiais
     .replace(/\u00A0/g, " ")
     .replace(/\u202F/g, " ")
     .replace(/\u2007/g, " ")
@@ -1476,18 +1491,12 @@ function normalizarTextoParaRawBT(texto) {
     .replace(/\u200C/g, "")
     .replace(/\u200D/g, "")
     .replace(/\uFEFF/g, "")
-
-    // aspas e traços
     .replace(/[“”„‟]/g, '"')
     .replace(/[‘’‚‛]/g, "'")
     .replace(/[–—−]/g, "-")
-
-    // reticências e bullets
     .replace(/\.\.\./g, "...")
     .replace(/…/g, "...")
     .replace(/[•·]/g, "-")
-
-    // símbolos que costumam dar problema
     .replace(/№/g, "No")
     .replace(/º/g, "o")
     .replace(/ª/g, "a")
@@ -1499,8 +1508,6 @@ function normalizarTextoParaRawBT(texto) {
     .replace(/®/g, "")
     .replace(/©/g, "")
     .replace(/™/g, "")
-
-    // setas e afins
     .replace(/→/g, "->")
     .replace(/←/g, "<-")
     .replace(/↔/g, "<->")
@@ -1509,30 +1516,16 @@ function normalizarTextoParaRawBT(texto) {
     .replace(/✔/g, "OK")
     .replace(/✖/g, "X")
     .replace(/×/g, "x")
-
-    // remove lixos comuns de encoding
     .replace(/Â/g, "")
     .replace(/Ã/g, "")
-
-    // moeda
     .replace(/R\$/g, "R$")
-
-    // normaliza acentos
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-
-    // cedilha depois da normalização
     .replace(/ç/g, "c")
     .replace(/Ç/g, "C")
-
-    // tabs e quebras estranhas
     .replace(/\t/g, " ")
     .replace(/\r/g, "")
-
-    // junta múltiplos espaços, mas preserva quebra de linha
     .replace(/[ ]{2,}/g, " ")
-
-    // remove qualquer coisa fora do ASCII imprimível + quebra de linha
     .replace(/[^\x0A\x0D\x20-\x7E]/g, "");
 }
 
@@ -1611,6 +1604,490 @@ Observação: ${pedido.observacao || "-"}
     .catch(() => alert("Não foi possível copiar o pedido."));
 }
 
+function clonarItensPedido(itens) {
+  if (!Array.isArray(itens)) return [];
+
+  return itens.map((item) => ({
+    nome: String(item.nome || "Item"),
+    quantidade: Math.max(1, Number(item.quantidade || 1)),
+    preco: Math.max(0, Number(item.preco || 0)),
+    observacao: String(item.observacao || "")
+  }));
+}
+
+function calcularSubtotalEdicao() {
+  if (!pedidoEmEdicao || !Array.isArray(pedidoEmEdicao.itens)) {
+    return 0;
+  }
+
+  return pedidoEmEdicao.itens.reduce((total, item) => {
+    const quantidade = Math.max(0, Number(item.quantidade || 0));
+    const preco = Math.max(0, Number(item.preco || 0));
+
+    return total + quantidade * preco;
+  }, 0);
+}
+
+function atualizarResumoEdicao() {
+  if (!pedidoEmEdicao) return;
+
+  const subtotal = calcularSubtotalEdicao();
+  const taxaEntrega = Math.max(0, Number(pedidoEmEdicao.taxaEntrega || 0));
+  const total = subtotal + taxaEntrega;
+
+  pedidoEmEdicao.subtotal = subtotal;
+  pedidoEmEdicao.total = total;
+
+  const campoSubtotal = byId("editarPedidoSubtotal");
+  const campoTaxa = byId("editarPedidoTaxa");
+  const campoTotal = byId("editarPedidoTotal");
+
+  if (campoSubtotal) campoSubtotal.textContent = formatarMoeda(subtotal);
+  if (campoTaxa) campoTaxa.textContent = formatarMoeda(taxaEntrega);
+  if (campoTotal) campoTotal.textContent = formatarMoeda(total);
+}
+
+function renderizarItensEdicao() {
+  const lista = byId("editarPedidoItens");
+
+  if (!lista || !pedidoEmEdicao) return;
+
+  if (!pedidoEmEdicao.itens.length) {
+    lista.innerHTML = `
+      <div class="empty-column">
+        Nenhum item neste pedido.
+      </div>
+    `;
+
+    atualizarResumoEdicao();
+    return;
+  }
+
+  lista.innerHTML = pedidoEmEdicao.itens
+    .map((item, index) => {
+      const valorTotalItem =
+        Number(item.preco || 0) * Number(item.quantidade || 0);
+
+      return `
+        <div class="edit-item-row">
+          <div class="edit-item-info">
+            <strong>${escaparHtml(item.nome)}</strong>
+
+            <small>
+              Unitário: ${formatarMoeda(item.preco)}
+              · Total: ${formatarMoeda(valorTotalItem)}
+            </small>
+
+            ${
+              item.observacao
+                ? `<small>Obs.: ${escaparHtml(item.observacao)}</small>`
+                : ""
+            }
+          </div>
+
+          <div class="edit-qty-control">
+            <button
+              type="button"
+              onclick="alterarQuantidadeItemEdicao(${index}, -1)"
+              aria-label="Diminuir quantidade"
+            >
+              −
+            </button>
+
+            <span>${escaparHtml(item.quantidade)}</span>
+
+            <button
+              type="button"
+              onclick="alterarQuantidadeItemEdicao(${index}, 1)"
+              aria-label="Aumentar quantidade"
+            >
+              +
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="edit-remove-btn"
+            onclick="removerItemEdicao(${index})"
+            title="Remover item"
+            aria-label="Remover item"
+          >
+            🗑
+          </button>
+        </div>
+      `;
+    })
+    .join("");
+
+  atualizarResumoEdicao();
+}
+
+function abrirModalEditarPedido(uidPedido) {
+  const pedidoOriginal = buscarPedidoPorUid(uidPedido);
+
+  if (!pedidoOriginal) {
+    alert("Pedido não encontrado.");
+    return;
+  }
+
+  pedidoEmEdicao = {
+    bancoId: pedidoOriginal.bancoId,
+    uid: pedidoOriginal.uid,
+    id: pedidoOriginal.id,
+    cliente: pedidoOriginal.cliente,
+    itens: clonarItensPedido(pedidoOriginal.itens),
+    taxaEntrega: Number(pedidoOriginal.taxaEntrega || 0),
+    subtotal: Number(pedidoOriginal.subtotal || 0),
+    total: Number(pedidoOriginal.total || 0),
+    observacao: String(pedidoOriginal.observacao || "")
+  };
+
+  uidPedidoEmEdicao = pedidoOriginal.uid;
+
+  const modal = byId("modalEditarPedido");
+  const identificacao = byId("editarPedidoIdentificacao");
+  const observacao = byId("editarPedidoObservacao");
+  const novoItemNome = byId("novoItemNome");
+  const novoItemPreco = byId("novoItemPreco");
+  const novoItemQuantidade = byId("novoItemQuantidade");
+
+  if (!modal) {
+    alert("Modal de edição não encontrado no admin.html.");
+    pedidoEmEdicao = null;
+    uidPedidoEmEdicao = null;
+    return;
+  }
+
+  if (identificacao) {
+    identificacao.textContent =
+      `${pedidoOriginal.id} · ${pedidoOriginal.cliente}`;
+  }
+
+  if (observacao) observacao.value = pedidoOriginal.observacao || "";
+  if (novoItemNome) novoItemNome.value = "";
+  if (novoItemPreco) novoItemPreco.value = "";
+  if (novoItemQuantidade) novoItemQuantidade.value = "1";
+
+  renderizarItensEdicao();
+  modal.classList.remove("hidden");
+
+  setTimeout(() => {
+    if (novoItemNome) novoItemNome.focus();
+  }, 100);
+}
+
+function fecharModalEditarPedido() {
+  if (salvandoEdicaoPedido) return;
+
+  const modal = byId("modalEditarPedido");
+
+  if (modal) modal.classList.add("hidden");
+
+  pedidoEmEdicao = null;
+  uidPedidoEmEdicao = null;
+}
+
+function alterarQuantidadeItemEdicao(index, alteracao) {
+  if (
+    !pedidoEmEdicao ||
+    !pedidoEmEdicao.itens ||
+    !pedidoEmEdicao.itens[index]
+  ) {
+    return;
+  }
+
+  const item = pedidoEmEdicao.itens[index];
+  const quantidadeAtual = Number(item.quantidade || 1);
+  const novaQuantidade = quantidadeAtual + Number(alteracao || 0);
+
+  if (novaQuantidade < 1) {
+    removerItemEdicao(index);
+    return;
+  }
+
+  item.quantidade = novaQuantidade;
+  renderizarItensEdicao();
+}
+
+function removerItemEdicao(index) {
+  if (
+    !pedidoEmEdicao ||
+    !pedidoEmEdicao.itens ||
+    !pedidoEmEdicao.itens[index]
+  ) {
+    return;
+  }
+
+  const item = pedidoEmEdicao.itens[index];
+  const confirmar = confirm(`Deseja remover "${item.nome}" do pedido?`);
+
+  if (!confirmar) return;
+
+  pedidoEmEdicao.itens.splice(index, 1);
+  renderizarItensEdicao();
+}
+
+function converterValorDigitado(valor) {
+  const texto = String(valor ?? "")
+    .trim()
+    .replace(/\s/g, "")
+    .replace(",", ".");
+
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : NaN;
+}
+
+function adicionarItemEdicao() {
+  if (!pedidoEmEdicao) {
+    alert("Nenhum pedido selecionado.");
+    return;
+  }
+
+  const campoNome = byId("novoItemNome");
+  const campoPreco = byId("novoItemPreco");
+  const campoQuantidade = byId("novoItemQuantidade");
+
+  const nome = String(campoNome?.value || "").trim();
+  const preco = converterValorDigitado(campoPreco?.value);
+  const quantidade = Math.floor(
+    converterValorDigitado(campoQuantidade?.value)
+  );
+
+  if (!nome) {
+    alert("Informe o nome do item.");
+    if (campoNome) campoNome.focus();
+    return;
+  }
+
+  if (!Number.isFinite(preco) || preco < 0) {
+    alert("Informe um valor unitário válido.");
+    if (campoPreco) campoPreco.focus();
+    return;
+  }
+
+  if (!Number.isFinite(quantidade) || quantidade < 1) {
+    alert("Informe uma quantidade válida.");
+    if (campoQuantidade) campoQuantidade.focus();
+    return;
+  }
+
+  const itemExistente = pedidoEmEdicao.itens.find(
+    (item) =>
+      String(item.nome).trim().toLowerCase() === nome.toLowerCase() &&
+      Number(item.preco) === Number(preco) &&
+      !item.observacao
+  );
+
+  if (itemExistente) {
+    itemExistente.quantidade += quantidade;
+  } else {
+    pedidoEmEdicao.itens.push({
+      nome,
+      quantidade,
+      preco,
+      observacao: ""
+    });
+  }
+
+  if (campoNome) campoNome.value = "";
+  if (campoPreco) campoPreco.value = "";
+  if (campoQuantidade) campoQuantidade.value = "1";
+
+  renderizarItensEdicao();
+
+  if (campoNome) campoNome.focus();
+}
+
+function prepararItensParaBanco(itens) {
+  return itens.map((item) => ({
+    name: String(item.nome || "Item").trim(),
+    quantity: Math.max(1, Number(item.quantidade || 1)),
+    price: Math.max(0, Number(item.preco || 0)),
+    observation: String(item.observacao || "")
+  }));
+}
+
+function montarCustomerNotesEditado(pedidoOriginal, novaObservacao) {
+  const partes = [];
+
+  if (
+    pedidoOriginal.pagamento &&
+    pedidoOriginal.pagamento !== "Não informado"
+  ) {
+    partes.push(`Pagamento: ${pedidoOriginal.pagamento}`);
+  }
+
+  if (pedidoOriginal.complemento) {
+    partes.push(`Complemento: ${pedidoOriginal.complemento}`);
+  }
+
+  if (novaObservacao) {
+    partes.push(novaObservacao);
+  }
+
+  return partes.join(" | ");
+}
+
+async function salvarEdicaoPedidoNoBanco(pedidoOriginal, pedidoEditado) {
+  if (!supabaseClient) {
+    throw new Error("Supabase não configurado.");
+  }
+
+  if (
+    pedidoOriginal.bancoId === null ||
+    pedidoOriginal.bancoId === undefined ||
+    Number.isNaN(Number(pedidoOriginal.bancoId))
+  ) {
+    throw new Error("Pedido sem ID válido no banco.");
+  }
+
+  const subtotal = calcularSubtotalEdicao();
+  const taxaEntrega = Math.max(
+    0,
+    Number(pedidoOriginal.taxaEntrega || 0)
+  );
+  const total = subtotal + taxaEntrega;
+
+  const observacaoCampo = byId("editarPedidoObservacao");
+  const novaObservacao = String(observacaoCampo?.value || "").trim();
+
+  const payload = {
+    items: prepararItensParaBanco(pedidoEditado.itens),
+    subtotal,
+    total,
+    customer_notes: montarCustomerNotesEditado(
+      pedidoOriginal,
+      novaObservacao
+    )
+  };
+
+  const { data, error } = await supabaseClient
+    .from(TABELA_PEDIDOS)
+    .update(payload)
+    .eq("id", Number(pedidoOriginal.bancoId))
+    .select("id");
+
+  if (error) {
+    console.error("Erro ao salvar edição no Supabase:", error);
+    throw error;
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error(
+      "Nenhuma linha foi atualizada. Verifique as policies do Supabase."
+    );
+  }
+
+  return true;
+}
+
+async function salvarEdicaoPedido() {
+  if (salvandoEdicaoPedido) return;
+
+  if (!pedidoEmEdicao || !uidPedidoEmEdicao) {
+    alert("Nenhum pedido está sendo editado.");
+    return;
+  }
+
+  if (!pedidoEmEdicao.itens.length) {
+    alert("O pedido precisa possuir pelo menos um item.");
+    return;
+  }
+
+  const pedidoOriginal = buscarPedidoPorUid(uidPedidoEmEdicao);
+
+  if (!pedidoOriginal) {
+    alert("O pedido original não foi encontrado.");
+    fecharModalEditarPedido();
+    return;
+  }
+
+  const botaoSalvar = byId("btnSalvarEdicaoPedido");
+  const observacaoCampo = byId("editarPedidoObservacao");
+
+  try {
+    salvandoEdicaoPedido = true;
+
+    if (botaoSalvar) {
+      botaoSalvar.disabled = true;
+      botaoSalvar.textContent = "Salvando...";
+    }
+
+    const subtotal = calcularSubtotalEdicao();
+    const taxaEntrega = Math.max(
+      0,
+      Number(pedidoOriginal.taxaEntrega || 0)
+    );
+    const total = subtotal + taxaEntrega;
+    const novaObservacao = String(
+      observacaoCampo?.value || ""
+    ).trim();
+
+    if (supabaseClient) {
+      await salvarEdicaoPedidoNoBanco(
+        pedidoOriginal,
+        pedidoEmEdicao
+      );
+
+      const modal = byId("modalEditarPedido");
+      if (modal) modal.classList.add("hidden");
+
+      pedidoEmEdicao = null;
+      uidPedidoEmEdicao = null;
+
+      ultimoHashPedidos = "";
+      await carregarPedidos();
+
+      alert("Pedido atualizado com sucesso.");
+      return;
+    }
+
+    const indiceOriginal = pedidos.findIndex(
+      (pedido) => pedido.uid === uidPedidoEmEdicao
+    );
+
+    if (indiceOriginal < 0) {
+      throw new Error(
+        "Pedido não encontrado no armazenamento local."
+      );
+    }
+
+    pedidos[indiceOriginal].itens =
+      clonarItensPedido(pedidoEmEdicao.itens);
+
+    pedidos[indiceOriginal].subtotal = subtotal;
+    pedidos[indiceOriginal].total = total;
+    pedidos[indiceOriginal].observacao = novaObservacao;
+
+    salvarPedidosStorage();
+    ultimoHashPedidos = "";
+    atualizarResumo();
+    renderizarQuadro();
+
+    const modal = byId("modalEditarPedido");
+    if (modal) modal.classList.add("hidden");
+
+    pedidoEmEdicao = null;
+    uidPedidoEmEdicao = null;
+
+    alert("Pedido atualizado com sucesso.");
+  } catch (erro) {
+    console.error("Falha ao salvar edição do pedido:", erro);
+
+    alert(
+      "Não foi possível salvar as alterações. " +
+      "Verifique o console e as permissões do Supabase."
+    );
+  } finally {
+    salvandoEdicaoPedido = false;
+
+    if (botaoSalvar) {
+      botaoSalvar.disabled = false;
+      botaoSalvar.textContent = "Salvar alterações";
+    }
+  }
+}
+
 function tocarNotificacaoNovoPedido() {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1678,7 +2155,8 @@ function obterStatusAutomaticoLoja(config = null) {
 
   const diasPermitidos = [0, 3, 4, 5, 6];
   const abertura = converterHorarioParaMinutos(config?.open_time) ?? 19 * 60;
-  const fechamento = converterHorarioParaMinutos(config?.close_time) ?? (22 * 60 + 30);
+  const fechamento =
+    converterHorarioParaMinutos(config?.close_time) ?? (22 * 60 + 30);
 
   return (
     diasPermitidos.includes(diaSemana) &&
@@ -1724,13 +2202,16 @@ async function atualizarConfiguracaoLojaStatus() {
     if (!configuracaoLoja) {
       configuracaoLoja = obterConfiguracaoLojaPadrao();
     }
+
     return configuracaoLoja;
   }
 
   try {
     const { data, error } = await supabaseClient
       .from(TABELA_CONFIG_LOJA)
-      .select("id, open_time, close_time, auto_open, manual_force_open, manual_force_closed, updated_at")
+      .select(
+        "id, open_time, close_time, auto_open, manual_force_open, manual_force_closed, updated_at"
+      )
       .eq("id", STORE_SETTINGS_ID)
       .single();
 
@@ -1774,6 +2255,7 @@ async function carregarStatusLoja() {
   const config = await atualizarConfiguracaoLojaStatus();
   const aberta = await lojaEstaAbertaAgora();
   const modo = obterModoLoja(config);
+
   aplicarStatusLoja(aberta, modo);
 }
 
@@ -1927,7 +2409,11 @@ function iniciarRealtimeSupabase() {
       .channel("orders-realtime-admin")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: TABELA_PEDIDOS },
+        {
+          event: "*",
+          schema: "public",
+          table: TABELA_PEDIDOS
+        },
         async (payload) => {
           console.log("Mudança recebida do Supabase:", payload);
           await carregarPedidos(payload?.eventType === "INSERT");
@@ -1952,8 +2438,13 @@ const filtroStatus = byId("filtroStatus");
 const filtroTipo = byId("filtroTipo");
 const ordenacao = byId("ordenacao");
 
-if (btnAtualizar) btnAtualizar.addEventListener("click", () => carregarPedidos());
-if (btnExportar) btnExportar.addEventListener("click", exportarPedidos);
+if (btnAtualizar) {
+  btnAtualizar.addEventListener("click", () => carregarPedidos());
+}
+
+if (btnExportar) {
+  btnExportar.addEventListener("click", exportarPedidos);
+}
 
 if (btnLimparTudo) {
   btnLimparTudo.removeEventListener("click", limparTodosPedidos);
@@ -1973,11 +2464,25 @@ if (btnModoAutomatico) {
   });
 }
 
-if (btnSair) btnSair.addEventListener("click", sairDoPainel);
-if (buscaPedido) buscaPedido.addEventListener("input", renderizarQuadro);
-if (filtroStatus) filtroStatus.addEventListener("change", renderizarQuadro);
-if (filtroTipo) filtroTipo.addEventListener("change", renderizarQuadro);
-if (ordenacao) ordenacao.addEventListener("change", renderizarQuadro);
+if (btnSair) {
+  btnSair.addEventListener("click", sairDoPainel);
+}
+
+if (buscaPedido) {
+  buscaPedido.addEventListener("input", renderizarQuadro);
+}
+
+if (filtroStatus) {
+  filtroStatus.addEventListener("change", renderizarQuadro);
+}
+
+if (filtroTipo) {
+  filtroTipo.addEventListener("change", renderizarQuadro);
+}
+
+if (ordenacao) {
+  ordenacao.addEventListener("change", renderizarQuadro);
+}
 
 window.addEventListener("beforeunload", () => {
   try {
@@ -2000,19 +2505,31 @@ window.enviarPedidoMotoboy = enviarPedidoMotoboy;
 window.fecharModalMotoboy = fecharModalMotoboy;
 window.confirmarEnvioMotoboy = confirmarEnvioMotoboy;
 
-console.log("ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA");
+window.abrirModalEditarPedido = abrirModalEditarPedido;
+window.fecharModalEditarPedido = fecharModalEditarPedido;
+window.alterarQuantidadeItemEdicao = alterarQuantidadeItemEdicao;
+window.removerItemEdicao = removerItemEdicao;
+window.adicionarItemEdicao = adicionarItemEdicao;
+window.salvarEdicaoPedido = salvarEdicaoPedido;
+
+console.log(
+  "ADMIN JS NOVO CARREGADO - MOSTRANDO APENAS PEDIDOS DO DIA E LIMPANDO NA VIRADA"
+);
 
 (async function iniciarAdmin() {
   esconderBotaoApagarTudo();
+
   await carregarConfiguracaoLoja();
   await carregarStatusLoja();
   await carregarPedidos();
+
   iniciarRealtimeSupabase();
   atualizarRelogio();
   aplicarEstadoColunasSalvas();
 
   setInterval(atualizarRelogio, 1000);
   setInterval(atualizarContadoresTempo, 30000);
+
   setInterval(async () => {
     verificarViradaDeDia();
     await carregarPedidos();
